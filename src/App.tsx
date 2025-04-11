@@ -10,6 +10,12 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import EvaluatorDashboard from "./pages/evaluator/EvaluatorDashboard";
 import Evaluation from "./pages/evaluator/Evaluation";
 import NotFound from "./pages/NotFound";
+import EventsPage from "./pages/admin/events/EventsPage";
+import NewEvent from "./pages/admin/events/NewEvent";
+import ProductsPage from "./pages/admin/products/ProductsPage";
+import ReportsPage from "./pages/admin/reports/ReportsPage";
+import UsersPage from "./pages/admin/users/UsersPage";
+import EventDetail from "./pages/admin/event/EventDetail";
 
 const queryClient = new QueryClient();
 
@@ -26,6 +32,12 @@ const App = () => (
             
             {/* Admin routes */}
             <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/admin/events" element={<EventsPage />} />
+            <Route path="/admin/events/new" element={<NewEvent />} />
+            <Route path="/admin/products" element={<ProductsPage />} />
+            <Route path="/admin/reports" element={<ReportsPage />} />
+            <Route path="/admin/users" element={<UsersPage />} />
+            <Route path="/admin/event/:eventId" element={<EventDetail />} />
             
             {/* Evaluator routes */}
             <Route path="/evaluator" element={<EvaluatorDashboard />} />
