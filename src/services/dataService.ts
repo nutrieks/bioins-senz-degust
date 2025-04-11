@@ -1,12 +1,13 @@
+
 import { 
   User, Event, ProductType, Sample, JARAttribute, 
   Randomization, Evaluation, HedonicScale, JARRating,
-  HedonicReport, JARReport, EventStatus, RetailerCode
+  HedonicReport, JARReport, EventStatus, RetailerCode, BaseProductType
 } from "../types";
 import { 
   users, events, productTypes, samples, jarAttributes, 
   randomizations, evaluations, generateRandomizationTable,
-  getNextSample
+  getNextSample, baseProductTypes
 } from "./mockData";
 
 // Authentication
@@ -48,7 +49,80 @@ export async function updateEventStatus(eventId: string, status: EventStatus): P
   return true;
 }
 
-// Product Type Management
+// Base Product Type Management (for reuse across events)
+export async function getAllProductTypes(): Promise<BaseProductType[]> {
+  return [...baseProductTypes];
+}
+
+export async function getBaseProductType(productTypeId: string): Promise<BaseProductType | null> {
+  return baseProductTypes.find(pt => pt.id === productTypeId) || null;
+}
+
+export async function createBaseProductType(
+  productName: string,
+  jarAttributes: JARAttribute[]
+): Promise<BaseProductType> {
+  const now = new Date().toISOString();
+  const id = `base_product_${Date.now()}`;
+  
+  // Create attributes with the new productTypeId
+  const attributes = jarAttributes.map(attr => ({
+    ...attr,
+    id: `attr_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+    productTypeId: id
+  }));
+  
+  const newBaseProductType: BaseProductType = {
+    id,
+    productName,
+    jarAttributes: attributes,
+    createdAt: now
+  };
+  
+  baseProductTypes.push(newBaseProductType);
+  return newBaseProductType;
+}
+
+export async function updateBaseProductType(
+  productTypeId: string,
+  productName: string,
+  jarAttributes: JARAttribute[]
+): Promise<boolean> {
+  const index = baseProductTypes.findIndex(pt => pt.id === productTypeId);
+  if (index === -1) return false;
+  
+  // Ensure attributes have the correct productTypeId
+  const updatedAttributes = jarAttributes.map(attr => ({
+    ...attr,
+    productTypeId
+  }));
+  
+  baseProductTypes[index] = {
+    ...baseProductTypes[index],
+    productName,
+    jarAttributes: updatedAttributes
+  };
+  
+  return true;
+}
+
+export async function deleteProductType(productTypeId: string): Promise<boolean> {
+  const index = baseProductTypes.findIndex(pt => pt.id === productTypeId);
+  if (index === -1) return false;
+  
+  // Check if this product type is used in any event
+  const isUsed = productTypes.some(pt => pt.baseProductTypeId === productTypeId);
+  if (isUsed) {
+    // In a real app, you might want to handle this differently
+    // For now, we'll allow deletion even if it's used (since we're using mock data)
+    console.warn("Deleting a product type that is used in events. This could cause issues.");
+  }
+  
+  baseProductTypes.splice(index, 1);
+  return true;
+}
+
+// Product Type Management (within events)
 export async function getProductTypes(eventId: string): Promise<ProductType[]> {
   return productTypes.filter(pt => pt.eventId === eventId);
 }
@@ -56,19 +130,34 @@ export async function getProductTypes(eventId: string): Promise<ProductType[]> {
 export async function createProductType(
   eventId: string, 
   customerCode: string, 
-  productName: string, 
+  baseProductTypeId: string, 
   baseCode: string,
   displayOrder: number
 ): Promise<ProductType> {
+  // Get the base product type to copy its attributes
+  const baseType = baseProductTypes.find(pt => pt.id === baseProductTypeId);
+  if (!baseType) throw new Error("Base product type not found");
+  
+  // Create a new ID for this product type instance
+  const newProductTypeId = `product_${Date.now()}`;
+  
+  // Create copies of the JAR attributes with the new productTypeId
+  const jarAttributesCopy = baseType.jarAttributes.map(attr => ({
+    ...attr,
+    id: `attr_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+    productTypeId: newProductTypeId
+  }));
+  
   const newProductType: ProductType = {
-    id: `product_${Date.now()}`,
+    id: newProductTypeId,
     eventId,
     customerCode,
-    productName,
+    productName: baseType.productName,
     baseCode,
     samples: [],
-    jarAttributes: [],
-    displayOrder
+    jarAttributes: jarAttributesCopy,
+    displayOrder,
+    baseProductTypeId
   };
   
   productTypes.push(newProductType);

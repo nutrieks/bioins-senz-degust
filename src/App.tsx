@@ -13,6 +13,8 @@ import NotFound from "./pages/NotFound";
 import EventsPage from "./pages/admin/events/EventsPage";
 import NewEvent from "./pages/admin/events/NewEvent";
 import ProductsPage from "./pages/admin/products/ProductsPage";
+import NewProductType from "./pages/admin/products/NewProductType";
+import EditProductType from "./pages/admin/products/EditProductType";
 import ReportsPage from "./pages/admin/reports/ReportsPage";
 import UsersPage from "./pages/admin/users/UsersPage";
 import EventDetail from "./pages/admin/event/EventDetail";
@@ -35,6 +37,8 @@ const App = () => (
             <Route path="/admin/events" element={<EventsPage />} />
             <Route path="/admin/events/new" element={<NewEvent />} />
             <Route path="/admin/products" element={<ProductsPage />} />
+            <Route path="/admin/products/new" element={<NewProductType />} />
+            <Route path="/admin/products/edit/:productTypeId" element={<EditProductType />} />
             <Route path="/admin/reports" element={<ReportsPage />} />
             <Route path="/admin/users" element={<UsersPage />} />
             <Route path="/admin/event/:eventId" element={<EventDetail />} />

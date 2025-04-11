@@ -47,6 +47,14 @@ export type ProductType = {
   samples: Sample[];
   jarAttributes: JARAttribute[];
   displayOrder: number; // For ordering within an event
+  baseProductTypeId?: string; // Reference to the base product type
+};
+
+export type BaseProductType = {
+  id: string;
+  productName: string; // General product type name (e.g., "Buđola", "Sir", "Čokolada")
+  jarAttributes: JARAttribute[];
+  createdAt: string;
 };
 
 export type Sample = {
