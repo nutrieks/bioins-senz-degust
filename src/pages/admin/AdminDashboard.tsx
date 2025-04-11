@@ -14,20 +14,21 @@ export default function AdminDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const fetchEvents = async () => {
-      try {
-        const eventsData = await getEvents();
-        // Sort by date descending
-        eventsData.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-        setEvents(eventsData);
-      } catch (error) {
-        console.error("Error fetching events:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  const fetchEvents = async () => {
+    try {
+      setIsLoading(true);
+      const eventsData = await getEvents();
+      // Sort by date descending
+      eventsData.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      setEvents(eventsData);
+    } catch (error) {
+      console.error("Error fetching events:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchEvents();
   }, []);
 
@@ -41,6 +42,11 @@ export default function AdminDashboard() {
 
   const handleCreateEvent = () => {
     navigate("/admin/events/new");
+  };
+
+  // Handle event updates by refreshing the events list
+  const handleEventUpdated = () => {
+    fetchEvents();
   };
 
   return (
@@ -68,7 +74,11 @@ export default function AdminDashboard() {
               ) : activeEvents.length > 0 ? (
                 <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
                   {activeEvents.map((event) => (
-                    <EventCard key={event.id} event={event} />
+                    <EventCard 
+                      key={event.id} 
+                      event={event} 
+                      onEventUpdated={handleEventUpdated} 
+                    />
                   ))}
                 </div>
               ) : (
@@ -92,7 +102,11 @@ export default function AdminDashboard() {
               ) : pastEvents.length > 0 ? (
                 <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
                   {pastEvents.map((event) => (
-                    <EventCard key={event.id} event={event} />
+                    <EventCard 
+                      key={event.id} 
+                      event={event} 
+                      onEventUpdated={handleEventUpdated} 
+                    />
                   ))}
                 </div>
               ) : (
