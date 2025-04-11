@@ -24,7 +24,7 @@ export function LoginForm() {
   return (
     <Card className="w-full max-w-md">
       <CardHeader>
-        <CardTitle className="text-2xl text-center">Sensory Taste Nexus</CardTitle>
+        <CardTitle className="text-2xl text-center">Bioins senzorska analiza</CardTitle>
         <CardDescription className="text-center">Prijavite se u platformu za senzorsku analizu</CardDescription>
       </CardHeader>
       <CardContent>
@@ -52,7 +52,7 @@ export function LoginForm() {
       </CardContent>
       <CardFooter className="flex justify-center">
         <p className="text-sm text-muted-foreground">
-          © {new Date().getFullYear()} Sensory Taste Nexus
+          © {new Date().getFullYear()} Bioins senzorska analiza
         </p>
       </CardFooter>
     </Card>

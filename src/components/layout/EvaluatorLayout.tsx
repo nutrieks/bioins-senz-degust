@@ -29,7 +29,7 @@ export function EvaluatorLayout({ children }: EvaluatorLayoutProps) {
     <div className="min-h-screen bg-background">
       <header className="bg-primary text-primary-foreground p-4 flex justify-between items-center">
         <div>
-          <h1 className="text-lg font-bold">Sensory Taste Nexus</h1>
+          <h1 className="text-lg font-bold">Bioins senzorska analiza</h1>
           <p className="text-sm opacity-90">Platforma za senzorsku analizu</p>
         </div>
         <div className="flex items-center gap-4">
@@ -51,7 +51,7 @@ export function EvaluatorLayout({ children }: EvaluatorLayoutProps) {
       </main>
 
       <footer className="bg-muted py-4 text-center text-sm text-muted-foreground">
-        <p>© {new Date().getFullYear()} Sensory Taste Nexus</p>
+        <p>© {new Date().getFullYear()} Bioins senzorska analiza</p>
       </footer>
     </div>
   );

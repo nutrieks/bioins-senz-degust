@@ -54,7 +54,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       <div className="hidden md:flex md:w-64 md:flex-col">
         <div className="flex min-h-0 flex-1 flex-col border-r bg-card">
           <div className="flex flex-shrink-0 items-center px-4 py-4 border-b">
-            <h1 className="text-xl font-bold">Sensory Taste Nexus</h1>
+            <h1 className="text-xl font-bold">Bioins senzorska analiza</h1>
           </div>
           <nav className="flex-1 space-y-1 px-4 py-4">
             {navigation.map((item) => (
@@ -109,7 +109,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         <div className="md:hidden fixed inset-0 z-40 bg-background">
           <div className="flex min-h-full flex-col">
             <div className="flex items-center justify-between px-4 py-4 border-b">
-              <h1 className="text-xl font-bold">Sensory Taste Nexus</h1>
+              <h1 className="text-xl font-bold">Bioins senzorska analiza</h1>
               <Button variant="ghost" size="icon" onClick={toggleMobileMenu}>
                 <span className="sr-only">Close menu</span>
                 ✕
