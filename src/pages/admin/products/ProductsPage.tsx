@@ -15,16 +15,16 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ProductType } from "@/types";
+import { BaseProductType } from "@/types";
 import { getAllProductTypes, deleteProductType } from "@/services/dataService";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 
 export default function ProductsPage() {
-  const [productTypes, setProductTypes] = useState<ProductType[]>([]);
+  const [productTypes, setProductTypes] = useState<BaseProductType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [productToDelete, setProductToDelete] = useState<ProductType | null>(null);
+  const [productToDelete, setProductToDelete] = useState<BaseProductType | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -53,11 +53,11 @@ export default function ProductsPage() {
     navigate("/admin/products/new");
   };
 
-  const handleEditType = (productType: ProductType) => {
+  const handleEditType = (productType: BaseProductType) => {
     navigate(`/admin/products/edit/${productType.id}`);
   };
 
-  const handleDeleteClick = (productType: ProductType) => {
+  const handleDeleteClick = (productType: BaseProductType) => {
     setProductToDelete(productType);
     setDeleteDialogOpen(true);
   };

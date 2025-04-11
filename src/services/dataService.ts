@@ -69,7 +69,10 @@ export async function createBaseProductType(
   const attributes = jarAttributes.map(attr => ({
     ...attr,
     id: `attr_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
-    productTypeId: id
+    productTypeId: id,
+    // Ensure scaleHR and scaleEN are proper tuples with 5 elements
+    scaleHR: attr.scaleHR as [string, string, string, string, string],
+    scaleEN: attr.scaleEN as [string, string, string, string, string]
   }));
   
   const newBaseProductType: BaseProductType = {
@@ -91,10 +94,12 @@ export async function updateBaseProductType(
   const index = baseProductTypes.findIndex(pt => pt.id === productTypeId);
   if (index === -1) return false;
   
-  // Ensure attributes have the correct productTypeId
+  // Ensure attributes have the correct productTypeId and proper tuple types
   const updatedAttributes = jarAttributes.map(attr => ({
     ...attr,
-    productTypeId
+    productTypeId,
+    scaleHR: attr.scaleHR as [string, string, string, string, string],
+    scaleEN: attr.scaleEN as [string, string, string, string, string]
   }));
   
   baseProductTypes[index] = {
@@ -145,7 +150,10 @@ export async function createProductType(
   const jarAttributesCopy = baseType.jarAttributes.map(attr => ({
     ...attr,
     id: `attr_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
-    productTypeId: newProductTypeId
+    productTypeId: newProductTypeId,
+    // Ensure we maintain the tuple types
+    scaleHR: [...attr.scaleHR] as [string, string, string, string, string],
+    scaleEN: [...attr.scaleEN] as [string, string, string, string, string]
   }));
   
   const newProductType: ProductType = {

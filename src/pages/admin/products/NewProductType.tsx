@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AdminLayout } from "@/components/layout/AdminLayout";
@@ -32,32 +31,32 @@ export default function NewProductType() {
       productTypeId: "",
       nameHR: "",
       nameEN: "",
-      scaleHR: ["", "", "Baš kako treba", "", ""],
-      scaleEN: ["", "", "Just About Right", "", ""]
+      scaleHR: ["", "", "Baš kako treba", "", ""] as [string, string, string, string, string],
+      scaleEN: ["", "", "Just About Right", "", ""] as [string, string, string, string, string]
     },
     {
       id: "attr_2",
       productTypeId: "",
       nameHR: "",
       nameEN: "",
-      scaleHR: ["", "", "Baš kako treba", "", ""],
-      scaleEN: ["", "", "Just About Right", "", ""]
+      scaleHR: ["", "", "Baš kako treba", "", ""] as [string, string, string, string, string],
+      scaleEN: ["", "", "Just About Right", "", ""] as [string, string, string, string, string]
     },
     {
       id: "attr_3",
       productTypeId: "",
       nameHR: "",
       nameEN: "",
-      scaleHR: ["", "", "Baš kako treba", "", ""],
-      scaleEN: ["", "", "Just About Right", "", ""]
+      scaleHR: ["", "", "Baš kako treba", "", ""] as [string, string, string, string, string],
+      scaleEN: ["", "", "Just About Right", "", ""] as [string, string, string, string, string]
     },
     {
       id: "attr_4",
       productTypeId: "",
       nameHR: "",
       nameEN: "",
-      scaleHR: ["", "", "Baš kako treba", "", ""],
-      scaleEN: ["", "", "Just About Right", "", ""]
+      scaleHR: ["", "", "Baš kako treba", "", ""] as [string, string, string, string, string],
+      scaleEN: ["", "", "Just About Right", "", ""] as [string, string, string, string, string]
     }
   ]);
 
@@ -84,10 +83,12 @@ export default function NewProductType() {
       const newAttributes = [...prev];
       const newScale = [...newAttributes[attrIndex][scaleType]];
       newScale[valueIndex] = value;
+      
       newAttributes[attrIndex] = {
         ...newAttributes[attrIndex],
-        [scaleType]: newScale
+        [scaleType]: newScale as [string, string, string, string, string]
       };
+      
       return newAttributes;
     });
   };
