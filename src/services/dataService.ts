@@ -1,4 +1,3 @@
-
 import { 
   User, Event, ProductType, Sample, JARAttribute, 
   Randomization, Evaluation, HedonicScale, JARRating,
@@ -6,7 +5,8 @@ import {
 } from "../types";
 import { 
   users, events, productTypes, samples, jarAttributes, 
-  randomizations, evaluations, generateRandomizationTable 
+  randomizations, evaluations, generateRandomizationTable,
+  getNextSample
 } from "./mockData";
 
 // Authentication
@@ -224,6 +224,8 @@ export async function getCompletedEvaluations(
   
   return query.map(e => e.sampleId);
 }
+
+export { getNextSample };
 
 export async function submitEvaluation(
   userId: string,
