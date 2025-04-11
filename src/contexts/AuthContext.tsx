@@ -1,13 +1,12 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { User } from "../types";
-import { login as apiLogin } from "../services/dataService";
+import { User, UserRole } from "../types";
 import { useToast } from "@/hooks/use-toast";
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (username: string, password: string) => Promise<boolean>;
+  login: (identifier: string) => Promise<boolean>;
   logout: () => void;
 }
 
@@ -31,21 +30,48 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setLoading(false);
   }, []);
 
-  const login = async (username: string, password: string) => {
+  const login = async (identifier: string): Promise<boolean> => {
     try {
-      const user = await apiLogin(username, password);
-      if (user) {
-        setUser(user);
-        localStorage.setItem("sensorUser", JSON.stringify(user));
+      // Check if the identifier is a valid evaluator position (1-12) or ADMIN
+      if (identifier === "ADMIN") {
+        // Admin login
+        const adminUser: User = {
+          id: "admin1",
+          username: "admin",
+          role: UserRole.ADMIN,
+          isActive: true
+        };
+        
+        setUser(adminUser);
+        localStorage.setItem("sensorUser", JSON.stringify(adminUser));
         toast({
           title: "Uspješna prijava",
-          description: `Dobrodošli, ${username}!`,
+          description: "Dobrodošli, Administrator!",
+        });
+        return true;
+      } else if (/^([1-9]|1[0-2])$/.test(identifier)) {
+        // Evaluator login - position between 1 and 12
+        const position = parseInt(identifier, 10);
+        const evaluatorUser: User = {
+          id: `evaluator${position}`,
+          username: `evaluator${position}`,
+          role: UserRole.EVALUATOR,
+          evaluatorPosition: position,
+          isActive: true
+        };
+        
+        setUser(evaluatorUser);
+        localStorage.setItem("sensorUser", JSON.stringify(evaluatorUser));
+        toast({
+          title: "Uspješna prijava",
+          description: `Dobrodošli, Ocjenjivač ${position}!`,
         });
         return true;
       } else {
+        // Invalid identifier
         toast({
           title: "Greška pri prijavi",
-          description: "Pogrešno korisničko ime ili lozinka",
+          description: "Nevažeće ocjenjivačko mjesto. Unesite broj od 1 do 12 ili ADMIN.",
           variant: "destructive",
         });
         return false;

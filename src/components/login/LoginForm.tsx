@@ -6,8 +6,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useAuth } from "@/contexts/AuthContext";
 
 export function LoginForm() {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
 
@@ -16,7 +15,7 @@ export function LoginForm() {
     setIsLoading(true);
     
     try {
-      await login(username, password);
+      await login(identifier);
     } finally {
       setIsLoading(false);
     }
@@ -31,33 +30,18 @@ export function LoginForm() {
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <label htmlFor="username" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-              Korisničko ime
+            <label htmlFor="identifier" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+              Ocjenjivačko mjesto
             </label>
             <Input
-              id="username"
+              id="identifier"
               type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              value={identifier}
+              onChange={(e) => setIdentifier(e.target.value)}
               required
               autoFocus
               className="w-full"
-              placeholder="Unesite korisničko ime"
-              disabled={isLoading}
-            />
-          </div>
-          <div className="space-y-2">
-            <label htmlFor="password" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-              Lozinka
-            </label>
-            <Input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="w-full"
-              placeholder="Unesite lozinku"
+              placeholder="Unesite broj mjesta (1-12) ili ADMIN"
               disabled={isLoading}
             />
           </div>
