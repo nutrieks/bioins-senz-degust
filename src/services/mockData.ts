@@ -1,0 +1,251 @@
+
+import { 
+  User, UserRole, Event, EventStatus, ProductType, 
+  Sample, JARAttribute, Randomization, RetailerCode, Evaluation 
+} from "../types";
+
+// Mock users
+export const users: User[] = [
+  {
+    id: "admin1",
+    username: "admin",
+    role: UserRole.ADMIN,
+    isActive: true
+  },
+  ...Array.from({ length: 12 }).map((_, i) => ({
+    id: `evaluator${i + 1}`,
+    username: `evaluator${i + 1}`,
+    role: UserRole.EVALUATOR,
+    evaluatorPosition: i + 1,
+    isActive: true
+  }))
+];
+
+// Mock events
+export const events: Event[] = [
+  {
+    id: "event1",
+    date: "2025-04-20",
+    status: EventStatus.PREPARATION,
+    productTypes: [],
+    createdAt: "2025-04-10T10:00:00Z",
+    randomizationComplete: false
+  },
+  {
+    id: "event2",
+    date: "2025-04-15",
+    status: EventStatus.ACTIVE,
+    productTypes: [],
+    createdAt: "2025-04-08T14:30:00Z",
+    randomizationComplete: true
+  }
+];
+
+// Mock product types
+export const productTypes: ProductType[] = [
+  {
+    id: "product1",
+    eventId: "event2",
+    customerCode: "4581",
+    productName: "Dimljeni vrat",
+    baseCode: "D",
+    samples: [],
+    jarAttributes: [],
+    displayOrder: 1
+  }
+];
+
+// Mock samples
+export const samples: Sample[] = [
+  {
+    id: "sample1",
+    productTypeId: "product1",
+    brand: "Gavrilović",
+    retailerCode: RetailerCode.LI,
+    images: {
+      prepared: "https://images.unsplash.com/photo-1504674900247-0877df9cc836",
+      packaging: "https://images.unsplash.com/photo-1600628421055-4d30de868b8f",
+      details: [
+        "https://images.unsplash.com/photo-1512621776951-a57141f2eefd",
+        "https://images.unsplash.com/photo-1602030638412-bb8dcc0bc8b0"
+      ]
+    },
+    blindCode: "D1"
+  },
+  {
+    id: "sample2",
+    productTypeId: "product1",
+    brand: "Belje",
+    retailerCode: RetailerCode.KL,
+    images: {
+      prepared: "https://images.unsplash.com/photo-1547050605-2f268cd5daf0",
+      packaging: "https://images.unsplash.com/photo-1563379926898-05f4575a45d8",
+      details: [
+        "https://images.unsplash.com/photo-1565299543923-37dd37887442"
+      ]
+    },
+    blindCode: "D2"
+  },
+  {
+    id: "sample3",
+    productTypeId: "product1",
+    brand: "PIK",
+    retailerCode: RetailerCode.KO,
+    images: {
+      prepared: "https://images.unsplash.com/photo-1618229063345-e6e043bb2d99",
+      packaging: "https://images.unsplash.com/photo-1621939514649-280e2ee25f60",
+      details: [
+        "https://images.unsplash.com/photo-1551782450-a2132b4ba21d"
+      ]
+    },
+    blindCode: "D3"
+  }
+];
+
+// Mock JAR attributes
+export const jarAttributes: JARAttribute[] = [
+  {
+    id: "attr1",
+    productTypeId: "product1",
+    nameHR: "Intenzitet mirisa dima",
+    nameEN: "Smoke Aroma Intensity",
+    scaleHR: ["Puno preslab", "Preslab", "Baš kako treba", "Prejak", "Puno prejak"],
+    scaleEN: ["Much too weak", "Too weak", "Just About Right", "Too strong", "Much too strong"]
+  },
+  {
+    id: "attr2",
+    productTypeId: "product1",
+    nameHR: "Slanost",
+    nameEN: "Saltiness",
+    scaleHR: ["Puno preslano", "Preslano", "Baš kako treba", "Preslano", "Puno preslano"],
+    scaleEN: ["Much too low", "Too low", "Just About Right", "Too high", "Much too high"]
+  },
+  {
+    id: "attr3",
+    productTypeId: "product1",
+    nameHR: "Sočnost",
+    nameEN: "Juiciness",
+    scaleHR: ["Puno presuho", "Presuho", "Baš kako treba", "Presočno", "Puno presočno"],
+    scaleEN: ["Much too dry", "Too dry", "Just About Right", "Too juicy", "Much too juicy"]
+  },
+  {
+    id: "attr4",
+    productTypeId: "product1",
+    nameHR: "Tvrdoća",
+    nameEN: "Hardness",
+    scaleHR: ["Puno premekano", "Premekano", "Baš kako treba", "Pretvrdo", "Puno pretvrdo"],
+    scaleEN: ["Much too soft", "Too soft", "Just About Right", "Too hard", "Much too hard"]
+  }
+];
+
+// Mock randomization
+export const randomizations: Randomization[] = [
+  {
+    id: "random1",
+    productTypeId: "product1",
+    table: {
+      1: { 1: "D1", 2: "D3", 3: "D2" },
+      2: { 1: "D2", 2: "D1", 3: "D3" },
+      3: { 1: "D3", 2: "D2", 3: "D1" },
+      4: { 1: "D1", 2: "D2", 3: "D3" },
+      5: { 1: "D2", 2: "D3", 3: "D1" },
+      6: { 1: "D3", 2: "D1", 3: "D2" },
+      7: { 1: "D1", 2: "D3", 3: "D2" },
+      8: { 1: "D2", 2: "D1", 3: "D3" },
+      9: { 1: "D3", 2: "D2", 3: "D1" },
+      10: { 1: "D1", 2: "D2", 3: "D3" },
+      11: { 1: "D2", 2: "D3", 3: "D1" },
+      12: { 1: "D3", 2: "D1", 3: "D2" }
+    }
+  }
+];
+
+// Mock evaluations
+export const evaluations: Evaluation[] = [];
+
+// Initialize data relationships
+productTypes[0].samples = samples;
+productTypes[0].jarAttributes = jarAttributes;
+events[1].productTypes = productTypes;
+
+// Helper functions for randomization
+export function generateRandomizationTable(productTypeId: string, sampleCount: number): Randomization {
+  // This is a simplified implementation
+  // In a real application, this would use a more sophisticated algorithm
+  // to ensure balanced distribution across positions and rounds
+  
+  const blindCodes = Array.from({ length: sampleCount }, (_, i) => {
+    const product = productTypes.find(p => p.id === productTypeId);
+    return product ? `${product.baseCode}${i + 1}` : `S${i + 1}`;
+  });
+  
+  const table: Randomization['table'] = {};
+  
+  for (let position = 1; position <= 12; position++) {
+    table[position] = {};
+    
+    // Shuffle blind codes for each position
+    const shuffled = [...blindCodes].sort(() => Math.random() - 0.5);
+    
+    for (let round = 1; round <= sampleCount; round++) {
+      table[position][round] = shuffled[round - 1];
+    }
+  }
+  
+  return {
+    id: `random_${Date.now()}`,
+    productTypeId,
+    table
+  };
+}
+
+// Helper function to get next sample for an evaluator
+export function getNextSample(
+  userId: string, 
+  eventId: string, 
+  productTypeId?: string, 
+  completed: string[] = []
+): { sample: Sample | null, round: number, isComplete: boolean } {
+  const user = users.find(u => u.id === userId);
+  if (!user || user.role !== UserRole.EVALUATOR || !user.evaluatorPosition) {
+    return { sample: null, round: 0, isComplete: true };
+  }
+  
+  const position = user.evaluatorPosition;
+  
+  // If no product type specified, get the first one from the event
+  if (!productTypeId) {
+    const event = events.find(e => e.id === eventId);
+    if (!event || event.productTypes.length === 0) {
+      return { sample: null, round: 0, isComplete: true };
+    }
+    productTypeId = event.productTypes[0].id;
+  }
+  
+  // Get randomization table for this product
+  const randomization = randomizations.find(r => r.productTypeId === productTypeId);
+  if (!randomization) {
+    return { sample: null, round: 0, isComplete: true };
+  }
+  
+  // Get the position table
+  const positionTable = randomization.table[position];
+  if (!positionTable) {
+    return { sample: null, round: 0, isComplete: true };
+  }
+  
+  // Find the next round that hasn't been completed
+  const rounds = Object.keys(positionTable).map(Number).sort((a, b) => a - b);
+  
+  for (const round of rounds) {
+    const blindCode = positionTable[round];
+    const sample = samples.find(s => s.blindCode === blindCode && s.productTypeId === productTypeId);
+    
+    if (sample && !completed.includes(sample.id)) {
+      return { sample, round, isComplete: false };
+    }
+  }
+  
+  // All rounds completed
+  return { sample: null, round: 0, isComplete: true };
+}
