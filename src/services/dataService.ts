@@ -1,4 +1,3 @@
-
 import { 
   User, Event, ProductType, Sample, JARAttribute, 
   Randomization, Evaluation, HedonicScale, JARRating,
