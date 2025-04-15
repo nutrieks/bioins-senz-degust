@@ -7,9 +7,26 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { getEvent, updateEventStatus, getAllProductTypes } from "@/services/dataService";
-import { Event, EventStatus, BaseProductType } from "@/types";
-import { ArrowLeft, Calendar, CheckCircle, XCircle, Plus, ChevronDown, ChevronUp } from "lucide-react";
+import { 
+  getEvent, 
+  updateEventStatus, 
+  getAllProductTypes, 
+  createProductType, 
+  createRandomization 
+} from "@/services/dataService";
+import { Event, EventStatus, BaseProductType, ProductType, RetailerCode } from "@/types";
+import { 
+  ArrowLeft, 
+  Calendar, 
+  CheckCircle, 
+  XCircle, 
+  Plus, 
+  ChevronDown, 
+  ChevronUp, 
+  FileDown, 
+  Printer,
+  Shuffle 
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { 
   Sheet,
@@ -19,6 +36,19 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { 
+  Table, 
+  TableBody, 
+  TableCaption, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from "@/components/ui/table";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { useForm } from "react-hook-form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 
 export default function EventDetail() {
   const { eventId } = useParams<{ eventId: string }>();
@@ -29,8 +59,28 @@ export default function EventDetail() {
   const [availableProductTypes, setAvailableProductTypes] = useState<BaseProductType[]>([]);
   const [selectedProductTypeId, setSelectedProductTypeId] = useState<string>("");
   const [isLoadingProductTypes, setIsLoadingProductTypes] = useState(false);
+  const [baseCode, setBaseCode] = useState<string>("");
+  const [customerCode, setCustomerCode] = useState<string>("");
+  const [sampleCount, setSampleCount] = useState<number>(3);
+  const [samples, setSamples] = useState<Array<{brand: string, retailerCode: RetailerCode}>>([
+    { brand: "", retailerCode: RetailerCode.LI }
+  ]);
+  const [randomizationView, setRandomizationView] = useState<boolean>(false);
+  const [randomizationTable, setRandomizationTable] = useState<any>(null);
+  const [selectedProductType, setSelectedProductType] = useState<ProductType | null>(null);
+  
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  const retailerOptions = [
+    { value: RetailerCode.LI, label: "Lidl (LI)" },
+    { value: RetailerCode.KL, label: "Kaufland (KL)" },
+    { value: RetailerCode.KO, label: "Konzum (KO)" },
+    { value: RetailerCode.IS, label: "Interspar (IS)" },
+    { value: RetailerCode.PL, label: "Plodine (PL)" },
+    { value: RetailerCode.ES, label: "Eurospin (ES)" },
+    { value: RetailerCode.M, label: "Metro (M)" },
+  ];
 
   const fetchEvent = async () => {
     if (!eventId) return;
@@ -127,25 +177,209 @@ export default function EventDetail() {
     setShowAddProductForm(!showAddProductForm);
   };
 
-  const handleAddProductType = () => {
-    // Here you would add logic to add the selected product type to the event
+  const handleRetailerChange = (index: number, value: RetailerCode) => {
+    const updatedSamples = [...samples];
+    updatedSamples[index].retailerCode = value;
+    setSamples(updatedSamples);
+  };
+
+  const handleBrandChange = (index: number, value: string) => {
+    const updatedSamples = [...samples];
+    updatedSamples[index].brand = value;
+    setSamples(updatedSamples);
+  };
+
+  const handleAddSample = () => {
+    setSamples([...samples, { brand: "", retailerCode: RetailerCode.LI }]);
+  };
+
+  const handleRemoveSample = (index: number) => {
+    if (samples.length > 1) {
+      const updatedSamples = samples.filter((_, i) => i !== index);
+      setSamples(updatedSamples);
+    }
+  };
+
+  const handleSampleCountChange = (count: number) => {
+    // Make sure we have the right number of samples in our state
+    setSampleCount(count);
+    const currentCount = samples.length;
+    if (count > currentCount) {
+      // Add more samples
+      const newSamples = [...samples];
+      for (let i = currentCount; i < count; i++) {
+        newSamples.push({ brand: "", retailerCode: RetailerCode.LI });
+      }
+      setSamples(newSamples);
+    } else if (count < currentCount) {
+      // Remove excess samples
+      setSamples(samples.slice(0, count));
+    }
+  };
+
+  const validateProductTypeForm = () => {
     if (!selectedProductTypeId) {
       toast({
         title: "Greška",
         description: "Morate odabrati tip proizvoda.",
         variant: "destructive",
       });
-      return;
+      return false;
     }
 
-    toast({
-      title: "Uspješno",
-      description: "Tip proizvoda je uspješno dodan događaju.",
-    });
+    if (!baseCode || baseCode.length !== 1 || !/^[A-Z]$/.test(baseCode)) {
+      toast({
+        title: "Greška",
+        description: "Šifra uzorka mora biti jedno veliko slovo (A-Z).",
+        variant: "destructive",
+      });
+      return false;
+    }
 
-    // Reset form and refresh event data
-    setShowAddProductForm(false);
-    fetchEvent();
+    if (!customerCode || customerCode.length !== 4 || !/^\d{4}$/.test(customerCode)) {
+      toast({
+        title: "Greška",
+        description: "Šifra kupca mora biti četveroznamenkasti broj.",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    const validSamples = samples.every(sample => sample.brand.trim() !== "");
+    if (!validSamples) {
+      toast({
+        title: "Greška",
+        description: "Svi uzorci moraju imati definiran naziv brenda.",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleAddProductType = async () => {
+    if (!eventId || !validateProductTypeForm()) return;
+
+    try {
+      setIsUpdating(true);
+      // Create the product type
+      const displayOrder = event?.productTypes.length || 0;
+      
+      const newProductType = await createProductType(
+        eventId,
+        customerCode,
+        selectedProductTypeId,
+        baseCode,
+        displayOrder + 1
+      );
+
+      // Add samples to the product type
+      for (const sample of samples) {
+        // In a real app, you would add the samples here
+        // For this prototype, the samples are added in the mock data service
+      }
+
+      toast({
+        title: "Uspješno",
+        description: "Tip proizvoda je uspješno dodan događaju.",
+      });
+
+      // Reset form
+      setShowAddProductForm(false);
+      setBaseCode("");
+      setCustomerCode("");
+      setSampleCount(3);
+      setSamples([{ brand: "", retailerCode: RetailerCode.LI }]);
+      
+      // Refresh event data
+      fetchEvent();
+    } catch (error) {
+      console.error("Error adding product type:", error);
+      toast({
+        title: "Greška",
+        description: "Došlo je do pogreške prilikom dodavanja tipa proizvoda.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleGenerateRandomization = async (productTypeId: string) => {
+    if (!productTypeId) return;
+    
+    try {
+      const randomization = await createRandomization(productTypeId);
+      if (randomization) {
+        setRandomizationTable(randomization.table);
+        setRandomizationView(true);
+        
+        // Refresh event data to update randomization status
+        fetchEvent();
+        
+        toast({
+          title: "Uspješno",
+          description: "Randomizacija je uspješno generirana.",
+        });
+      } else {
+        toast({
+          title: "Greška",
+          description: "Nije moguće generirati randomizaciju. Provjerite jesu li dodani uzorci.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Error generating randomization:", error);
+      toast({
+        title: "Greška",
+        description: "Došlo je do pogreške prilikom generiranja randomizacije.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleViewRandomization = (productType: ProductType) => {
+    setSelectedProductType(productType);
+    setRandomizationView(true);
+  };
+
+  const handlePrintRandomizationTable = () => {
+    window.print();
+  };
+
+  const handleExportRandomizationTable = () => {
+    if (!randomizationTable || !selectedProductType) return;
+    
+    // Create CSV content
+    let csvContent = "data:text/csv;charset=utf-8,";
+    csvContent += `${selectedProductType.productName} - ${selectedProductType.baseCode}\n\n`;
+    csvContent += "Mjesto,";
+    
+    // Headers for rounds
+    const roundCount = Object.keys(randomizationTable[1] || {}).length;
+    for (let i = 1; i <= roundCount; i++) {
+      csvContent += `Dijeljenje ${i},`;
+    }
+    csvContent += "\n";
+    
+    // Data rows
+    for (let position = 1; position <= 12; position++) {
+      csvContent += `${position},`;
+      for (let round = 1; round <= roundCount; round++) {
+        csvContent += `${randomizationTable[position]?.[round] || ""},`;
+      }
+      csvContent += "\n";
+    }
+    
+    // Create download link
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `randomizacija_${selectedProductType.baseCode}_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   if (isLoading) {
@@ -275,6 +509,7 @@ export default function EventDetail() {
         <Tabs defaultValue="products">
           <TabsList className="mb-4">
             <TabsTrigger value="products">Tipovi proizvoda</TabsTrigger>
+            <TabsTrigger value="randomization">Randomizacija</TabsTrigger>
             <TabsTrigger value="reports">Izvještaji</TabsTrigger>
           </TabsList>
           
@@ -340,10 +575,23 @@ export default function EventDetail() {
                           key={productType.id} 
                           className="flex justify-between items-center p-3 border rounded-md"
                         >
-                          <span>{productType.productName}</span>
-                          <span className="text-sm text-muted-foreground">
-                            {productType.jarAttributes.length} JAR atributa
-                          </span>
+                          <div className="flex flex-col">
+                            <span className="font-medium">{productType.productName}</span>
+                            <span className="text-sm text-muted-foreground">
+                              Šifra: {productType.baseCode} | Uzorci: {productType.samples.length}
+                            </span>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleViewRandomization(productType)}
+                              className="flex items-center"
+                            >
+                              <Shuffle className="mr-1 h-4 w-4" />
+                              Randomizacija
+                            </Button>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -383,21 +631,117 @@ export default function EventDetail() {
                         </Sheet>
                       </div>
                     ) : (
-                      <div className="space-y-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="productType">Odaberite tip proizvoda</Label>
-                          <select
-                            id="productType"
-                            className="w-full px-3 py-2 border rounded-md"
-                            value={selectedProductTypeId}
-                            onChange={(e) => setSelectedProductTypeId(e.target.value)}
-                          >
-                            {availableProductTypes.map((type) => (
-                              <option key={type.id} value={type.id}>
-                                {type.productName}
-                              </option>
-                            ))}
-                          </select>
+                      <div className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="productType">Odaberite tip proizvoda</Label>
+                            <select
+                              id="productType"
+                              className="w-full px-3 py-2 border rounded-md"
+                              value={selectedProductTypeId}
+                              onChange={(e) => setSelectedProductTypeId(e.target.value)}
+                            >
+                              {availableProductTypes.map((type) => (
+                                <option key={type.id} value={type.id}>
+                                  {type.productName}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <Label htmlFor="customerCode">Šifra kupca (4 znamenke)</Label>
+                            <Input
+                              id="customerCode"
+                              value={customerCode}
+                              onChange={(e) => setCustomerCode(e.target.value)}
+                              placeholder="npr. 4581"
+                              maxLength={4}
+                            />
+                          </div>
+                        
+                          <div className="space-y-2">
+                            <Label htmlFor="baseCode">Šifra uzorka (jedno slovo A-Z)</Label>
+                            <Input
+                              id="baseCode"
+                              value={baseCode}
+                              onChange={(e) => setBaseCode(e.target.value.toUpperCase())}
+                              placeholder="npr. A"
+                              maxLength={1}
+                              className="uppercase"
+                            />
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <Label htmlFor="sampleCount">Broj uzoraka</Label>
+                            <Input
+                              id="sampleCount"
+                              type="number"
+                              min={1}
+                              max={10}
+                              value={sampleCount}
+                              onChange={(e) => handleSampleCountChange(parseInt(e.target.value))}
+                            />
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-3">
+                          <Label>Uzorci</Label>
+                          {samples.map((sample, index) => (
+                            <div key={index} className="grid grid-cols-1 md:grid-cols-5 gap-3 items-end">
+                              <div className="md:col-span-3">
+                                <Label htmlFor={`brand-${index}`} className="text-sm">
+                                  Naziv brenda/proizvođača
+                                </Label>
+                                <Input
+                                  id={`brand-${index}`}
+                                  value={sample.brand}
+                                  onChange={(e) => handleBrandChange(index, e.target.value)}
+                                  placeholder="npr. Gavrilović"
+                                />
+                              </div>
+                              <div className="md:col-span-1">
+                                <Label htmlFor={`retailer-${index}`} className="text-sm">
+                                  Trgovina
+                                </Label>
+                                <select
+                                  id={`retailer-${index}`}
+                                  className="w-full px-3 py-2 border rounded-md"
+                                  value={sample.retailerCode}
+                                  onChange={(e) => handleRetailerChange(index, e.target.value as RetailerCode)}
+                                >
+                                  {retailerOptions.map((option) => (
+                                    <option key={option.value} value={option.value}>
+                                      {option.label}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                              <div className="md:col-span-1">
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="icon"
+                                  onClick={() => handleRemoveSample(index)}
+                                  disabled={samples.length <= 1}
+                                >
+                                  <XCircle className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
+                          
+                          {samples.length < 10 && (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={handleAddSample}
+                              className="mt-2"
+                            >
+                              <Plus className="mr-2 h-4 w-4" />
+                              Dodaj uzorak
+                            </Button>
+                          )}
                         </div>
                         
                         <div className="flex justify-end space-x-2">
@@ -407,12 +751,141 @@ export default function EventDetail() {
                           >
                             Odustani
                           </Button>
-                          <Button onClick={handleAddProductType}>
+                          <Button 
+                            onClick={handleAddProductType}
+                            disabled={isUpdating}
+                          >
                             Dodaj
                           </Button>
                         </div>
                       </div>
                     )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="randomization">
+            <Card>
+              <CardHeader>
+                <CardTitle>Randomizacija</CardTitle>
+                <CardDescription>
+                  Generiranje i pregled randomizacije uzoraka.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {event.productTypes.length === 0 ? (
+                  <div className="text-center p-6 border rounded-lg">
+                    <p className="text-muted-foreground">
+                      Nema dodanih tipova proizvoda za koje bi se mogla generirati randomizacija.
+                    </p>
+                  </div>
+                ) : randomizationView && selectedProductType ? (
+                  <div className="space-y-4 print:space-y-2">
+                    <div className="flex justify-between items-center print:hidden">
+                      <h3 className="text-lg font-medium">Tablica randomizacije: {selectedProductType.productName}</h3>
+                      <div className="flex space-x-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handlePrintRandomizationTable}
+                          className="flex items-center"
+                        >
+                          <Printer className="mr-2 h-4 w-4" />
+                          Ispiši
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleExportRandomizationTable}
+                          className="flex items-center"
+                        >
+                          <FileDown className="mr-2 h-4 w-4" />
+                          Preuzmi CSV
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setRandomizationView(false)}
+                        >
+                          Natrag
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    <div className="print:text-black">
+                      <h1 className="text-xl font-bold mb-2 text-center hidden print:block">
+                        {selectedProductType.productName} - {selectedProductType.baseCode}
+                      </h1>
+                      
+                      <div className="overflow-x-auto">
+                        <Table>
+                          <TableCaption>
+                            Randomizacija za {selectedProductType.productName}
+                          </TableCaption>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead className="w-24">Mjesto</TableHead>
+                              {/* Generate columns based on sample count */}
+                              {selectedProductType.samples.map((_, index) => (
+                                <TableHead key={index}>Dijeljenje {index + 1}</TableHead>
+                              ))}
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {/* Generate a row for each evaluator position (1-12) */}
+                            {Array.from({ length: 12 }, (_, i) => i + 1).map((position) => (
+                              <TableRow key={position}>
+                                <TableCell className="font-medium">{position}</TableCell>
+                                {/* For each round, show the blind code */}
+                                {selectedProductType.samples.map((_, round) => (
+                                  <TableCell key={round}>
+                                    {randomizationTable?.[position]?.[round + 1] || "-"}
+                                  </TableCell>
+                                ))}
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <p>Odaberite tip proizvoda za koji želite generirati ili pregledati randomizaciju:</p>
+                    
+                    <div className="space-y-2">
+                      {event.productTypes.map((productType) => (
+                        <div 
+                          key={productType.id} 
+                          className="flex justify-between items-center p-3 border rounded-md"
+                        >
+                          <div className="flex flex-col">
+                            <span className="font-medium">{productType.productName}</span>
+                            <span className="text-sm text-muted-foreground">
+                              Šifra: {productType.baseCode} | Uzorci: {productType.samples.length}
+                            </span>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Button
+                              onClick={() => handleGenerateRandomization(productType.id)}
+                              className="flex items-center"
+                              variant="outline"
+                            >
+                              <Shuffle className="mr-2 h-4 w-4" />
+                              Generiraj randomizaciju
+                            </Button>
+                            <Button 
+                              onClick={() => handleViewRandomization(productType)}
+                              variant="default"
+                            >
+                              Pregledaj
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
               </CardContent>

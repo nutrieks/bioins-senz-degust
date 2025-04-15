@@ -1,14 +1,356 @@
 
+import { useEffect, useState } from "react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { getEvents, getRandomization } from "@/services/dataService";
+import { Event, EventStatus, ProductType, Randomization } from "@/types";
+import { FileDown, Printer, Calendar } from "lucide-react";
+import { 
+  Table, 
+  TableBody, 
+  TableCaption, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from "@/components/ui/table";
+import { useToast } from "@/hooks/use-toast";
 
 export default function ReportsPage() {
+  const [events, setEvents] = useState<Event[]>([]);
+  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+  const [selectedProductType, setSelectedProductType] = useState<ProductType | null>(null);
+  const [randomization, setRandomization] = useState<Randomization | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  const { toast } = useToast();
+
+  // Fetch all events
+  const fetchEvents = async () => {
+    try {
+      setIsLoading(true);
+      const fetchedEvents = await getEvents();
+      // Filter only completed or archived events
+      const filteredEvents = fetchedEvents.filter(
+        event => event.status === EventStatus.COMPLETED || event.status === EventStatus.ARCHIVED
+      );
+      setEvents(filteredEvents);
+      
+      if (filteredEvents.length > 0) {
+        setSelectedEvent(filteredEvents[0]);
+      }
+    } catch (error) {
+      console.error("Error fetching events:", error);
+      toast({
+        title: "Greška",
+        description: "Došlo je do pogreške prilikom dohvaćanja podataka o događajima.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Fetch randomization data when product type is selected
+  const fetchRandomization = async (productTypeId: string) => {
+    try {
+      setIsLoading(true);
+      const randomizationData = await getRandomization(productTypeId);
+      setRandomization(randomizationData);
+    } catch (error) {
+      console.error("Error fetching randomization:", error);
+      toast({
+        title: "Greška",
+        description: "Došlo je do pogreške prilikom dohvaćanja podataka o randomizaciji.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchEvents();
+  }, []);
+
+  // When event is selected, reset product type selection
+  useEffect(() => {
+    setSelectedProductType(null);
+    setRandomization(null);
+  }, [selectedEvent]);
+
+  // When product type is selected, fetch randomization
+  useEffect(() => {
+    if (selectedProductType) {
+      fetchRandomization(selectedProductType.id);
+    }
+  }, [selectedProductType]);
+
+  const handleEventSelect = (event: Event) => {
+    setSelectedEvent(event);
+  };
+
+  const handleProductTypeSelect = (productType: ProductType) => {
+    setSelectedProductType(productType);
+  };
+
+  const handlePrintRandomizationTable = () => {
+    window.print();
+  };
+
+  const handleExportRandomizationTable = () => {
+    if (!randomization || !selectedProductType) return;
+    
+    // Create CSV content
+    let csvContent = "data:text/csv;charset=utf-8,";
+    csvContent += `${selectedProductType.productName} - ${selectedProductType.baseCode}\n\n`;
+    csvContent += "Mjesto,";
+    
+    // Headers for rounds
+    const roundCount = Object.keys(randomization.table[1] || {}).length;
+    for (let i = 1; i <= roundCount; i++) {
+      csvContent += `Dijeljenje ${i},`;
+    }
+    csvContent += "\n";
+    
+    // Data rows
+    for (let position = 1; position <= 12; position++) {
+      csvContent += `${position},`;
+      for (let round = 1; round <= roundCount; round++) {
+        csvContent += `${randomization.table[position]?.[round] || ""},`;
+      }
+      csvContent += "\n";
+    }
+    
+    // Create download link
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `randomizacija_${selectedProductType.baseCode}_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat("hr-HR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    }).format(date);
+  };
+
   return (
     <AdminLayout>
       <div className="space-y-6">
         <h1 className="text-2xl font-bold">Izvještaji</h1>
-        <p className="text-muted-foreground">
-          Ovdje će biti prikazan pregled izvještaja. Stranica u razvoju.
-        </p>
+        
+        <Tabs defaultValue="randomization">
+          <TabsList className="mb-4">
+            <TabsTrigger value="randomization">Randomizacija</TabsTrigger>
+            <TabsTrigger value="hedonic">Hedonika</TabsTrigger>
+            <TabsTrigger value="jar">JAR</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="randomization">
+            <Card>
+              <CardHeader>
+                <CardTitle>Tablice randomizacije</CardTitle>
+                <CardDescription>
+                  Pregled i izvoz tablica randomizacije za sve događaje.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {isLoading ? (
+                  <div className="text-center p-4">Učitavanje...</div>
+                ) : events.length === 0 ? (
+                  <div className="text-center p-6 border rounded-lg">
+                    <p className="text-muted-foreground">
+                      Nema završenih događaja za koje bi se mogli prikazati izvještaji.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="flex flex-col sm:flex-row gap-4">
+                      <div className="w-full sm:w-64 p-4 border rounded-md">
+                        <h3 className="text-lg font-medium mb-3">Događaji</h3>
+                        <div className="space-y-2">
+                          {events.map((event) => (
+                            <button
+                              key={event.id}
+                              onClick={() => handleEventSelect(event)}
+                              className={`w-full text-left px-3 py-2 rounded-md transition-colors ${
+                                selectedEvent?.id === event.id 
+                                  ? "bg-primary text-primary-foreground" 
+                                  : "hover:bg-muted"
+                              }`}
+                            >
+                              <div className="flex items-center">
+                                <Calendar className="mr-2 h-4 w-4" />
+                                {formatDate(event.date)}
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      
+                      {selectedEvent && (
+                        <div className="flex-1 p-4 border rounded-md">
+                          <h3 className="text-lg font-medium mb-3">Tipovi proizvoda</h3>
+                          {selectedEvent.productTypes.length === 0 ? (
+                            <p className="text-muted-foreground">
+                              Ovaj događaj nema tipova proizvoda.
+                            </p>
+                          ) : (
+                            <div className="space-y-2">
+                              {selectedEvent.productTypes.map((productType) => (
+                                <button
+                                  key={productType.id}
+                                  onClick={() => handleProductTypeSelect(productType)}
+                                  className={`w-full text-left px-3 py-2 rounded-md transition-colors ${
+                                    selectedProductType?.id === productType.id 
+                                      ? "bg-primary text-primary-foreground" 
+                                      : "hover:bg-muted"
+                                  }`}
+                                >
+                                  <div className="flex justify-between items-center">
+                                    <span>{productType.productName}</span>
+                                    <span className="text-sm">
+                                      Šifra: {productType.baseCode}
+                                    </span>
+                                  </div>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    
+                    {selectedProductType && randomization && (
+                      <div className="space-y-4 print:space-y-2">
+                        <div className="flex justify-between items-center print:hidden">
+                          <h3 className="text-lg font-medium">
+                            Tablica randomizacije: {selectedProductType.productName}
+                          </h3>
+                          <div className="flex space-x-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={handlePrintRandomizationTable}
+                              className="flex items-center"
+                            >
+                              <Printer className="mr-2 h-4 w-4" />
+                              Ispiši
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={handleExportRandomizationTable}
+                              className="flex items-center"
+                            >
+                              <FileDown className="mr-2 h-4 w-4" />
+                              Preuzmi CSV
+                            </Button>
+                          </div>
+                        </div>
+                        
+                        <div className="print:text-black">
+                          <h1 className="text-xl font-bold mb-2 text-center hidden print:block">
+                            {selectedProductType.productName} - {selectedProductType.baseCode}
+                          </h1>
+                          
+                          <div className="overflow-x-auto">
+                            <Table>
+                              <TableCaption>
+                                Randomizacija za {selectedProductType.productName}
+                              </TableCaption>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead className="w-24">Mjesto</TableHead>
+                                  {/* Generate columns based on sample count */}
+                                  {Array.from(
+                                    { length: Object.keys(randomization.table[1] || {}).length },
+                                    (_, i) => i + 1
+                                  ).map((round) => (
+                                    <TableHead key={round}>Dijeljenje {round}</TableHead>
+                                  ))}
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {/* Generate a row for each evaluator position (1-12) */}
+                                {Array.from({ length: 12 }, (_, i) => i + 1).map((position) => (
+                                  <TableRow key={position}>
+                                    <TableCell className="font-medium">{position}</TableCell>
+                                    {/* For each round, show the blind code */}
+                                    {Array.from(
+                                      { length: Object.keys(randomization.table[1] || {}).length },
+                                      (_, i) => i + 1
+                                    ).map((round) => (
+                                      <TableCell key={round}>
+                                        {randomization.table[position]?.[round] || "-"}
+                                      </TableCell>
+                                    ))}
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          </div>
+                          
+                          <div className="mt-4 text-sm text-muted-foreground print:text-black">
+                            <p>Legenda:</p>
+                            <ul className="list-disc pl-5 mt-1">
+                              {selectedProductType.samples.map((sample, index) => (
+                                <li key={index}>
+                                  {sample.blindCode}: {sample.brand} ({sample.retailerCode})
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="hedonic">
+            <Card>
+              <CardHeader>
+                <CardTitle>Hedonički izvještaji</CardTitle>
+                <CardDescription>
+                  Pregled hedoničkih izvještaja za sve događaje.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  Hedonički izvještaji će biti dostupni u budućoj verziji.
+                </p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="jar">
+            <Card>
+              <CardHeader>
+                <CardTitle>JAR izvještaji</CardTitle>
+                <CardDescription>
+                  Pregled JAR (Just About Right) izvještaja za sve događaje.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  JAR izvještaji će biti dostupni u budućoj verziji.
+                </p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </AdminLayout>
   );
