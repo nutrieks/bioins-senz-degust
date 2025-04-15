@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Plus, Edit, Trash2 } from "lucide-react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
@@ -71,7 +70,7 @@ export default function ProductsPage() {
         title: "Uspješno",
         description: `Tip proizvoda "${productToDelete.productName}" je izbrisan.`,
       });
-      await fetchProductTypes(); // Refresh the list
+      await fetchProductTypes();
     } catch (error) {
       console.error("Error deleting product type:", error);
       toast({
@@ -95,7 +94,10 @@ export default function ProductsPage() {
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold">Proizvodi</h1>
-          <Button onClick={handleAddNewType}>
+          <Button 
+            onClick={handleAddNewType}
+            className="flex items-center"
+          >
             <Plus className="mr-2 h-4 w-4" />
             Dodaj novi tip proizvoda
           </Button>
