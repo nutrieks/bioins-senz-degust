@@ -13,7 +13,8 @@ import {
   getAllProductTypes, 
   createProductType, 
   createRandomization,
-  createSample
+  createSample,
+  getRandomization
 } from "@/services/dataService";
 import { Event, EventStatus, BaseProductType, ProductType, RetailerCode } from "@/types";
 import { 
