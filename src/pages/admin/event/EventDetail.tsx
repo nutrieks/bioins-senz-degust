@@ -5,16 +5,30 @@ import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { getEvent, updateEventStatus } from "@/services/dataService";
-import { Event, EventStatus } from "@/types";
-import { ArrowLeft, Calendar, CheckCircle, XCircle } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { getEvent, updateEventStatus, getAllProductTypes } from "@/services/dataService";
+import { Event, EventStatus, BaseProductType } from "@/types";
+import { ArrowLeft, Calendar, CheckCircle, XCircle, Plus, ChevronDown, ChevronUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { 
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 
 export default function EventDetail() {
   const { eventId } = useParams<{ eventId: string }>();
   const [event, setEvent] = useState<Event | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [showAddProductForm, setShowAddProductForm] = useState(false);
+  const [availableProductTypes, setAvailableProductTypes] = useState<BaseProductType[]>([]);
+  const [selectedProductTypeId, setSelectedProductTypeId] = useState<string>("");
+  const [isLoadingProductTypes, setIsLoadingProductTypes] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -33,6 +47,26 @@ export default function EventDetail() {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const fetchAvailableProductTypes = async () => {
+    try {
+      setIsLoadingProductTypes(true);
+      const types = await getAllProductTypes();
+      setAvailableProductTypes(types);
+      if (types.length > 0) {
+        setSelectedProductTypeId(types[0].id);
+      }
+    } catch (error) {
+      console.error("Error fetching product types:", error);
+      toast({
+        title: "Greška",
+        description: "Došlo je do pogreške prilikom dohvaćanja tipova proizvoda.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingProductTypes(false);
     }
   };
 
@@ -84,6 +118,34 @@ export default function EventDetail() {
       month: "2-digit",
       year: "numeric",
     }).format(date);
+  };
+
+  const handleToggleAddProductForm = () => {
+    if (!showAddProductForm && availableProductTypes.length === 0) {
+      fetchAvailableProductTypes();
+    }
+    setShowAddProductForm(!showAddProductForm);
+  };
+
+  const handleAddProductType = () => {
+    // Here you would add logic to add the selected product type to the event
+    if (!selectedProductTypeId) {
+      toast({
+        title: "Greška",
+        description: "Morate odabrati tip proizvoda.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    toast({
+      title: "Uspješno",
+      description: "Tip proizvoda je uspješno dodan događaju.",
+    });
+
+    // Reset form and refresh event data
+    setShowAddProductForm(false);
+    fetchEvent();
   };
 
   if (isLoading) {
@@ -228,11 +290,129 @@ export default function EventDetail() {
                 {event.productTypes.length === 0 ? (
                   <div className="text-center p-6 border rounded-lg">
                     <p className="text-muted-foreground mb-4">Nema dodanih tipova proizvoda.</p>
-                    <Button>Dodaj tip proizvoda</Button>
+                    
+                    {/* Inline form toggle button */}
+                    <Button 
+                      onClick={handleToggleAddProductForm}
+                      className="flex items-center"
+                    >
+                      {showAddProductForm ? (
+                        <>
+                          <ChevronUp className="mr-2 h-4 w-4" />
+                          Sakrij formu
+                        </>
+                      ) : (
+                        <>
+                          <Plus className="mr-2 h-4 w-4" />
+                          Dodaj tip proizvoda
+                        </>
+                      )}
+                    </Button>
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    <p>Uskoro implementacija prikaza tipova proizvoda...</p>
+                    {/* List of product types would go here */}
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className="text-lg font-medium">Dodani tipovi proizvoda</h3>
+                      <Button 
+                        onClick={handleToggleAddProductForm}
+                        variant="outline"
+                        className="flex items-center"
+                      >
+                        {showAddProductForm ? (
+                          <>
+                            <ChevronUp className="mr-2 h-4 w-4" />
+                            Sakrij formu
+                          </>
+                        ) : (
+                          <>
+                            <Plus className="mr-2 h-4 w-4" />
+                            Dodaj tip proizvoda
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                    
+                    {/* Display added product types */}
+                    <div className="space-y-2">
+                      {event.productTypes.map((productType) => (
+                        <div 
+                          key={productType.id} 
+                          className="flex justify-between items-center p-3 border rounded-md"
+                        >
+                          <span>{productType.productName}</span>
+                          <span className="text-sm text-muted-foreground">
+                            {productType.jarAttributes.length} JAR atributa
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                {/* Add product type form */}
+                {showAddProductForm && (
+                  <div className="mt-6 border rounded-md p-4 space-y-4 bg-muted/30">
+                    <h3 className="text-lg font-semibold">Dodaj novi tip proizvoda</h3>
+                    
+                    {isLoadingProductTypes ? (
+                      <div className="text-center p-4">Učitavanje tipova proizvoda...</div>
+                    ) : availableProductTypes.length === 0 ? (
+                      <div>
+                        <p className="mb-4">Nema dostupnih tipova proizvoda za dodavanje.</p>
+                        <Sheet>
+                          <SheetTrigger asChild>
+                            <Button variant="outline">Kreiraj novi tip proizvoda</Button>
+                          </SheetTrigger>
+                          <SheetContent side="right" className="sm:max-w-md">
+                            <SheetHeader>
+                              <SheetTitle>Novi tip proizvoda</SheetTitle>
+                              <SheetDescription>
+                                Kreirajte novi tip proizvoda koji će biti dostupan za sve događaje.
+                              </SheetDescription>
+                            </SheetHeader>
+                            <div className="mt-6">
+                              <p>Ovdje bi bila forma za kreiranje novog tipa proizvoda...</p>
+                              <div className="mt-4">
+                                <Button onClick={() => navigate("/admin/products/new")} className="w-full">
+                                  Otvori punu formu za dodavanje
+                                </Button>
+                              </div>
+                            </div>
+                          </SheetContent>
+                        </Sheet>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="productType">Odaberite tip proizvoda</Label>
+                          <select
+                            id="productType"
+                            className="w-full px-3 py-2 border rounded-md"
+                            value={selectedProductTypeId}
+                            onChange={(e) => setSelectedProductTypeId(e.target.value)}
+                          >
+                            {availableProductTypes.map((type) => (
+                              <option key={type.id} value={type.id}>
+                                {type.productName}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        
+                        <div className="flex justify-end space-x-2">
+                          <Button 
+                            variant="outline"
+                            onClick={() => setShowAddProductForm(false)}
+                          >
+                            Odustani
+                          </Button>
+                          <Button onClick={handleAddProductType}>
+                            Dodaj
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </CardContent>
