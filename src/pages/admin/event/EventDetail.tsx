@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { AdminLayout } from "@/components/layout/AdminLayout";
@@ -27,7 +26,9 @@ import {
   ChevronUp, 
   FileDown, 
   Printer,
-  Shuffle 
+  Shuffle,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { 
@@ -77,7 +78,7 @@ export default function EventDetail() {
     { value: RetailerCode.IS, label: "Interspar (IS)" },
     { value: RetailerCode.PL, label: "Plodine (PL)" },
     { value: RetailerCode.ES, label: "Eurospin (ES)" },
-    { value: RetailerCode.M, label: "Metro (M)" },
+    { value: RetailerCode.M, label: "Marka \"M\"" },
   ];
 
   const fetchEvent = async () => {
@@ -199,18 +200,15 @@ export default function EventDetail() {
   };
 
   const handleSampleCountChange = (count: number) => {
-    // Make sure we have the right number of samples in our state
     setSampleCount(count);
     const currentCount = samples.length;
     if (count > currentCount) {
-      // Add more samples
       const newSamples = [...samples];
       for (let i = currentCount; i < count; i++) {
         newSamples.push({ brand: "", retailerCode: RetailerCode.LI });
       }
       setSamples(newSamples);
     } else if (count < currentCount) {
-      // Remove excess samples
       setSamples(samples.slice(0, count));
     }
   };
@@ -225,7 +223,6 @@ export default function EventDetail() {
       return false;
     }
 
-    // Now allowing multi-character codes (removed single-letter validation)
     if (!baseCode || baseCode.trim() === "") {
       toast({
         title: "Greška",
@@ -367,6 +364,24 @@ export default function EventDetail() {
         description: "Došlo je do pogreške prilikom dohvaćanja randomizacije.",
         variant: "destructive",
       });
+    }
+  };
+
+  const navigateToNextProductType = () => {
+    if (!event || !selectedProductType) return;
+    
+    const currentIndex = event.productTypes.findIndex(pt => pt.id === selectedProductType.id);
+    if (currentIndex < event.productTypes.length - 1) {
+      handleViewRandomization(event.productTypes[currentIndex + 1]);
+    }
+  };
+
+  const navigateToPrevProductType = () => {
+    if (!event || !selectedProductType) return;
+    
+    const currentIndex = event.productTypes.findIndex(pt => pt.id === selectedProductType.id);
+    if (currentIndex > 0) {
+      handleViewRandomization(event.productTypes[currentIndex - 1]);
     }
   };
 
@@ -627,7 +642,6 @@ export default function EventDetail() {
                   </div>
                 )}
                 
-                {/* Add product type form */}
                 {showAddProductForm && (
                   <div className="mt-6 border rounded-md p-4 space-y-4 bg-muted/30">
                     <h3 className="text-lg font-semibold">Dodaj novi tip proizvoda</h3>
@@ -815,7 +829,14 @@ export default function EventDetail() {
                 ) : randomizationView && selectedProductType ? (
                   <div className="space-y-4 print:space-y-2">
                     <div className="flex justify-between items-center print:hidden">
-                      <h3 className="text-lg font-medium">Tablica randomizacije: {selectedProductType.productName}</h3>
+                      <div className="flex items-center">
+                        <h3 className="text-lg font-medium">
+                          Tablica randomizacije: {selectedProductType.productName}
+                          <span className="ml-2 text-sm text-muted-foreground">
+                            (Šifra: {selectedProductType.baseCode})
+                          </span>
+                        </h3>
+                      </div>
                       <div className="flex space-x-2">
                         <Button
                           variant="outline"
@@ -845,6 +866,36 @@ export default function EventDetail() {
                       </div>
                     </div>
                     
+                    {event.productTypes.length > 1 && (
+                      <div className="flex justify-between items-center p-2 border rounded mb-4 print:hidden">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={navigateToPrevProductType}
+                          disabled={event.productTypes.indexOf(selectedProductType) === 0}
+                          className="flex items-center"
+                        >
+                          <ChevronLeft className="mr-1 h-4 w-4" />
+                          Prethodni proizvod
+                        </Button>
+                        
+                        <div className="px-4 py-2 bg-muted rounded text-sm">
+                          {event.productTypes.indexOf(selectedProductType) + 1} / {event.productTypes.length}
+                        </div>
+                        
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={navigateToNextProductType}
+                          disabled={event.productTypes.indexOf(selectedProductType) === event.productTypes.length - 1}
+                          className="flex items-center"
+                        >
+                          Sljedeći proizvod
+                          <ChevronRight className="ml-1 h-4 w-4" />
+                        </Button>
+                      </div>
+                    )}
+                    
                     <div className="print:text-black">
                       <h1 className="text-xl font-bold mb-2 text-center hidden print:block">
                         {selectedProductType.productName} - {selectedProductType.baseCode}
@@ -858,18 +909,15 @@ export default function EventDetail() {
                           <TableHeader>
                             <TableRow>
                               <TableHead className="w-24">Mjesto</TableHead>
-                              {/* Generate columns based on sample count */}
                               {selectedProductType.samples.map((_, index) => (
                                 <TableHead key={index}>Dijeljenje {index + 1}</TableHead>
                               ))}
                             </TableRow>
                           </TableHeader>
                           <TableBody>
-                            {/* Generate a row for each evaluator position (1-12) */}
                             {Array.from({ length: 12 }, (_, i) => i + 1).map((position) => (
                               <TableRow key={position}>
                                 <TableCell className="font-medium">{position}</TableCell>
-                                {/* For each round, show the blind code */}
                                 {selectedProductType.samples.map((_, round) => (
                                   <TableCell key={round}>
                                     {randomizationTable?.[position]?.[round + 1] || "-"}
@@ -880,72 +928,19 @@ export default function EventDetail() {
                           </TableBody>
                         </Table>
                       </div>
+                      
+                      <div className="mt-4 text-sm text-muted-foreground print:text-black">
+                        <p>Legenda:</p>
+                        <ul className="list-disc pl-5 mt-1">
+                          {selectedProductType.samples.map((sample, index) => (
+                            <li key={index}>
+                              {sample.blindCode}: {sample.brand} ({sample.retailerCode})
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
                     </div>
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    <p>Odaberite tip proizvoda za koji želite generirati ili pregledati randomizaciju:</p>
-                    
-                    <div className="space-y-2">
-                      {event.productTypes.map((productType) => (
-                        <div 
-                          key={productType.id} 
-                          className="flex justify-between items-center p-3 border rounded-md"
-                        >
-                          <div className="flex flex-col">
-                            <span className="font-medium">{productType.productName}</span>
-                            <span className="text-sm text-muted-foreground">
-                              Šifra: {productType.baseCode} | Uzorci: {productType.samples.length}
-                            </span>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <Button
-                              onClick={() => handleGenerateRandomization(productType.id)}
-                              className="flex items-center"
-                              variant="outline"
-                            >
-                              <Shuffle className="mr-2 h-4 w-4" />
-                              Generiraj randomizaciju
-                            </Button>
-                            <Button 
-                              onClick={() => handleViewRandomization(productType)}
-                              variant="default"
-                            >
-                              Pregledaj
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
-          <TabsContent value="reports">
-            <Card>
-              <CardHeader>
-                <CardTitle>Izvještaji</CardTitle>
-                <CardDescription>
-                  Pregled i generiranje izvještaja za ovaj događaj.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {event.status !== EventStatus.COMPLETED && event.status !== EventStatus.ARCHIVED ? (
-                  <p className="text-muted-foreground">
-                    Izvještaji će biti dostupni nakon što događaj bude završen.
-                  </p>
-                ) : (
-                  <div className="space-y-4">
-                    <p>Uskoro implementacija izvještaja...</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-      </div>
-    </AdminLayout>
-  );
-}
+                    <p>Odaberite tip proizvoda za koji želite generirati
