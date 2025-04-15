@@ -12,7 +12,8 @@ import {
   updateEventStatus, 
   getAllProductTypes, 
   createProductType, 
-  createRandomization 
+  createRandomization,
+  createSample
 } from "@/services/dataService";
 import { Event, EventStatus, BaseProductType, ProductType, RetailerCode } from "@/types";
 import { 
@@ -45,10 +46,6 @@ import {
   TableHeader, 
   TableRow 
 } from "@/components/ui/table";
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { useForm } from "react-hook-form";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 
 export default function EventDetail() {
   const { eventId } = useParams<{ eventId: string }>();
@@ -227,10 +224,11 @@ export default function EventDetail() {
       return false;
     }
 
-    if (!baseCode || baseCode.length !== 1 || !/^[A-Z]$/.test(baseCode)) {
+    // Now allowing multi-character codes (removed single-letter validation)
+    if (!baseCode || baseCode.trim() === "") {
       toast({
         title: "Greška",
-        description: "Šifra uzorka mora biti jedno veliko slovo (A-Z).",
+        description: "Šifra uzorka ne može biti prazna.",
         variant: "destructive",
       });
       return false;
@@ -274,10 +272,13 @@ export default function EventDetail() {
         displayOrder + 1
       );
 
-      // Add samples to the product type
+      // Add samples to the product type - FIXED: now properly adding samples
       for (const sample of samples) {
-        // In a real app, you would add the samples here
-        // For this prototype, the samples are added in the mock data service
+        await createSample(
+          newProductType.id,
+          sample.brand,
+          sample.retailerCode
+        );
       }
 
       toast({
@@ -313,6 +314,9 @@ export default function EventDetail() {
       const randomization = await createRandomization(productTypeId);
       if (randomization) {
         setRandomizationTable(randomization.table);
+        // Also update the selected product type to show the randomization properly
+        const productType = event?.productTypes.find(pt => pt.id === productTypeId) || null;
+        setSelectedProductType(productType);
         setRandomizationView(true);
         
         // Refresh event data to update randomization status
@@ -339,9 +343,30 @@ export default function EventDetail() {
     }
   };
 
-  const handleViewRandomization = (productType: ProductType) => {
+  const handleViewRandomization = async (productType: ProductType) => {
     setSelectedProductType(productType);
-    setRandomizationView(true);
+    
+    try {
+      // Get the randomization data for this product type
+      const randomization = await getRandomization(productType.id);
+      if (randomization) {
+        setRandomizationTable(randomization.table);
+        setRandomizationView(true);
+      } else {
+        toast({
+          title: "Nema randomizacije",
+          description: "Za ovaj tip proizvoda još nije generirana randomizacija.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Error viewing randomization:", error);
+      toast({
+        title: "Greška",
+        description: "Došlo je do pogreške prilikom dohvaćanja randomizacije.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handlePrintRandomizationTable = () => {
@@ -357,7 +382,10 @@ export default function EventDetail() {
     csvContent += "Mjesto,";
     
     // Headers for rounds
-    const roundCount = Object.keys(randomizationTable[1] || {}).length;
+    const roundCount = Math.max(...Object.keys(randomizationTable).map(pos => 
+      Object.keys(randomizationTable[pos] || {}).length
+    ));
+    
     for (let i = 1; i <= roundCount; i++) {
       csvContent += `Dijeljenje ${i},`;
     }
@@ -661,15 +689,17 @@ export default function EventDetail() {
                           </div>
                         
                           <div className="space-y-2">
-                            <Label htmlFor="baseCode">Šifra uzorka (jedno slovo A-Z)</Label>
+                            <Label htmlFor="baseCode">Šifra uzorka</Label>
                             <Input
                               id="baseCode"
                               value={baseCode}
                               onChange={(e) => setBaseCode(e.target.value.toUpperCase())}
-                              placeholder="npr. A"
-                              maxLength={1}
+                              placeholder="npr. A, B, C, AA, AB..."
                               className="uppercase"
                             />
+                            <p className="text-xs text-muted-foreground">
+                              Možete koristiti slova poput A, B, C ili kombinacije AA, AB, itd.
+                            </p>
                           </div>
                           
                           <div className="space-y-2">

@@ -1,3 +1,4 @@
+
 import { 
   User, Event, ProductType, Sample, JARAttribute, 
   Randomization, Evaluation, HedonicScale, JARRating,
@@ -189,7 +190,7 @@ export async function createSample(
   retailerCode: RetailerCode
 ): Promise<Sample> {
   const newSample: Sample = {
-    id: `sample_${Date.now()}`,
+    id: `sample_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
     productTypeId,
     brand,
     retailerCode,
@@ -280,8 +281,11 @@ export async function createRandomization(productTypeId: string): Promise<Random
   // Generate randomization table
   const randomization = generateRandomizationTable(productTypeId, sampleCount);
   
-  // Assign blind codes to samples
+  // Assign blind codes to samples based on baseCode
+  // Now supporting extended codes beyond A-Z
   productType.samples.forEach((sample, index) => {
+    // Use a combination of the base code and index+1
+    // If base code is multi-character, we can still append the index
     sample.blindCode = `${productType.baseCode}${index + 1}`;
   });
   
