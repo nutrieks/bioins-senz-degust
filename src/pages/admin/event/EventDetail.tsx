@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { AdminLayout } from "@/components/layout/AdminLayout";
@@ -943,4 +944,67 @@ export default function EventDetail() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    <p>Odaberite tip proizvoda za koji želite generirati
+                    <p>Odaberite tip proizvoda za koji želite generirati ili pregledati randomizaciju:</p>
+                    <div className="space-y-2">
+                      {event.productTypes.map((productType) => (
+                        <div 
+                          key={productType.id} 
+                          className="flex justify-between items-center p-3 border rounded-md"
+                        >
+                          <div className="flex flex-col">
+                            <span className="font-medium">{productType.productName}</span>
+                            <span className="text-sm text-muted-foreground">
+                              Šifra: {productType.baseCode} | Uzorci: {productType.samples.length}
+                            </span>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            {productType.randomizationGenerated ? (
+                              <Button 
+                                onClick={() => handleViewRandomization(productType)}
+                                className="flex items-center"
+                              >
+                                <Shuffle className="mr-1 h-4 w-4" />
+                                Pregled randomizacije
+                              </Button>
+                            ) : (
+                              <Button 
+                                onClick={() => handleGenerateRandomization(productType.id)}
+                                disabled={productType.samples.length === 0}
+                                className="flex items-center"
+                              >
+                                <Shuffle className="mr-1 h-4 w-4" />
+                                Generiraj randomizaciju
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="reports">
+            <Card>
+              <CardHeader>
+                <CardTitle>Izvještaji</CardTitle>
+                <CardDescription>
+                  Pregled i preuzimanje izvještaja o događaju.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center p-6 border rounded-lg">
+                  <p className="text-muted-foreground">
+                    Ova funkcionalnost će biti dostupna uskoro.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
+    </AdminLayout>
+  );
+}
