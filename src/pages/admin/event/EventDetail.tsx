@@ -424,6 +424,7 @@ export default function EventDetail() {
               samples={samples}
               isUpdating={isUpdating}
               onViewRandomization={handleViewRandomization}
+              onGenerateRandomization={handleGenerateRandomization}
               onToggleAddProductForm={handleToggleAddProductForm}
               onSelectedProductTypeIdChange={setSelectedProductTypeId}
               onBaseCodeChange={setBaseCode}
