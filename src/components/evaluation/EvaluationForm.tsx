@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { format } from "date-fns";
@@ -44,18 +43,21 @@ type FormData = {
   };
 };
 
-// Opisi za hedonističku skalu
+// Opis za hedonističku skalu s brojevima u zagradama
 const HEDONIC_LABELS = [
-  "Iznimno mi se ne sviđa",
-  "Vrlo mi se ne sviđa",
-  "Umjereno mi se ne sviđa",
-  "Malo mi se ne sviđa",
-  "Niti mi se sviđa niti ne sviđa",
-  "Malo mi se sviđa",
-  "Umjereno mi se sviđa",
-  "Vrlo mi se sviđa",
-  "Iznimno mi se sviđa"
+  "Iznimno mi se ne sviđa (1)",
+  "Vrlo mi se ne sviđa (2)",
+  "Umjereno mi se ne sviđa (3)",
+  "Lagano mi se ne sviđa (4)",
+  "Niti mi se sviđa niti mi se ne sviđa (5)",
+  "Lagano mi se sviđa (6)",
+  "Umjereno mi se sviđa (7)",
+  "Vrlo mi se sviđa (8)",
+  "Iznimno mi se sviđa (9)"
 ];
+
+// Definirajmo koje oznake prikazati (šparamo prostor)
+const VISIBLE_LABELS = [0, 2, 4, 6, 8]; // Indeksi za koje pokazujemo puni tekst
 
 export function EvaluationForm({ eventId, productTypeId, onComplete }: EvaluationFormProps) {
   const { user } = useAuth();
@@ -64,7 +66,8 @@ export function EvaluationForm({ eventId, productTypeId, onComplete }: Evaluatio
     currentRound, 
     currentJARAttributes, 
     loadNextSample, 
-    isComplete 
+    isComplete,
+    currentProductType
   } = useEvaluation();
   const { toast } = useToast();
   
@@ -217,8 +220,8 @@ export function EvaluationForm({ eventId, productTypeId, onComplete }: Evaluatio
                 <span>Datum: {eventDate}</span>
               </div>
               <div>
-                {currentJARAttributes.length > 0 && (
-                  <span className="font-medium">{currentJARAttributes[0]?.nameHR}</span>
+                {currentProductType && (
+                  <span className="font-medium text-base">{currentProductType.productName}</span>
                 )}
               </div>
             </div>
@@ -245,17 +248,13 @@ export function EvaluationForm({ eventId, productTypeId, onComplete }: Evaluatio
                             <HedonicRadioGroup 
                               onValueChange={field.onChange}
                               defaultValue={field.value}
-                              className="justify-between"
                             >
-                              {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((value) => (
+                              {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((value, index) => (
                                 <HedonicRadioItem 
                                   key={`appearance-${value}`}
                                   value={value.toString()}
-                                  label={value === 1 ? HEDONIC_LABELS[0] :
-                                         value === 3 ? HEDONIC_LABELS[2] :
-                                         value === 5 ? HEDONIC_LABELS[4] :
-                                         value === 7 ? HEDONIC_LABELS[6] :
-                                         value === 9 ? HEDONIC_LABELS[8] : undefined}
+                                  label={VISIBLE_LABELS.includes(index) ? HEDONIC_LABELS[index] : undefined}
+                                  number={value.toString()}
                                 />
                               ))}
                             </HedonicRadioGroup>
@@ -274,17 +273,13 @@ export function EvaluationForm({ eventId, productTypeId, onComplete }: Evaluatio
                             <HedonicRadioGroup 
                               onValueChange={field.onChange}
                               defaultValue={field.value}
-                              className="justify-between"
                             >
-                              {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((value) => (
+                              {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((value, index) => (
                                 <HedonicRadioItem 
                                   key={`odor-${value}`}
                                   value={value.toString()}
-                                  label={value === 1 ? HEDONIC_LABELS[0] :
-                                         value === 3 ? HEDONIC_LABELS[2] :
-                                         value === 5 ? HEDONIC_LABELS[4] :
-                                         value === 7 ? HEDONIC_LABELS[6] :
-                                         value === 9 ? HEDONIC_LABELS[8] : undefined}
+                                  label={VISIBLE_LABELS.includes(index) ? HEDONIC_LABELS[index] : undefined}
+                                  number={value.toString()}
                                 />
                               ))}
                             </HedonicRadioGroup>
@@ -303,17 +298,13 @@ export function EvaluationForm({ eventId, productTypeId, onComplete }: Evaluatio
                             <HedonicRadioGroup 
                               onValueChange={field.onChange}
                               defaultValue={field.value}
-                              className="justify-between"
                             >
-                              {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((value) => (
+                              {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((value, index) => (
                                 <HedonicRadioItem 
                                   key={`texture-${value}`}
                                   value={value.toString()}
-                                  label={value === 1 ? HEDONIC_LABELS[0] :
-                                         value === 3 ? HEDONIC_LABELS[2] :
-                                         value === 5 ? HEDONIC_LABELS[4] :
-                                         value === 7 ? HEDONIC_LABELS[6] :
-                                         value === 9 ? HEDONIC_LABELS[8] : undefined}
+                                  label={VISIBLE_LABELS.includes(index) ? HEDONIC_LABELS[index] : undefined}
+                                  number={value.toString()}
                                 />
                               ))}
                             </HedonicRadioGroup>
@@ -332,17 +323,13 @@ export function EvaluationForm({ eventId, productTypeId, onComplete }: Evaluatio
                             <HedonicRadioGroup 
                               onValueChange={field.onChange}
                               defaultValue={field.value}
-                              className="justify-between"
                             >
-                              {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((value) => (
+                              {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((value, index) => (
                                 <HedonicRadioItem 
                                   key={`flavor-${value}`}
                                   value={value.toString()}
-                                  label={value === 1 ? HEDONIC_LABELS[0] :
-                                         value === 3 ? HEDONIC_LABELS[2] :
-                                         value === 5 ? HEDONIC_LABELS[4] :
-                                         value === 7 ? HEDONIC_LABELS[6] :
-                                         value === 9 ? HEDONIC_LABELS[8] : undefined}
+                                  label={VISIBLE_LABELS.includes(index) ? HEDONIC_LABELS[index] : undefined}
+                                  number={value.toString()}
                                 />
                               ))}
                             </HedonicRadioGroup>
@@ -361,17 +348,13 @@ export function EvaluationForm({ eventId, productTypeId, onComplete }: Evaluatio
                             <HedonicRadioGroup 
                               onValueChange={field.onChange}
                               defaultValue={field.value}
-                              className="justify-between"
                             >
-                              {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((value) => (
+                              {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((value, index) => (
                                 <HedonicRadioItem 
                                   key={`overallLiking-${value}`}
                                   value={value.toString()}
-                                  label={value === 1 ? HEDONIC_LABELS[0] :
-                                         value === 3 ? HEDONIC_LABELS[2] :
-                                         value === 5 ? HEDONIC_LABELS[4] :
-                                         value === 7 ? HEDONIC_LABELS[6] :
-                                         value === 9 ? HEDONIC_LABELS[8] : undefined}
+                                  label={VISIBLE_LABELS.includes(index) ? HEDONIC_LABELS[index] : undefined}
+                                  number={value.toString()}
                                 />
                               ))}
                             </HedonicRadioGroup>
@@ -383,42 +366,48 @@ export function EvaluationForm({ eventId, productTypeId, onComplete }: Evaluatio
                 </CardContent>
               </Card>
 
-              {/* JAR skala */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>JAR skala (Just About Right)</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-8">
-                    {currentJARAttributes.map((attribute) => (
-                      <FormField
-                        key={attribute.id}
-                        control={form.control}
-                        name={`jar.${attribute.id}`}
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-lg font-semibold">{attribute.nameHR}</FormLabel>
-                            <div className="mt-3">
-                              <JARRadioGroup 
-                                onValueChange={field.onChange}
-                                defaultValue={field.value}
-                              >
-                                {[1, 2, 3, 4, 5].map((value, index) => (
-                                  <JARRadioItem
-                                    key={`${attribute.id}-${value}`}
-                                    value={value.toString()}
-                                    label={attribute.scaleHR[index]}
-                                  />
-                                ))}
-                              </JARRadioGroup>
-                            </div>
-                          </FormItem>
-                        )}
-                      />
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
+              {/* JAR skala - filtriraj da ne uključuje nepotrebne atribute */}
+              {currentJARAttributes.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>JAR skala (Just About Right)</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-8">
+                      {currentJARAttributes.filter(attr => 
+                        // Filtriranje nepotrebnih atributa
+                        !attr.nameHR.toLowerCase().includes("intenzitet mirisa dima")
+                      ).map((attribute) => (
+                        <FormField
+                          key={attribute.id}
+                          control={form.control}
+                          name={`jar.${attribute.id}`}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-lg font-semibold">{attribute.nameHR}</FormLabel>
+                              <div className="mt-3">
+                                <JARRadioGroup 
+                                  onValueChange={field.onChange}
+                                  defaultValue={field.value}
+                                >
+                                  {[1, 2, 3, 4, 5].map((value) => (
+                                    <JARRadioItem
+                                      key={`${attribute.id}-${value}`}
+                                      value={value.toString()}
+                                      label={attribute.scaleHR[value-1]}
+                                      number={value.toString()}
+                                    />
+                                  ))}
+                                </JARRadioGroup>
+                              </div>
+                            </FormItem>
+                          )}
+                        />
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </div>
             
             <div className="flex justify-center mt-10 mb-6">

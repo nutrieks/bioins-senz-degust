@@ -40,14 +40,14 @@ const RadioGroupItem = React.forwardRef<
 })
 RadioGroupItem.displayName = RadioGroupPrimitive.Item.displayName
 
-// Dodatna komponenta za bolju prezentaciju hedonističke skale
+// Prilagođena komponenta za hedonističku skalu koja naglašava tekst
 const HedonicRadioGroup = React.forwardRef<
   React.ElementRef<typeof RadioGroupPrimitive.Root>,
   React.ComponentPropsWithoutRef<typeof RadioGroupPrimitive.Root>
 >(({ className, ...props }, ref) => {
   return (
     <RadioGroupPrimitive.Root
-      className={cn("flex flex-wrap justify-between gap-2", className)}
+      className={cn("flex justify-between", className)}
       {...props}
       ref={ref}
     />
@@ -55,29 +55,32 @@ const HedonicRadioGroup = React.forwardRef<
 })
 HedonicRadioGroup.displayName = "HedonicRadioGroup"
 
-// Prilagođeni izborni krug za hedonističku skalu (1-9)
+// Prilagođeni izborni krug za hedonističku skalu s manjim brojčanim oznakama
 const HedonicRadioItem = React.forwardRef<
   React.ElementRef<typeof RadioGroupPrimitive.Item>,
   React.ComponentPropsWithoutRef<typeof RadioGroupPrimitive.Item> & {
     value: string;
     label?: string;
+    number?: string;
   }
->(({ className, value, label, ...props }, ref) => {
+>(({ className, value, label, number, ...props }, ref) => {
   return (
     <div className="flex flex-col items-center">
-      <RadioGroupPrimitive.Item
-        ref={ref}
-        value={value}
-        className={cn(
-          "flex h-9 w-9 items-center justify-center rounded-full border-2 border-primary text-sm font-semibold text-primary shadow ring-offset-background focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground",
-          className
-        )}
-        {...props}
-      >
-        {value}
-      </RadioGroupPrimitive.Item>
+      <div className="relative">
+        <RadioGroupPrimitive.Item
+          ref={ref}
+          value={value}
+          className={cn(
+            "flex h-8 w-8 items-center justify-center rounded-full border-2 border-primary text-xs font-medium text-primary shadow ring-offset-background focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground",
+            className
+          )}
+          {...props}
+        >
+          {number && <span>{number}</span>}
+        </RadioGroupPrimitive.Item>
+      </div>
       {label && (
-        <span className="mt-1 text-center text-xs">{label}</span>
+        <span className="mt-2 text-center text-xs max-w-[90px]">{label}</span>
       )}
     </div>
   )
@@ -91,7 +94,7 @@ const JARRadioGroup = React.forwardRef<
 >(({ className, ...props }, ref) => {
   return (
     <RadioGroupPrimitive.Root
-      className={cn("flex justify-between gap-2", className)}
+      className={cn("flex justify-between", className)}
       {...props}
       ref={ref}
     />
@@ -105,22 +108,25 @@ const JARRadioItem = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof RadioGroupPrimitive.Item> & {
     value: string;
     label: string;
+    number?: string;
   }
->(({ className, value, label, ...props }, ref) => {
+>(({ className, value, label, number, ...props }, ref) => {
   return (
-    <div className="flex flex-col items-center max-w-[120px]">
-      <RadioGroupPrimitive.Item
-        ref={ref}
-        value={value}
-        className={cn(
-          "flex h-8 w-8 items-center justify-center rounded-full border-2 border-primary text-sm font-semibold text-primary ring-offset-background focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground",
-          className
-        )}
-        {...props}
-      >
-        {value}
-      </RadioGroupPrimitive.Item>
-      <span className="mt-1 text-center text-xs">{label}</span>
+    <div className="flex flex-col items-center">
+      <div className="relative">
+        <RadioGroupPrimitive.Item
+          ref={ref}
+          value={value}
+          className={cn(
+            "flex h-8 w-8 items-center justify-center rounded-full border-2 border-primary text-xs font-medium text-primary shadow ring-offset-background focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground",
+            className
+          )}
+          {...props}
+        >
+          {number && <span>{number}</span>}
+        </RadioGroupPrimitive.Item>
+      </div>
+      <span className="mt-2 text-center text-xs max-w-[120px]">{label}</span>
     </div>
   )
 })
