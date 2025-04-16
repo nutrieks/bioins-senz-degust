@@ -8,7 +8,10 @@ interface ProductTypesListProps {
   onViewRandomization: (productType: ProductType) => void;
 }
 
-export function ProductTypesList({ productTypes, onViewRandomization }: ProductTypesListProps) {
+export function ProductTypesList({
+  productTypes,
+  onViewRandomization,
+}: ProductTypesListProps) {
   return (
     <div className="space-y-2">
       {productTypes.map((productType) => (

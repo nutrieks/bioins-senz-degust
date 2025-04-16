@@ -1,9 +1,5 @@
-
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { AdminLayout } from "@/components/layout/AdminLayout";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   getEvent, 
   updateEventStatus, 
@@ -15,6 +11,8 @@ import {
 } from "@/services/dataService";
 import { Event, EventStatus, BaseProductType, ProductType, RetailerCode } from "@/types";
 import { ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { formatDate } from "@/utils/dateUtils";
 import { getStatusLabel } from "@/utils/eventUtils";
@@ -22,6 +20,7 @@ import { EventInfoCard } from "@/components/admin/event/EventInfoCard";
 import { ProductTypesTab } from "@/components/admin/event/ProductTypesTab";
 import { RandomizationTab } from "@/components/admin/event/RandomizationTab";
 import { ReportsTab } from "@/components/admin/event/ReportsTab";
+import { AdminLayout } from "@/components/layout/AdminLayout";
 
 export default function EventDetail() {
   const { eventId } = useParams<{ eventId: string }>();
@@ -51,7 +50,6 @@ export default function EventDetail() {
       setIsLoading(true);
       const eventData = await getEvent(eventId);
       
-      // Add hasRandomization property to each product type
       const updatedProductTypes = eventData.productTypes.map((pt: ProductType) => ({
         ...pt,
         hasRandomization: !!pt.hasRandomization
@@ -209,7 +207,6 @@ export default function EventDetail() {
 
     try {
       setIsUpdating(true);
-      // Create the product type
       const displayOrder = event?.productTypes.length || 0;
       
       const newProductType = await createProductType(
@@ -220,7 +217,6 @@ export default function EventDetail() {
         displayOrder + 1
       );
 
-      // Add samples to the product type
       for (const sample of samples) {
         await createSample(
           newProductType.id,
@@ -234,14 +230,12 @@ export default function EventDetail() {
         description: "Tip proizvoda je uspješno dodan događaju.",
       });
 
-      // Reset form
       setShowAddProductForm(false);
       setBaseCode("");
       setCustomerCode("");
       setSampleCount(3);
       setSamples([{ brand: "", retailerCode: RetailerCode.LI }]);
       
-      // Refresh event data
       fetchEvent();
     } catch (error) {
       console.error("Error adding product type:", error);
@@ -262,12 +256,10 @@ export default function EventDetail() {
       const randomization = await createRandomization(productTypeId);
       if (randomization) {
         setRandomizationTable(randomization.table);
-        // Also update the selected product type to show the randomization properly
         const productType = event?.productTypes.find(pt => pt.id === productTypeId) || null;
         setSelectedProductType(productType);
         setRandomizationView(true);
         
-        // Refresh event data to update randomization status
         fetchEvent();
         
         toast({
@@ -295,7 +287,6 @@ export default function EventDetail() {
     setSelectedProductType(productType);
     
     try {
-      // Get the randomization data for this product type
       const randomization = await getRandomization(productType.id);
       if (randomization) {
         setRandomizationTable(randomization.table);
@@ -342,31 +333,29 @@ export default function EventDetail() {
   const handleExportRandomizationTable = () => {
     if (!randomizationTable || !selectedProductType) return;
     
-    // Create CSV content
     let csvContent = "data:text/csv;charset=utf-8,";
     csvContent += `${selectedProductType.productName} - ${selectedProductType.baseCode}\n\n`;
-    csvContent += "Mjesto,";
     
-    // Headers for rounds
-    const roundCount = Math.max(...Object.keys(randomizationTable).map(pos => 
-      Object.keys(randomizationTable[pos] || {}).length
-    ));
-    
-    for (let i = 1; i <= roundCount; i++) {
-      csvContent += `Dijeljenje ${i},`;
+    csvContent += "Dijeljenje / Mjesto,";
+    for (let position = 1; position <= 12; position++) {
+      csvContent += `${position},`;
     }
     csvContent += "\n";
     
-    // Data rows
-    for (let position = 1; position <= 12; position++) {
-      csvContent += `${position},`;
-      for (let round = 1; round <= roundCount; round++) {
+    const rounds = selectedProductType.samples.length;
+    for (let round = 1; round <= rounds; round++) {
+      csvContent += `Dijeljenje ${round},`;
+      for (let position = 1; position <= 12; position++) {
         csvContent += `${randomizationTable[position]?.[round] || ""},`;
       }
       csvContent += "\n";
     }
     
-    // Create download link
+    csvContent += "\nLegenda:\n";
+    selectedProductType.samples.forEach((sample) => {
+      csvContent += `${sample.blindCode}: ${sample.brand} (${sample.retailerCode})\n`;
+    });
+    
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
