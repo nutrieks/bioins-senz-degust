@@ -249,35 +249,58 @@ productTypes[0].samples = samples;
 productTypes[0].jarAttributes = jarAttributes;
 events[1].productTypes = productTypes;
 
-// Helper functions for randomization
+// Randomization Table Generator
 export function generateRandomizationTable(productTypeId: string, sampleCount: number): Randomization {
-  // This is a simplified implementation
-  // In a real application, this would use a more sophisticated algorithm
-  // to ensure balanced distribution across positions and rounds
+  // Create a randomization table for up to 12 evaluators
+  const table: { [position: number]: { [round: number]: string } } = {};
   
-  const blindCodes = Array.from({ length: sampleCount }, (_, i) => {
-    const product = productTypes.find(p => p.id === productTypeId);
-    return product ? `${product.baseCode}${i + 1}` : `S${i + 1}`;
-  });
-  
-  const table: Randomization['table'] = {};
-  
+  // For each position (1-12)
   for (let position = 1; position <= 12; position++) {
     table[position] = {};
     
-    // Shuffle blind codes for each position
-    const shuffled = [...blindCodes].sort(() => Math.random() - 0.5);
+    // Create an array of blind codes (e.g., A1, A2, etc.)
+    const productType = productTypes.find(pt => pt.id === productTypeId);
+    if (!productType) continue;
     
-    for (let round = 1; round <= sampleCount; round++) {
-      table[position][round] = shuffled[round - 1];
+    const baseCode = productType?.baseCode || "X";
+    
+    // Create an array of sample indices (0, 1, 2, ...) to shuffle
+    const sampleIndices = Array.from({ length: sampleCount }, (_, i) => i);
+    
+    // For the first distribution (round 1), ensure it doesn't start with "1"
+    // by swapping the first element if it's 0 (which would become sampleIndex+1 = 1)
+    const shuffledIndices = shuffle([...sampleIndices]);
+    
+    // Make sure the first position doesn't have sample 1 for the first round
+    if (shuffledIndices[0] === 0 && sampleCount > 1) {
+      const randomSwap = 1 + Math.floor(Math.random() * (shuffledIndices.length - 1));
+      [shuffledIndices[0], shuffledIndices[randomSwap]] = [shuffledIndices[randomSwap], shuffledIndices[0]];
     }
+    
+    // Assign blind codes to each round
+    shuffledIndices.forEach((sampleIndex, roundIndex) => {
+      const round = roundIndex + 1;
+      table[position][round] = `${baseCode}${sampleIndex + 1}`;
+    });
   }
   
+  const randomizationId = `rand_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+  
   return {
-    id: `random_${Date.now()}`,
+    id: randomizationId,
     productTypeId,
     table
   };
+}
+
+// Fisher-Yates shuffle algorithm
+function shuffle(array: any[]): any[] {
+  const result = [...array];
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
 }
 
 // Helper function to get next sample for an evaluator

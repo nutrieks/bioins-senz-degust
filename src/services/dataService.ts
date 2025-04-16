@@ -300,7 +300,7 @@ export async function createRandomization(productTypeId: string): Promise<Random
     // Check if all product types for this event have randomization
     const allRandomized = productTypes
       .filter(pt => pt.eventId === event.id)
-      .every(pt => randomizations.some(r => r.productTypeId === pt.id));
+      .every(pt => pt.hasRandomization);
     
     if (allRandomized) {
       event.randomizationComplete = true;

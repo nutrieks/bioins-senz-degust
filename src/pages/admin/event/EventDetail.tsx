@@ -336,16 +336,17 @@ export default function EventDetail() {
     let csvContent = "data:text/csv;charset=utf-8,";
     csvContent += `${selectedProductType.productName} - ${selectedProductType.baseCode}\n\n`;
     
-    csvContent += "Dijeljenje / Mjesto,";
-    for (let position = 1; position <= 12; position++) {
-      csvContent += `${position},`;
+    // Header row with round numbers
+    csvContent += "Mjesto / Dijeljenje,";
+    for (let round = 1; round <= selectedProductType.samples.length; round++) {
+      csvContent += `Dijeljenje ${round},`;
     }
     csvContent += "\n";
     
-    const rounds = selectedProductType.samples.length;
-    for (let round = 1; round <= rounds; round++) {
-      csvContent += `Dijeljenje ${round},`;
-      for (let position = 1; position <= 12; position++) {
+    // Data rows for each position
+    for (let position = 1; position <= 12; position++) {
+      csvContent += `Mjesto ${position},`;
+      for (let round = 1; round <= selectedProductType.samples.length; round++) {
         csvContent += `${randomizationTable[position]?.[round] || ""},`;
       }
       csvContent += "\n";

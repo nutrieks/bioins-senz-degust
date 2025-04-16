@@ -17,6 +17,7 @@ interface ProductTypesTabProps {
   samples: Array<{ brand: string; retailerCode: RetailerCode }>;
   isUpdating: boolean;
   onViewRandomization: (productType: ProductType) => void;
+  onGenerateRandomization: (productTypeId: string) => void;
   onToggleAddProductForm: () => void;
   onSelectedProductTypeIdChange: (id: string) => void;
   onBaseCodeChange: (code: string) => void;
@@ -41,6 +42,7 @@ export function ProductTypesTab({
   samples,
   isUpdating,
   onViewRandomization,
+  onGenerateRandomization,
   onToggleAddProductForm,
   onSelectedProductTypeIdChange,
   onBaseCodeChange,
@@ -117,6 +119,7 @@ export function ProductTypesTab({
             <ProductTypesList 
               productTypes={productTypes} 
               onViewRandomization={onViewRandomization} 
+              onGenerateRandomization={onGenerateRandomization} 
             />
           </div>
         )}

@@ -40,6 +40,9 @@ export function RandomizationTable({
   
   // Determine how many rounds/distributions we have
   const rounds = selectedProductType.samples.length;
+  
+  // Create an array of round numbers (1 to rounds)
+  const roundNumbers = Array.from({ length: rounds }, (_, i) => i + 1);
 
   return (
     <div className="space-y-4 print:space-y-2">
@@ -123,18 +126,18 @@ export function RandomizationTable({
             </TableCaption>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-24">Dijeljenje / Mjesto</TableHead>
-                {positions.map((position) => (
-                  <TableHead key={position} className="text-center">{position}</TableHead>
+                <TableHead className="w-24">Mjesto / Dijeljenje</TableHead>
+                {roundNumbers.map((round) => (
+                  <TableHead key={round} className="text-center">Dijeljenje {round}</TableHead>
                 ))}
               </TableRow>
             </TableHeader>
             <TableBody>
-              {Array.from({ length: rounds }, (_, i) => i + 1).map((round) => (
-                <TableRow key={round}>
-                  <TableCell className="font-medium">Dijeljenje {round}</TableCell>
-                  {positions.map((position) => (
-                    <TableCell key={position} className="text-center">
+              {positions.map((position) => (
+                <TableRow key={position}>
+                  <TableCell className="font-medium">Mjesto {position}</TableCell>
+                  {roundNumbers.map((round) => (
+                    <TableCell key={round} className="text-center">
                       {randomizationTable?.[position]?.[round] || "-"}
                     </TableCell>
                   ))}

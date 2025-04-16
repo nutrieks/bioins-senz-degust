@@ -6,11 +6,13 @@ import { Shuffle } from "lucide-react";
 interface ProductTypesListProps {
   productTypes: ProductType[];
   onViewRandomization: (productType: ProductType) => void;
+  onGenerateRandomization: (productTypeId: string) => void;
 }
 
 export function ProductTypesList({
   productTypes,
   onViewRandomization,
+  onGenerateRandomization,
 }: ProductTypesListProps) {
   return (
     <div className="space-y-2">
@@ -26,15 +28,28 @@ export function ProductTypesList({
             </span>
           </div>
           <div className="flex items-center space-x-2">
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => onViewRandomization(productType)}
-              className="flex items-center"
-            >
-              <Shuffle className="mr-1 h-4 w-4" />
-              Randomizacija
-            </Button>
+            {productType.hasRandomization ? (
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => onViewRandomization(productType)}
+                className="flex items-center"
+              >
+                <Shuffle className="mr-1 h-4 w-4" />
+                Randomizacija
+              </Button>
+            ) : (
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => onGenerateRandomization(productType.id)}
+                disabled={productType.samples.length === 0}
+                className="flex items-center"
+              >
+                <Shuffle className="mr-1 h-4 w-4" />
+                Randomizacija
+              </Button>
+            )}
           </div>
         </div>
       ))}
