@@ -1,6 +1,6 @@
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { CheckCircle } from "lucide-react";
 
 interface CompletionMessageProps {
@@ -9,19 +9,17 @@ interface CompletionMessageProps {
 
 export function CompletionMessage({ onReturn }: CompletionMessageProps) {
   return (
-    <Card className="max-w-md mx-auto my-16">
-      <CardHeader className="text-center">
-        <CheckCircle className="w-16 h-16 mx-auto text-green-500 mb-4" />
-        <CardTitle className="text-2xl">Ocjenjivanje završeno</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <p className="text-center">
-          Uspješno ste završili ocjenjivanje svih uzoraka. Hvala na sudjelovanju!
+    <Card className="my-8 max-w-lg mx-auto">
+      <CardContent className="p-8 flex flex-col items-center text-center">
+        <CheckCircle className="h-16 w-16 text-primary mb-4" />
+        <h2 className="text-2xl font-bold mb-4">Ocjenjivanje završeno</h2>
+        <p className="text-muted-foreground mb-6">
+          Završili ste s ocjenjivanjem za danas. Hvala na vašem sudjelovanju!
         </p>
+        <Button size="lg" onClick={onReturn}>
+          Povratak na početnu
+        </Button>
       </CardContent>
-      <CardFooter className="flex justify-center">
-        <Button onClick={onReturn}>Povratak na početnu</Button>
-      </CardFooter>
     </Card>
   );
 }
