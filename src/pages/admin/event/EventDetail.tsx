@@ -54,7 +54,7 @@ export default function EventDetail() {
       // Add hasRandomization property to each product type
       const updatedProductTypes = eventData.productTypes.map((pt: ProductType) => ({
         ...pt,
-        hasRandomization: !!pt.randomizationGenerated
+        hasRandomization: !!pt.hasRandomization
       }));
       
       setEvent({

@@ -291,6 +291,9 @@ export async function createRandomization(productTypeId: string): Promise<Random
   
   randomizations.push(randomization);
   
+  // Set the hasRandomization property on the product type
+  productType.hasRandomization = true;
+  
   // Update product's event status
   const event = events.find(e => e.id === productType.eventId);
   if (event) {

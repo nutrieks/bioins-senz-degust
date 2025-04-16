@@ -1,4 +1,3 @@
-
 export enum UserRole {
   ADMIN = "admin",
   EVALUATOR = "evaluator"
@@ -48,6 +47,7 @@ export type ProductType = {
   jarAttributes: JARAttribute[];
   displayOrder: number; // For ordering within an event
   baseProductTypeId?: string; // Reference to the base product type
+  hasRandomization?: boolean; // Flag to indicate if randomization has been generated
 };
 
 export type BaseProductType = {
