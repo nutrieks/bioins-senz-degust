@@ -247,11 +247,11 @@ export function EvaluationForm({ eventId, productTypeId, onComplete }: Evaluatio
                               onValueChange={field.onChange}
                               defaultValue={field.value}
                             >
-                              {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((value) => (
+                              {[9, 8, 7, 6, 5, 4, 3, 2, 1].map((value, index) => (
                                 <HedonicRadioItem 
                                   key={`appearance-${value}`}
                                   value={value.toString()}
-                                  label={HEDONIC_LABELS[9-value]}
+                                  label={HEDONIC_LABELS[index]}
                                 />
                               ))}
                             </HedonicRadioGroup>
@@ -271,11 +271,11 @@ export function EvaluationForm({ eventId, productTypeId, onComplete }: Evaluatio
                               onValueChange={field.onChange}
                               defaultValue={field.value}
                             >
-                              {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((value) => (
+                              {[9, 8, 7, 6, 5, 4, 3, 2, 1].map((value, index) => (
                                 <HedonicRadioItem 
                                   key={`odor-${value}`}
                                   value={value.toString()}
-                                  label={HEDONIC_LABELS[9-value]}
+                                  label={HEDONIC_LABELS[index]}
                                 />
                               ))}
                             </HedonicRadioGroup>
@@ -295,11 +295,11 @@ export function EvaluationForm({ eventId, productTypeId, onComplete }: Evaluatio
                               onValueChange={field.onChange}
                               defaultValue={field.value}
                             >
-                              {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((value) => (
+                              {[9, 8, 7, 6, 5, 4, 3, 2, 1].map((value, index) => (
                                 <HedonicRadioItem 
                                   key={`texture-${value}`}
                                   value={value.toString()}
-                                  label={HEDONIC_LABELS[9-value]}
+                                  label={HEDONIC_LABELS[index]}
                                 />
                               ))}
                             </HedonicRadioGroup>
@@ -319,11 +319,11 @@ export function EvaluationForm({ eventId, productTypeId, onComplete }: Evaluatio
                               onValueChange={field.onChange}
                               defaultValue={field.value}
                             >
-                              {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((value) => (
+                              {[9, 8, 7, 6, 5, 4, 3, 2, 1].map((value, index) => (
                                 <HedonicRadioItem 
                                   key={`flavor-${value}`}
                                   value={value.toString()}
-                                  label={HEDONIC_LABELS[9-value]}
+                                  label={HEDONIC_LABELS[index]}
                                 />
                               ))}
                             </HedonicRadioGroup>
@@ -345,11 +345,11 @@ export function EvaluationForm({ eventId, productTypeId, onComplete }: Evaluatio
                               onValueChange={field.onChange}
                               defaultValue={field.value}
                             >
-                              {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((value) => (
+                              {[9, 8, 7, 6, 5, 4, 3, 2, 1].map((value, index) => (
                                 <HedonicRadioItem 
                                   key={`overallLiking-${value}`}
                                   value={value.toString()}
-                                  label={HEDONIC_LABELS[9-value]}
+                                  label={HEDONIC_LABELS[index]}
                                 />
                               ))}
                             </HedonicRadioGroup>
@@ -362,7 +362,7 @@ export function EvaluationForm({ eventId, productTypeId, onComplete }: Evaluatio
               </Card>
 
               {/* JAR skala */}
-              {currentJARAttributes.length > 0 && (
+              {currentJARAttributes && currentJARAttributes.length > 0 && (
                 <Card>
                   <CardHeader className="border-b">
                     <CardTitle>JAR skala (Just About Right)</CardTitle>

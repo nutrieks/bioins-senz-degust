@@ -55,6 +55,8 @@ export const EvaluationProvider: React.FC<{
           }
         } catch (error) {
           console.error("Error updating JAR attributes:", error);
+          // Set empty array to avoid undefined
+          setCurrentJARAttributes([]);
         }
       }
     };
@@ -100,6 +102,10 @@ export const EvaluationProvider: React.FC<{
             setAllProductTypes(types);
           }
         }
+        
+        // Explicitly load JAR attributes
+        const attributes = await getJARAttributes(sample.productTypeId);
+        setCurrentJARAttributes(attributes);
       }
 
       // Ako su svi uzorci ovog tipa proizvoda ocijenjeni, prikaži otkrivanje

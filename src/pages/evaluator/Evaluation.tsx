@@ -7,7 +7,6 @@ import { CompletionMessage } from "@/components/evaluation/CompletionMessage";
 import { SampleRevealScreen } from "@/components/evaluation/SampleRevealScreen";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
-import { useEvaluation } from "@/contexts/EvaluationContext";
 import { getEvent, getJARAttributes, getProductTypes } from "@/services/dataService";
 import { EvaluationProvider } from "@/contexts/EvaluationContext";
 import { JARAttribute, ProductType } from "@/types";
