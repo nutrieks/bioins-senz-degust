@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { Sample, JARAttribute, ProductType } from "../types";
-import { getNextSample, getCompletedEvaluations, getProductTypes } from "../services/dataService";
+import { getNextSample, getCompletedEvaluations, getProductTypes, getJARAttributes } from "../services/dataService";
 import { useAuth } from "./AuthContext";
 
 interface EvaluationContextType {
@@ -36,14 +36,30 @@ export const EvaluationProvider: React.FC<{
   const [remainingProductTypes, setRemainingProductTypes] = useState<ProductType[]>([]);
   const [allProductTypes, setAllProductTypes] = useState<ProductType[]>([]);
 
-  // Load completed samples on mount or when user changes
+  // Update JAR attributes when current sample changes
   useEffect(() => {
-    if (currentSample && jarAttributes.length > 0) {
-      const relevantAttributes = jarAttributes.filter(
-        (attr) => attr.productTypeId === currentSample.productTypeId
-      );
-      setCurrentJARAttributes(relevantAttributes);
-    }
+    const updateJARAttributes = async () => {
+      if (currentSample && currentSample.productTypeId) {
+        try {
+          // First check if we have attributes in the jarAttributes prop
+          const relevantAttributes = jarAttributes.filter(
+            (attr) => attr.productTypeId === currentSample.productTypeId
+          );
+          
+          // If we don't have any attributes in the prop, fetch them from the server
+          if (relevantAttributes.length === 0) {
+            const fetchedAttributes = await getJARAttributes(currentSample.productTypeId);
+            setCurrentJARAttributes(fetchedAttributes);
+          } else {
+            setCurrentJARAttributes(relevantAttributes);
+          }
+        } catch (error) {
+          console.error("Error updating JAR attributes:", error);
+        }
+      }
+    };
+    
+    updateJARAttributes();
   }, [currentSample, jarAttributes]);
 
   // Funkcija za učitavanje sljedećeg uzorka
@@ -66,18 +82,22 @@ export const EvaluationProvider: React.FC<{
       setCurrentSample(sample);
       setCurrentRound(round);
       
-      // Ako imamo uzorak, ažuriraj JAR atribute i postavi trenutni tip proizvoda
+      // Ako imamo uzorak, pronađi i postavi trenutni tip proizvoda
       if (sample) {
-        const relevantAttributes = jarAttributes.filter(
-          (attr) => attr.productTypeId === sample.productTypeId
-        );
-        setCurrentJARAttributes(relevantAttributes);
-
-        // Pronađi i postavi trenutni tip proizvoda
+        // Ako smo već učitali sve tipove proizvoda, pronađi odgovarajući
         if (allProductTypes.length > 0) {
           const productType = allProductTypes.find(pt => pt.id === sample.productTypeId);
           if (productType) {
             setCurrentProductType(productType);
+          }
+        } 
+        // Inače, učitaj tip proizvoda direktno
+        else if (productTypeId) {
+          const types = await getProductTypes(eventId);
+          const productType = types.find(pt => pt.id === productTypeId);
+          if (productType) {
+            setCurrentProductType(productType);
+            setAllProductTypes(types);
           }
         }
       }

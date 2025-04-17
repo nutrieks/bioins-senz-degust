@@ -46,15 +46,15 @@ type FormData = {
 
 // Opis za hedonističku skalu s brojevima u zagradama
 const HEDONIC_LABELS = [
-  "Iznimno mi se ne sviđa (1)",
-  "Vrlo mi se ne sviđa (2)",
-  "Umjereno mi se ne sviđa (3)",
-  "Lagano mi se ne sviđa (4)",
-  "Niti mi se sviđa niti mi se ne sviđa (5)",
-  "Lagano mi se sviđa (6)",
-  "Umjereno mi se sviđa (7)",
+  "Iznimno mi se sviđa (9)",
   "Vrlo mi se sviđa (8)",
-  "Iznimno mi se sviđa (9)"
+  "Umjereno mi se sviđa (7)",
+  "Lagano mi se sviđa (6)",
+  "Niti mi se sviđa niti mi se ne sviđa (5)",
+  "Lagano mi se ne sviđa (4)",
+  "Umjereno mi se ne sviđa (3)",
+  "Vrlo mi se ne sviđa (2)",
+  "Iznimno mi se ne sviđa (1)"
 ];
 
 export function EvaluationForm({ eventId, productTypeId, onComplete }: EvaluationFormProps) {
@@ -247,7 +247,7 @@ export function EvaluationForm({ eventId, productTypeId, onComplete }: Evaluatio
                               onValueChange={field.onChange}
                               defaultValue={field.value}
                             >
-                              {[9, 8, 7, 6, 5, 4, 3, 2, 1].map((value, index) => (
+                              {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((value) => (
                                 <HedonicRadioItem 
                                   key={`appearance-${value}`}
                                   value={value.toString()}
@@ -271,7 +271,7 @@ export function EvaluationForm({ eventId, productTypeId, onComplete }: Evaluatio
                               onValueChange={field.onChange}
                               defaultValue={field.value}
                             >
-                              {[9, 8, 7, 6, 5, 4, 3, 2, 1].map((value, index) => (
+                              {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((value) => (
                                 <HedonicRadioItem 
                                   key={`odor-${value}`}
                                   value={value.toString()}
@@ -295,7 +295,7 @@ export function EvaluationForm({ eventId, productTypeId, onComplete }: Evaluatio
                               onValueChange={field.onChange}
                               defaultValue={field.value}
                             >
-                              {[9, 8, 7, 6, 5, 4, 3, 2, 1].map((value, index) => (
+                              {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((value) => (
                                 <HedonicRadioItem 
                                   key={`texture-${value}`}
                                   value={value.toString()}
@@ -319,7 +319,7 @@ export function EvaluationForm({ eventId, productTypeId, onComplete }: Evaluatio
                               onValueChange={field.onChange}
                               defaultValue={field.value}
                             >
-                              {[9, 8, 7, 6, 5, 4, 3, 2, 1].map((value, index) => (
+                              {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((value) => (
                                 <HedonicRadioItem 
                                   key={`flavor-${value}`}
                                   value={value.toString()}
@@ -345,7 +345,7 @@ export function EvaluationForm({ eventId, productTypeId, onComplete }: Evaluatio
                               onValueChange={field.onChange}
                               defaultValue={field.value}
                             >
-                              {[9, 8, 7, 6, 5, 4, 3, 2, 1].map((value, index) => (
+                              {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((value) => (
                                 <HedonicRadioItem 
                                   key={`overallLiking-${value}`}
                                   value={value.toString()}
@@ -361,7 +361,7 @@ export function EvaluationForm({ eventId, productTypeId, onComplete }: Evaluatio
                 </CardContent>
               </Card>
 
-              {/* JAR skala - filtriraj da ne uključuje nepotrebne atribute */}
+              {/* JAR skala */}
               {currentJARAttributes.length > 0 && (
                 <Card>
                   <CardHeader className="border-b">
@@ -369,10 +369,7 @@ export function EvaluationForm({ eventId, productTypeId, onComplete }: Evaluatio
                   </CardHeader>
                   <CardContent className="p-6">
                     <div className="space-y-8">
-                      {currentJARAttributes.filter(attr => 
-                        // Filtriranje nepotrebnih atributa
-                        !attr.nameHR.toLowerCase().includes("intenzitet mirisa dima")
-                      ).map((attribute) => (
+                      {currentJARAttributes.map((attribute) => (
                         <FormField
                           key={attribute.id}
                           control={form.control}
@@ -385,11 +382,11 @@ export function EvaluationForm({ eventId, productTypeId, onComplete }: Evaluatio
                                   onValueChange={field.onChange}
                                   defaultValue={field.value}
                                 >
-                                  {[5, 4, 3, 2, 1].map((value) => (
+                                  {[1, 2, 3, 4, 5].map((value) => (
                                     <JARRadioItem
                                       key={`${attribute.id}-${value}`}
                                       value={value.toString()}
-                                      label={attribute.scaleHR[5-value]}
+                                      label={attribute.scaleHR[value-1]}
                                     />
                                   ))}
                                 </JARRadioGroup>

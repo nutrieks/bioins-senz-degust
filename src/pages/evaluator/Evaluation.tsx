@@ -39,7 +39,7 @@ export default function Evaluation() {
         // Set event date
         const date = new Date(event.date);
         setEventDate(date.toLocaleDateString('hr-HR'));
-        setEventName(date.toLocaleDateString('hr-HR'));
+        setEventName(event.date); // Store the full date string for display
 
         // Dohvati sve tipove proizvoda za događaj
         const types = await getProductTypes(eventId);
