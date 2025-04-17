@@ -8,7 +8,7 @@ import { SampleRevealScreen } from "@/components/evaluation/SampleRevealScreen";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
 import { getEvent, getJARAttributes, getProductTypes } from "@/services/dataService";
-import { EvaluationProvider, useEvaluation } from "@/contexts/EvaluationContext"; // Added useEvaluation import
+import { EvaluationProvider, useEvaluation } from "@/contexts/EvaluationContext";
 import { JARAttribute, ProductType } from "@/types";
 
 export default function Evaluation() {
@@ -48,6 +48,7 @@ export default function Evaluation() {
         const allAttributes: JARAttribute[] = [];
         for (const productType of types) {
           const attributes = await getJARAttributes(productType.id);
+          console.log("Fetched attributes for product type:", productType.id, attributes);
           allAttributes.push(...attributes);
         }
         setJarAttributes(allAttributes);
@@ -125,7 +126,7 @@ function EvaluationContent({
     if (!initialized) {
       initializeEvaluation();
     }
-  }, [eventId, loadNextSample, loadNextProductType, initialized]);
+  }, [eventId, loadNextProductType, initialized]);
 
   const handleReturn = () => {
     navigate("/evaluator");

@@ -71,6 +71,7 @@ const HedonicRadioItem = React.forwardRef<
           "h-6 w-6 rounded-full border border-primary text-primary shadow ring-offset-background focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
           className
         )}
+        id={`radio-${value}-${Math.random().toString(36).substring(2, 9)}`}
         {...props}
       >
         <RadioGroupPrimitive.Indicator className="flex items-center justify-center">
@@ -78,7 +79,7 @@ const HedonicRadioItem = React.forwardRef<
         </RadioGroupPrimitive.Indicator>
       </RadioGroupPrimitive.Item>
       {label && (
-        <span className="text-sm font-medium">{label}</span>
+        <span className="text-sm font-medium flex-1">{label}</span>
       )}
     </label>
   )
@@ -116,13 +117,14 @@ const JARRadioItem = React.forwardRef<
           "h-6 w-6 rounded-full border border-primary text-primary shadow ring-offset-background focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
           className
         )}
+        id={`radio-jar-${value}-${Math.random().toString(36).substring(2, 9)}`}
         {...props}
       >
         <RadioGroupPrimitive.Indicator className="flex items-center justify-center">
           <Circle className="h-3.5 w-3.5 fill-current text-current" />
         </RadioGroupPrimitive.Indicator>
       </RadioGroupPrimitive.Item>
-      <span className="text-sm font-medium">{label}</span>
+      <span className="text-sm font-medium flex-1">{label}</span>
     </label>
   )
 })

@@ -72,6 +72,7 @@ export function EvaluationForm({ eventId, productTypeId, onComplete }: Evaluatio
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [eventDate, setEventDate] = useState<string>("");
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [formKey, setFormKey] = useState<number>(Date.now()); // Key to force form reset
   
   // HEDONIC_LABELS poredani od 9 (najbolje) do 1 (najgore)
   const HEDONIC_LABELS = [
@@ -97,8 +98,26 @@ export function EvaluationForm({ eventId, productTypeId, onComplete }: Evaluatio
         overallLiking: ""
       },
       jar: {}
-    }
+    },
+    // Use formKey in form to force re-initialization
+    key: formKey.toString()
   });
+  
+  // Reset form when current sample changes
+  useEffect(() => {
+    form.reset({
+      hedonic: {
+        appearance: "",
+        odor: "",
+        texture: "",
+        flavor: "",
+        overallLiking: ""
+      },
+      jar: {}
+    });
+    // Update the form key to force re-rendering of radio inputs
+    setFormKey(Date.now());
+  }, [currentSample, form]);
   
   // Dohvati datum događaja
   useEffect(() => {
@@ -160,7 +179,7 @@ export function EvaluationForm({ eventId, productTypeId, onComplete }: Evaluatio
         description: `Uspješno ste ocijenili uzorak ${currentSample.blindCode}.`,
       });
       
-      // Resetiranje obrasca
+      // Completely reset the form
       form.reset({
         hedonic: {
           appearance: "",
@@ -171,6 +190,9 @@ export function EvaluationForm({ eventId, productTypeId, onComplete }: Evaluatio
         },
         jar: {}
       });
+      
+      // Generate a new key to force radio buttons to reset
+      setFormKey(Date.now());
       
       // Učitaj sljedeći uzorak nakon kratke pauze
       setTimeout(() => {
@@ -250,7 +272,7 @@ export function EvaluationForm({ eventId, productTypeId, onComplete }: Evaluatio
         </Card>
         
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)}>
+          <form onSubmit={form.handleSubmit(onSubmit)} key={formKey}>
             <div className="space-y-10">
               {/* Hedonistička skala */}
               <Card>
@@ -272,7 +294,7 @@ export function EvaluationForm({ eventId, productTypeId, onComplete }: Evaluatio
                             >
                               {[9, 8, 7, 6, 5, 4, 3, 2, 1].map((value, index) => (
                                 <HedonicRadioItem 
-                                  key={`appearance-${value}`}
+                                  key={`appearance-${value}-${formKey}`}
                                   value={value.toString()}
                                   label={HEDONIC_LABELS[index]}
                                 />
@@ -296,7 +318,7 @@ export function EvaluationForm({ eventId, productTypeId, onComplete }: Evaluatio
                             >
                               {[9, 8, 7, 6, 5, 4, 3, 2, 1].map((value, index) => (
                                 <HedonicRadioItem 
-                                  key={`odor-${value}`}
+                                  key={`odor-${value}-${formKey}`}
                                   value={value.toString()}
                                   label={HEDONIC_LABELS[index]}
                                 />
@@ -320,7 +342,7 @@ export function EvaluationForm({ eventId, productTypeId, onComplete }: Evaluatio
                             >
                               {[9, 8, 7, 6, 5, 4, 3, 2, 1].map((value, index) => (
                                 <HedonicRadioItem 
-                                  key={`texture-${value}`}
+                                  key={`texture-${value}-${formKey}`}
                                   value={value.toString()}
                                   label={HEDONIC_LABELS[index]}
                                 />
@@ -344,7 +366,7 @@ export function EvaluationForm({ eventId, productTypeId, onComplete }: Evaluatio
                             >
                               {[9, 8, 7, 6, 5, 4, 3, 2, 1].map((value, index) => (
                                 <HedonicRadioItem 
-                                  key={`flavor-${value}`}
+                                  key={`flavor-${value}-${formKey}`}
                                   value={value.toString()}
                                   label={HEDONIC_LABELS[index]}
                                 />
@@ -370,7 +392,7 @@ export function EvaluationForm({ eventId, productTypeId, onComplete }: Evaluatio
                             >
                               {[9, 8, 7, 6, 5, 4, 3, 2, 1].map((value, index) => (
                                 <HedonicRadioItem 
-                                  key={`overallLiking-${value}`}
+                                  key={`overallLiking-${value}-${formKey}`}
                                   value={value.toString()}
                                   label={HEDONIC_LABELS[index]}
                                 />
@@ -394,7 +416,7 @@ export function EvaluationForm({ eventId, productTypeId, onComplete }: Evaluatio
                     <div className="space-y-8">
                       {currentJARAttributes.map((attribute) => (
                         <FormField
-                          key={attribute.id}
+                          key={`jar-${attribute.id}-${formKey}`}
                           control={form.control}
                           name={`jar.${attribute.id}`}
                           render={({ field }) => (
@@ -407,7 +429,7 @@ export function EvaluationForm({ eventId, productTypeId, onComplete }: Evaluatio
                                 >
                                   {[1, 2, 3, 4, 5].map((value) => (
                                     <JARRadioItem
-                                      key={`${attribute.id}-${value}`}
+                                      key={`${attribute.id}-${value}-${formKey}`}
                                       value={value.toString()}
                                       label={attribute.scaleHR[value-1]}
                                     />

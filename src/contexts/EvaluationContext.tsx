@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { Sample, JARAttribute, ProductType } from "../types";
 import { getNextSample, getCompletedEvaluations, getProductTypes, getJARAttributes } from "../services/dataService";
@@ -22,8 +23,8 @@ const EvaluationContext = createContext<EvaluationContextType | undefined>(undef
 
 export const EvaluationProvider: React.FC<{
   children: React.ReactNode;
-  jarAttributes: JARAttribute[];
-}> = ({ children, jarAttributes }) => {
+  jarAttributes?: JARAttribute[];
+}> = ({ children, jarAttributes = [] }) => {
   const { user } = useAuth();
   const [currentSample, setCurrentSample] = useState<Sample | null>(null);
   const [currentRound, setCurrentRound] = useState<number>(0);
@@ -35,12 +36,14 @@ export const EvaluationProvider: React.FC<{
   const [remainingProductTypes, setRemainingProductTypes] = useState<ProductType[]>([]);
   const [allProductTypes, setAllProductTypes] = useState<ProductType[]>([]);
 
+  // Ensure JAR attributes are loaded correctly when currentSample changes
   useEffect(() => {
     const updateJARAttributes = async () => {
       if (currentSample && currentSample.productTypeId) {
         try {
+          // Directly fetch the JAR attributes from the database for this product type
           const fetchedAttributes = await getJARAttributes(currentSample.productTypeId);
-          console.log("Fetched JAR attributes:", fetchedAttributes);
+          console.log("Fetched JAR attributes for product type:", currentSample.productTypeId, fetchedAttributes);
           setCurrentJARAttributes(fetchedAttributes);
         } catch (error) {
           console.error("Error updating JAR attributes:", error);
@@ -84,7 +87,9 @@ export const EvaluationProvider: React.FC<{
           }
         }
         
+        // Ensure JAR attributes are loaded immediately
         const attributes = await getJARAttributes(sample.productTypeId);
+        console.log("Loading JAR attributes for new sample:", attributes);
         setCurrentJARAttributes(attributes);
       }
 
