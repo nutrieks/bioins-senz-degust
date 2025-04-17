@@ -65,18 +65,17 @@ export const EvaluationProvider: React.FC<{
 
       setCurrentSample(sample);
       setCurrentRound(round);
-      setIsComplete(complete);
-
-      // Update JAR attributes if we have a sample
+      
+      // Ako imamo uzorak, ažuriraj JAR atribute i postavi trenutni tip proizvoda
       if (sample) {
         const relevantAttributes = jarAttributes.filter(
           (attr) => attr.productTypeId === sample.productTypeId
         );
         setCurrentJARAttributes(relevantAttributes);
 
-        // Postavi trenutni tip proizvoda
-        if (productTypeId && allProductTypes.length > 0) {
-          const productType = allProductTypes.find(pt => pt.id === productTypeId);
+        // Pronađi i postavi trenutni tip proizvoda
+        if (allProductTypes.length > 0) {
+          const productType = allProductTypes.find(pt => pt.id === sample.productTypeId);
           if (productType) {
             setCurrentProductType(productType);
           }
@@ -85,7 +84,10 @@ export const EvaluationProvider: React.FC<{
 
       // Ako su svi uzorci ovog tipa proizvoda ocijenjeni, prikaži otkrivanje
       if (complete && productTypeId) {
+        setIsComplete(false); // Ne označavamo kao potpuno završeno, samo ovaj tip proizvoda
         setShowSampleReveal(true);
+      } else {
+        setIsComplete(complete);
       }
     } catch (error) {
       console.error("Error loading next sample:", error);

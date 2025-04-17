@@ -18,6 +18,7 @@ export default function Evaluation() {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [eventName, setEventName] = useState("");
+  const [eventDate, setEventDate] = useState("");
   const [jarAttributes, setJarAttributes] = useState<JARAttribute[]>([]);
   const [productTypes, setProductTypes] = useState<ProductType[]>([]);
 
@@ -35,8 +36,10 @@ export default function Evaluation() {
           return;
         }
 
-        // Set event name (date)
-        setEventName(new Date(event.date).toLocaleDateString());
+        // Set event date
+        const date = new Date(event.date);
+        setEventDate(date.toLocaleDateString('hr-HR'));
+        setEventName(date.toLocaleDateString('hr-HR'));
 
         // Dohvati sve tipove proizvoda za događaj
         const types = await getProductTypes(eventId);
@@ -75,7 +78,8 @@ export default function Evaluation() {
         <EvaluationProvider jarAttributes={jarAttributes}>
           <EvaluationContent 
             eventId={eventId || ""} 
-            eventName={eventName} 
+            eventName={eventName}
+            eventDate={eventDate}
             productTypes={productTypes}
           />
         </EvaluationProvider>
@@ -87,10 +91,12 @@ export default function Evaluation() {
 function EvaluationContent({ 
   eventId, 
   eventName,
+  eventDate,
   productTypes
 }: { 
   eventId: string; 
   eventName: string;
+  eventDate: string;
   productTypes: ProductType[];
 }) {
   const navigate = useNavigate();
@@ -100,7 +106,8 @@ function EvaluationContent({
     loadNextProductType,
     currentProductType,
     showSampleReveal,
-    setShowSampleReveal
+    setShowSampleReveal,
+    currentSample
   } = useEvaluation();
   const [initialized, setInitialized] = useState(false);
 

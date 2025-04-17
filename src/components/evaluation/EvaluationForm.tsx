@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { format } from "date-fns";
@@ -55,9 +56,6 @@ const HEDONIC_LABELS = [
   "Vrlo mi se sviđa (8)",
   "Iznimno mi se sviđa (9)"
 ];
-
-// Definirajmo koje oznake prikazati (šparamo prostor)
-const VISIBLE_LABELS = [0, 2, 4, 6, 8]; // Indeksi za koje pokazujemo puni tekst
 
 export function EvaluationForm({ eventId, productTypeId, onComplete }: EvaluationFormProps) {
   const { user } = useAuth();
@@ -208,9 +206,9 @@ export function EvaluationForm({ eventId, productTypeId, onComplete }: Evaluatio
   
   return (
     <ScrollArea className="h-[calc(100vh-240px)]">
-      <div className="evaluation-form container max-w-4xl px-4 py-6">
+      <div className="evaluation-form container max-w-5xl px-4 py-6">
         <Card className="mb-8">
-          <CardHeader className="text-center">
+          <CardHeader className="text-center bg-[#F1F0FB] rounded-t-lg">
             <CardTitle className="text-2xl">
               {currentSample.blindCode}
             </CardTitle>
@@ -233,28 +231,27 @@ export function EvaluationForm({ eventId, productTypeId, onComplete }: Evaluatio
             <div className="space-y-10">
               {/* Hedonistička skala */}
               <Card>
-                <CardHeader>
-                  <CardTitle>Hedonistička skala</CardTitle>
+                <CardHeader className="border-b">
+                  <CardTitle>Hedonistička Skala</CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="space-y-8">
+                <CardContent className="p-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-10">
                     <FormField
                       control={form.control}
                       name="hedonic.appearance"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-lg font-semibold">Izgled</FormLabel>
-                          <div className="mt-3">
+                          <FormLabel className="text-lg font-semibold">Izgled:</FormLabel>
+                          <div className="mt-2">
                             <HedonicRadioGroup 
                               onValueChange={field.onChange}
                               defaultValue={field.value}
                             >
-                              {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((value, index) => (
+                              {[9, 8, 7, 6, 5, 4, 3, 2, 1].map((value, index) => (
                                 <HedonicRadioItem 
                                   key={`appearance-${value}`}
                                   value={value.toString()}
-                                  label={VISIBLE_LABELS.includes(index) ? HEDONIC_LABELS[index] : undefined}
-                                  number={value.toString()}
+                                  label={HEDONIC_LABELS[9-value]}
                                 />
                               ))}
                             </HedonicRadioGroup>
@@ -268,18 +265,17 @@ export function EvaluationForm({ eventId, productTypeId, onComplete }: Evaluatio
                       name="hedonic.odor"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-lg font-semibold">Miris</FormLabel>
-                          <div className="mt-3">
+                          <FormLabel className="text-lg font-semibold">Miris:</FormLabel>
+                          <div className="mt-2">
                             <HedonicRadioGroup 
                               onValueChange={field.onChange}
                               defaultValue={field.value}
                             >
-                              {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((value, index) => (
+                              {[9, 8, 7, 6, 5, 4, 3, 2, 1].map((value, index) => (
                                 <HedonicRadioItem 
                                   key={`odor-${value}`}
                                   value={value.toString()}
-                                  label={VISIBLE_LABELS.includes(index) ? HEDONIC_LABELS[index] : undefined}
-                                  number={value.toString()}
+                                  label={HEDONIC_LABELS[9-value]}
                                 />
                               ))}
                             </HedonicRadioGroup>
@@ -293,18 +289,17 @@ export function EvaluationForm({ eventId, productTypeId, onComplete }: Evaluatio
                       name="hedonic.texture"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-lg font-semibold">Tekstura</FormLabel>
-                          <div className="mt-3">
+                          <FormLabel className="text-lg font-semibold">Tekstura:</FormLabel>
+                          <div className="mt-2">
                             <HedonicRadioGroup 
                               onValueChange={field.onChange}
                               defaultValue={field.value}
                             >
-                              {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((value, index) => (
+                              {[9, 8, 7, 6, 5, 4, 3, 2, 1].map((value, index) => (
                                 <HedonicRadioItem 
                                   key={`texture-${value}`}
                                   value={value.toString()}
-                                  label={VISIBLE_LABELS.includes(index) ? HEDONIC_LABELS[index] : undefined}
-                                  number={value.toString()}
+                                  label={HEDONIC_LABELS[9-value]}
                                 />
                               ))}
                             </HedonicRadioGroup>
@@ -318,18 +313,17 @@ export function EvaluationForm({ eventId, productTypeId, onComplete }: Evaluatio
                       name="hedonic.flavor"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-lg font-semibold">Okus</FormLabel>
-                          <div className="mt-3">
+                          <FormLabel className="text-lg font-semibold">Okus:</FormLabel>
+                          <div className="mt-2">
                             <HedonicRadioGroup 
                               onValueChange={field.onChange}
                               defaultValue={field.value}
                             >
-                              {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((value, index) => (
+                              {[9, 8, 7, 6, 5, 4, 3, 2, 1].map((value, index) => (
                                 <HedonicRadioItem 
                                   key={`flavor-${value}`}
                                   value={value.toString()}
-                                  label={VISIBLE_LABELS.includes(index) ? HEDONIC_LABELS[index] : undefined}
-                                  number={value.toString()}
+                                  label={HEDONIC_LABELS[9-value]}
                                 />
                               ))}
                             </HedonicRadioGroup>
@@ -337,24 +331,25 @@ export function EvaluationForm({ eventId, productTypeId, onComplete }: Evaluatio
                         </FormItem>
                       )}
                     />
-                    
+                  </div>
+                  
+                  <div className="mt-10">
                     <FormField
                       control={form.control}
                       name="hedonic.overallLiking"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-lg font-semibold">Ukupni dojam</FormLabel>
-                          <div className="mt-3">
+                          <FormLabel className="text-lg font-semibold">Ukupni dojam:</FormLabel>
+                          <div className="mt-2">
                             <HedonicRadioGroup 
                               onValueChange={field.onChange}
                               defaultValue={field.value}
                             >
-                              {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((value, index) => (
+                              {[9, 8, 7, 6, 5, 4, 3, 2, 1].map((value, index) => (
                                 <HedonicRadioItem 
                                   key={`overallLiking-${value}`}
                                   value={value.toString()}
-                                  label={VISIBLE_LABELS.includes(index) ? HEDONIC_LABELS[index] : undefined}
-                                  number={value.toString()}
+                                  label={HEDONIC_LABELS[9-value]}
                                 />
                               ))}
                             </HedonicRadioGroup>
@@ -369,10 +364,10 @@ export function EvaluationForm({ eventId, productTypeId, onComplete }: Evaluatio
               {/* JAR skala - filtriraj da ne uključuje nepotrebne atribute */}
               {currentJARAttributes.length > 0 && (
                 <Card>
-                  <CardHeader>
+                  <CardHeader className="border-b">
                     <CardTitle>JAR skala (Just About Right)</CardTitle>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="p-6">
                     <div className="space-y-8">
                       {currentJARAttributes.filter(attr => 
                         // Filtriranje nepotrebnih atributa
@@ -384,18 +379,17 @@ export function EvaluationForm({ eventId, productTypeId, onComplete }: Evaluatio
                           name={`jar.${attribute.id}`}
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel className="text-lg font-semibold">{attribute.nameHR}</FormLabel>
-                              <div className="mt-3">
+                              <FormLabel className="text-lg font-semibold">{attribute.nameHR}:</FormLabel>
+                              <div className="mt-2">
                                 <JARRadioGroup 
                                   onValueChange={field.onChange}
                                   defaultValue={field.value}
                                 >
-                                  {[1, 2, 3, 4, 5].map((value) => (
+                                  {[5, 4, 3, 2, 1].map((value) => (
                                     <JARRadioItem
                                       key={`${attribute.id}-${value}`}
                                       value={value.toString()}
-                                      label={attribute.scaleHR[value-1]}
-                                      number={value.toString()}
+                                      label={attribute.scaleHR[5-value]}
                                     />
                                   ))}
                                 </JARRadioGroup>
