@@ -63,7 +63,7 @@ const HedonicRadioItem = React.forwardRef<
   }
 >(({ className, value, label, ...props }, ref) => {
   return (
-    <div className="flex items-center space-x-3">
+    <label className="flex items-center space-x-3 cursor-pointer">
       <RadioGroupPrimitive.Item
         ref={ref}
         value={value}
@@ -80,7 +80,7 @@ const HedonicRadioItem = React.forwardRef<
       {label && (
         <span className="text-sm font-medium">{label}</span>
       )}
-    </div>
+    </label>
   )
 })
 HedonicRadioItem.displayName = "HedonicRadioItem"
@@ -108,7 +108,7 @@ const JARRadioItem = React.forwardRef<
   }
 >(({ className, value, label, ...props }, ref) => {
   return (
-    <div className="flex items-center space-x-3">
+    <label className="flex items-center space-x-3 cursor-pointer">
       <RadioGroupPrimitive.Item
         ref={ref}
         value={value}
@@ -123,7 +123,7 @@ const JARRadioItem = React.forwardRef<
         </RadioGroupPrimitive.Indicator>
       </RadioGroupPrimitive.Item>
       <span className="text-sm font-medium">{label}</span>
-    </div>
+    </label>
   )
 })
 JARRadioItem.displayName = "JARRadioItem"

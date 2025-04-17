@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { format } from "date-fns";
 import { Check } from "lucide-react";
@@ -71,6 +71,20 @@ export function EvaluationForm({ eventId, productTypeId, onComplete }: Evaluatio
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [eventDate, setEventDate] = useState<string>("");
+  const scrollRef = useRef<HTMLDivElement>(null);
+  
+  // HEDONIC_LABELS poredani od 9 (najbolje) do 1 (najgore)
+  const HEDONIC_LABELS = [
+    "Iznimno mi se sviđa (9)",
+    "Vrlo mi se sviđa (8)",
+    "Umjereno mi se sviđa (7)",
+    "Lagano mi se sviđa (6)",
+    "Niti mi se sviđa niti mi se ne sviđa (5)",
+    "Lagano mi se ne sviđa (4)",
+    "Umjereno mi se ne sviđa (3)",
+    "Vrlo mi se ne sviđa (2)",
+    "Iznimno mi se ne sviđa (1)"
+  ];
   
   // Inicijalizacija obrasca kroz react-hook-form
   const form = useForm<FormData>({
@@ -103,6 +117,11 @@ export function EvaluationForm({ eventId, productTypeId, onComplete }: Evaluatio
 
     fetchEventDate();
   }, [eventId]);
+
+  // Log currentJARAttributes whenever they change
+  useEffect(() => {
+    console.log("Current JAR Attributes in form:", currentJARAttributes);
+  }, [currentJARAttributes]);
   
   const onSubmit = async (data: FormData) => {
     if (!user || !currentSample) return;
@@ -157,6 +176,10 @@ export function EvaluationForm({ eventId, productTypeId, onComplete }: Evaluatio
       setTimeout(() => {
         loadNextSample(eventId, productTypeId).then(() => {
           setIsSubmitting(false);
+          // Scroll to top after submitting
+          if (scrollRef.current) {
+            scrollRef.current.scrollIntoView({ behavior: 'smooth' });
+          }
         });
       }, 1000);
       
@@ -206,7 +229,7 @@ export function EvaluationForm({ eventId, productTypeId, onComplete }: Evaluatio
   
   return (
     <ScrollArea className="h-[calc(100vh-240px)]">
-      <div className="evaluation-form container max-w-5xl px-4 py-6">
+      <div className="evaluation-form container max-w-5xl px-4 py-6" ref={scrollRef}>
         <Card className="mb-8">
           <CardHeader className="text-center bg-[#F1F0FB] rounded-t-lg">
             <CardTitle className="text-2xl">
@@ -405,7 +428,7 @@ export function EvaluationForm({ eventId, productTypeId, onComplete }: Evaluatio
               <Button 
                 type="submit" 
                 size="lg" 
-                disabled={isSubmitting || !form.formState.isValid}
+                disabled={isSubmitting}
                 className="w-full max-w-md text-lg py-6"
               >
                 {isSubmitting ? 
