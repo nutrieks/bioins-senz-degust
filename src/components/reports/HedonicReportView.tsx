@@ -3,8 +3,6 @@ import React from "react";
 import { HedonicReport } from "@/types";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent } from "@/components/ui/card";
-import { RetailerCode } from "@/types";
-import { ChartContainer } from "@/components/ui/chart";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, LabelList, ResponsiveContainer } from "recharts";
 
 interface HedonicReportViewProps {
@@ -130,7 +128,7 @@ export function HedonicReportView({ report, productName }: HedonicReportViewProp
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-36">Atribut</TableHead>
+              <TableHead className="w-36 bg-gray-100">Atribut</TableHead>
               {sortedSamples.map(([id, sample]) => (
                 <TableHead 
                   key={id}
@@ -152,14 +150,15 @@ export function HedonicReportView({ report, productName }: HedonicReportViewProp
               { key: "texture", label: "Texture" },
               { key: "flavor", label: "Flavour" },
               { key: "overallLiking", label: "Overall liking" }
-            ].map((attr) => (
+            ].map((attr, index) => (
               <TableRow key={attr.key}>
-                <TableCell className="font-medium">{attr.label}</TableCell>
+                <TableCell className="font-medium bg-gray-100">{attr.label}</TableCell>
                 {sortedSamples.map(([id, sample]) => (
                   <TableCell 
                     key={id}
                     style={{ 
-                      backgroundColor: `${colorMap.get(id)}50` // 50 = 30% opacity
+                      backgroundColor: `${colorMap.get(id)}`,
+                      color: 'black'
                     }}
                   >
                     {sample.hedonic[attr.key as keyof typeof sample.hedonic].toFixed(1)}
@@ -199,12 +198,12 @@ export function HedonicReportView({ report, productName }: HedonicReportViewProp
                   domain={[1, 9]}
                   ticks={[1, 2, 3, 4, 5, 6, 7, 8, 9]}
                 />
-                <Tooltip />
+                <Tooltip contentStyle={{ color: 'black' }} />
                 <Legend 
                   layout="horizontal" 
                   verticalAlign="bottom" 
                   align="center"
-                  wrapperStyle={{ bottom: -10, lineHeight: '40px' }}
+                  wrapperStyle={{ bottom: -10, lineHeight: '40px', color: 'black' }}
                 />
                 
                 {sortedSamples.map(([id, sample]) => (
@@ -214,7 +213,11 @@ export function HedonicReportView({ report, productName }: HedonicReportViewProp
                     name={sample.brand}
                     fill={colorMap.get(id)}
                   >
-                    <LabelList dataKey={`${sample.brand}_${id}`} position="top" />
+                    <LabelList 
+                      dataKey={`${sample.brand}_${id}`} 
+                      position="top"
+                      style={{ fill: 'black' }}
+                    />
                   </Bar>
                 ))}
               </BarChart>
