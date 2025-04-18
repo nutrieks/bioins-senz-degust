@@ -1,8 +1,14 @@
+
+import { 
+  User, Event, ProductType, Sample, JARAttribute, 
+  Randomization, Evaluation, HedonicScale, JARRating,
+  HedonicReport, JARReport, EventStatus, RetailerCode, BaseProductType
+} from "../types";
 import { 
   users, events, productTypes, samples, jarAttributes, 
-  randomizations, evaluations, generateRandomizationTable,
-  getNextSample, baseProductTypes
+  randomizations, evaluations, baseProductTypes
 } from "./mock";
+import { generateRandomizationTable, getNextSample } from "./mock/utils";
 
 // Authentication
 export async function login(username: string, password: string): Promise<User | null> {

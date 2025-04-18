@@ -1,3 +1,4 @@
+
 // Fisher-Yates shuffle algorithm
 export function shuffle(array: any[]): any[] {
   const result = [...array];
@@ -8,7 +9,7 @@ export function shuffle(array: any[]): any[] {
   return result;
 }
 
-import { productTypes } from './productTypes';
+import { productTypes, samples, randomizations } from './index';
 
 // Randomization Table Generator
 export function generateRandomizationTable(productTypeId: string, sampleCount: number): { id: string; productTypeId: string; table: any } {
@@ -50,5 +51,68 @@ export function generateRandomizationTable(productTypeId: string, sampleCount: n
     id: randomizationId,
     productTypeId,
     table
+  };
+}
+
+// Get next sample for evaluation
+export function getNextSample(
+  userId: string,
+  eventId: string,
+  productTypeId: string | undefined,
+  completedSamples: string[]
+): { sample: any; round: number; isComplete: boolean } {
+  // Default return for no next sample
+  const defaultReturn = { sample: null, round: 0, isComplete: true };
+  
+  // If no productTypeId provided, can't determine next sample
+  if (!productTypeId) return defaultReturn;
+  
+  // Find the product type
+  const productType = productTypes.find(pt => pt.id === productTypeId);
+  if (!productType) return defaultReturn;
+  
+  // Get all samples for this product type
+  const productSamples = samples.filter(s => s.productTypeId === productTypeId);
+  if (productSamples.length === 0) return defaultReturn;
+  
+  // If the user has completed all samples, return isComplete
+  if (completedSamples.length >= productSamples.length) {
+    return defaultReturn;
+  }
+  
+  // Find randomization for this product
+  const randomization = randomizations.find(r => r.productTypeId === productTypeId);
+  if (!randomization) {
+    // If no randomization, just return first sample that's not completed
+    const nextSample = productSamples.find(s => !completedSamples.includes(s.id));
+    return {
+      sample: nextSample || null,
+      round: completedSamples.length + 1,
+      isComplete: !nextSample
+    };
+  }
+  
+  // Get user's evaluator position (from 1-12)
+  // This would come from user record in a real app
+  const evaluatorPosition = parseInt(userId.replace("evaluator", "")) || 1;
+  
+  // Determine which round the user is on (1-based)
+  const currentRound = completedSamples.length + 1;
+  
+  // Get blind code from randomization table
+  const blindCode = randomization.table[evaluatorPosition]?.[currentRound];
+  
+  if (!blindCode) {
+    // User has completed all rounds
+    return defaultReturn;
+  }
+  
+  // Find the sample with this blind code
+  const nextSample = productSamples.find(s => s.blindCode === blindCode);
+  
+  return {
+    sample: nextSample || null,
+    round: currentRound,
+    isComplete: !nextSample
   };
 }
