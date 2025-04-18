@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { format } from "date-fns";
@@ -98,9 +97,7 @@ export function EvaluationForm({ eventId, productTypeId, onComplete }: Evaluatio
         overallLiking: ""
       },
       jar: {}
-    },
-    // Use formKey in form to force re-initialization
-    key: formKey.toString()
+    }
   });
   
   // Reset form when current sample changes
