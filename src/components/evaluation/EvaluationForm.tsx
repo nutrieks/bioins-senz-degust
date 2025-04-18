@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { format } from "date-fns";
@@ -73,19 +74,6 @@ export function EvaluationForm({ eventId, productTypeId, onComplete }: Evaluatio
   const scrollRef = useRef<HTMLDivElement>(null);
   const [formKey, setFormKey] = useState<number>(Date.now()); // Key to force form reset
   
-  // HEDONIC_LABELS poredani od 9 (najbolje) do 1 (najgore)
-  const HEDONIC_LABELS = [
-    "Iznimno mi se sviđa (9)",
-    "Vrlo mi se sviđa (8)",
-    "Umjereno mi se sviđa (7)",
-    "Lagano mi se sviđa (6)",
-    "Niti mi se sviđa niti mi se ne sviđa (5)",
-    "Lagano mi se ne sviđa (4)",
-    "Umjereno mi se ne sviđa (3)",
-    "Vrlo mi se ne sviđa (2)",
-    "Iznimno mi se ne sviđa (1)"
-  ];
-  
   // Inicijalizacija obrasca kroz react-hook-form
   const form = useForm<FormData>({
     defaultValues: {
@@ -114,6 +102,11 @@ export function EvaluationForm({ eventId, productTypeId, onComplete }: Evaluatio
     });
     // Update the form key to force re-rendering of radio inputs
     setFormKey(Date.now());
+    
+    // Scroll to top when sample changes
+    if (scrollRef.current) {
+      scrollRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
   }, [currentSample, form]);
   
   // Dohvati datum događaja
@@ -176,7 +169,7 @@ export function EvaluationForm({ eventId, productTypeId, onComplete }: Evaluatio
         description: `Uspješno ste ocijenili uzorak ${currentSample.blindCode}.`,
       });
       
-      // Completely reset the form
+      // Completely reset the form - this resets the internal state
       form.reset({
         hedonic: {
           appearance: "",
@@ -403,7 +396,7 @@ export function EvaluationForm({ eventId, productTypeId, onComplete }: Evaluatio
                 </CardContent>
               </Card>
 
-              {/* JAR skala */}
+              {/* JAR skala - only show if attributes exist */}
               {currentJARAttributes && currentJARAttributes.length > 0 && (
                 <Card>
                   <CardHeader className="border-b">

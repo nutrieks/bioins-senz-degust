@@ -42,6 +42,7 @@ export default function EditProductType() {
       if (productType) {
         setProductName(productType.productName);
         setJarAttributes(productType.jarAttributes);
+        console.log("Loaded product type with JAR attributes:", productType.jarAttributes);
       } else {
         toast({
           title: "Greška",

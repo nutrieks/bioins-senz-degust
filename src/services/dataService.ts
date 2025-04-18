@@ -1,4 +1,3 @@
-
 import { 
   User, Event, ProductType, Sample, JARAttribute, 
   Randomization, Evaluation, HedonicScale, JARRating,
@@ -55,7 +54,9 @@ export async function getAllProductTypes(): Promise<BaseProductType[]> {
 }
 
 export async function getBaseProductType(productTypeId: string): Promise<BaseProductType | null> {
-  return baseProductTypes.find(pt => pt.id === productTypeId) || null;
+  const productType = baseProductTypes.find(pt => pt.id === productTypeId);
+  console.log("Retrieved base product type:", productTypeId, productType);
+  return productType || null;
 }
 
 export async function createBaseProductType(
@@ -155,6 +156,11 @@ export async function createProductType(
     scaleHR: [...attr.scaleHR] as [string, string, string, string, string],
     scaleEN: [...attr.scaleEN] as [string, string, string, string, string]
   }));
+
+  // Add the copied attributes to the global jarAttributes array so they can be queried
+  jarAttributesCopy.forEach(attr => {
+    jarAttributes.push(attr);
+  });
   
   const newProductType: ProductType = {
     id: newProductTypeId,
@@ -236,7 +242,9 @@ export async function updateSampleImages(
 
 // JAR Attribute Management
 export async function getJARAttributes(productTypeId: string): Promise<JARAttribute[]> {
-  return jarAttributes.filter(ja => ja.productTypeId === productTypeId);
+  const attributes = jarAttributes.filter(ja => ja.productTypeId === productTypeId);
+  console.log(`Getting JAR attributes for productTypeId ${productTypeId}:`, attributes);
+  return attributes;
 }
 
 export async function createJARAttribute(

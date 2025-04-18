@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { Sample, JARAttribute, ProductType } from "../types";
-import { getNextSample, getCompletedEvaluations, getProductTypes, getJARAttributes } from "../services/dataService";
+import { getNextSample, getCompletedEvaluations, getProductTypes, getJARAttributes, getBaseProductType } from "../services/dataService";
 import { useAuth } from "./AuthContext";
 
 interface EvaluationContextType {
@@ -41,10 +41,28 @@ export const EvaluationProvider: React.FC<{
     const updateJARAttributes = async () => {
       if (currentSample && currentSample.productTypeId) {
         try {
-          // Directly fetch the JAR attributes from the database for this product type
-          const fetchedAttributes = await getJARAttributes(currentSample.productTypeId);
-          console.log("Fetched JAR attributes for product type:", currentSample.productTypeId, fetchedAttributes);
-          setCurrentJARAttributes(fetchedAttributes);
+          // First try to get the attributes from the product type directly
+          const attributes = await getJARAttributes(currentSample.productTypeId);
+          console.log("Fetched JAR attributes for product type:", currentSample.productTypeId, attributes);
+          
+          if (attributes && attributes.length > 0) {
+            setCurrentJARAttributes(attributes);
+          } else {
+            // If no attributes found directly, try to get them from the base product type
+            if (currentProductType && currentProductType.baseProductTypeId) {
+              const baseProductType = await getBaseProductType(currentProductType.baseProductTypeId);
+              if (baseProductType && baseProductType.jarAttributes.length > 0) {
+                console.log("Using JAR attributes from base product type:", baseProductType.jarAttributes);
+                setCurrentJARAttributes(baseProductType.jarAttributes);
+              } else {
+                setCurrentJARAttributes([]);
+                console.error("No JAR attributes found for product type or base product type");
+              }
+            } else {
+              setCurrentJARAttributes([]);
+              console.error("No base product type ID available to fetch JAR attributes");
+            }
+          }
         } catch (error) {
           console.error("Error updating JAR attributes:", error);
           setCurrentJARAttributes([]);
@@ -53,7 +71,7 @@ export const EvaluationProvider: React.FC<{
     };
     
     updateJARAttributes();
-  }, [currentSample]);
+  }, [currentSample, currentProductType]);
 
   const loadNextSample = async (eventId: string, productTypeId?: string) => {
     if (!user || !user.id) return;
@@ -86,11 +104,6 @@ export const EvaluationProvider: React.FC<{
             setAllProductTypes(types);
           }
         }
-        
-        // Ensure JAR attributes are loaded immediately
-        const attributes = await getJARAttributes(sample.productTypeId);
-        console.log("Loading JAR attributes for new sample:", attributes);
-        setCurrentJARAttributes(attributes);
       }
 
       if (complete && productTypeId) {

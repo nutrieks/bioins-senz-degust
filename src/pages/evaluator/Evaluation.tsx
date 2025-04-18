@@ -7,7 +7,7 @@ import { CompletionMessage } from "@/components/evaluation/CompletionMessage";
 import { SampleRevealScreen } from "@/components/evaluation/SampleRevealScreen";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
-import { getEvent, getJARAttributes, getProductTypes } from "@/services/dataService";
+import { getEvent, getJARAttributes, getProductTypes, getBaseProductType } from "@/services/dataService";
 import { EvaluationProvider, useEvaluation } from "@/contexts/EvaluationContext";
 import { JARAttribute, ProductType } from "@/types";
 
@@ -46,11 +46,30 @@ export default function Evaluation() {
 
         // Dohvati JAR atribute za sve tipove proizvoda
         const allAttributes: JARAttribute[] = [];
+        
         for (const productType of types) {
+          // First try to get attributes directly from the product type
           const attributes = await getJARAttributes(productType.id);
-          console.log("Fetched attributes for product type:", productType.id, attributes);
-          allAttributes.push(...attributes);
+          console.log(`Attributes for product type ${productType.id}:`, attributes);
+          
+          if (attributes && attributes.length > 0) {
+            allAttributes.push(...attributes);
+          } else if (productType.baseProductTypeId) {
+            // If no attributes found, try to get from base product type
+            const baseType = await getBaseProductType(productType.baseProductTypeId);
+            if (baseType && baseType.jarAttributes.length > 0) {
+              console.log(`Using attributes from base product type ${productType.baseProductTypeId}:`, baseType.jarAttributes);
+              // Clone attributes with the current product type ID
+              const clonedAttributes = baseType.jarAttributes.map(attr => ({
+                ...attr,
+                productTypeId: productType.id,
+              }));
+              allAttributes.push(...clonedAttributes);
+            }
+          }
         }
+        
+        console.log("All JAR attributes for event:", allAttributes);
         setJarAttributes(allAttributes);
       } catch (error) {
         console.error("Error fetching event data:", error);
