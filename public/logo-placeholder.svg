@@ -1,0 +1,6 @@
+
+<svg width="200" height="60" viewBox="0 0 200 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="200" height="60" rx="6" fill="#F5F5F5"/>
+  <path d="M40 30C40 24.4772 44.4772 20 50 20H150C155.523 20 160 24.4772 160 30C160 35.5228 155.523 40 150 40H50C44.4772 40 40 35.5228 40 30Z" fill="#E0E0E0"/>
+  <text x="100" y="35" font-family="Arial" font-size="16" text-anchor="middle" fill="#666666">COMPANY LOGO</text>
+</svg>
