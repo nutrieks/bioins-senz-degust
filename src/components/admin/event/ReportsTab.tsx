@@ -4,12 +4,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { FileDown, Printer } from "lucide-react";
-import { generateHedonicReport, generateJARReport, getProductTypes } from "@/services/dataService";
+import { generateHedonicReport, generateJARReport, getProductTypes, getEvent } from "@/services/dataService";
 import { HedonicReport, JARReport, ProductType } from "@/types";
 import { HedonicReportView } from "@/components/reports/HedonicReportView";
 import { JARReportView } from "@/components/reports/JARReportView";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { formatDate } from "@/utils/dateUtils";
 
 interface ReportsTabProps {
   eventId: string;
@@ -21,7 +22,22 @@ export function ReportsTab({ eventId }: ReportsTabProps) {
   const [hedonicReport, setHedonicReport] = useState<HedonicReport | null>(null);
   const [jarReport, setJARReport] = useState<JARReport | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [eventDate, setEventDate] = useState<string>("");
   const { toast } = useToast();
+
+  // Fetch event data when component mounts
+  useEffect(() => {
+    const fetchEventData = async () => {
+      try {
+        const eventData = await getEvent(eventId);
+        setEventDate(eventData.date);
+      } catch (error) {
+        console.error("Error fetching event data:", error);
+      }
+    };
+
+    fetchEventData();
+  }, [eventId]);
 
   // Fetch product types when component mounts
   useEffect(() => {
@@ -162,7 +178,7 @@ export function ReportsTab({ eventId }: ReportsTabProps) {
                 <div className="border-t pt-4">
                   <h1 className="text-2xl font-bold">Potrošačka degustacija</h1>
                   <h2 className="text-xl mt-1 mb-3">
-                    {productType?.createdAt ? new Date(productType.createdAt).toLocaleDateString('hr-HR') : ""}
+                    {eventDate ? formatDate(eventDate) : ""}
                   </h2>
                   <h3 className="text-lg">
                     {productType?.customerCode} - {productType?.productName}

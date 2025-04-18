@@ -455,7 +455,7 @@ export default function EventDetail() {
           </TabsContent>
           
           <TabsContent value="reports">
-            <ReportsTab />
+            <ReportsTab eventId={eventId || ''} />
           </TabsContent>
         </Tabs>
       </div>

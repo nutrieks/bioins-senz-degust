@@ -21,7 +21,15 @@ const JAR_COLORS = [
 
 // Sort retailer order function
 const sortRetailerOrder = (samples: { retailerCode: RetailerCode, brand: string, sampleId: string }[]) => {
-  const retailerOrder: RetailerCode[] = ["LI", "KL", "KO", "IS", "PL", "ES", "M"];
+  const retailerOrder: RetailerCode[] = [
+    RetailerCode.LI, 
+    RetailerCode.KL, 
+    RetailerCode.KO, 
+    RetailerCode.IS, 
+    RetailerCode.PL, 
+    RetailerCode.ES, 
+    RetailerCode.M
+  ];
   
   return [...samples].sort((a, b) => {
     const retailerA = a.retailerCode;

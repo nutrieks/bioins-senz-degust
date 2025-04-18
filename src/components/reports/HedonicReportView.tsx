@@ -14,13 +14,13 @@ interface HedonicReportViewProps {
 
 // Define retailer colors
 const RETAILER_COLORS: Record<RetailerCode, string> = {
-  LI: "rgb(255, 255, 0)", // Lidl: Yellow
-  KL: "rgb(255, 0, 0)",   // Kaufland: Red
-  KO: "rgb(0, 0, 255)",   // Konzum: Blue
-  IS: "rgb(128, 128, 255)", // Interspar: Light Blue
-  PL: "rgb(128, 128, 128)", // Plodine: Gray
-  ES: "rgb(0, 176, 240)",  // Eurospin: Light Blue
-  M: "rgb(0, 255, 0)"      // Marke: Green
+  [RetailerCode.LI]: "rgb(255, 255, 0)", // Lidl: Yellow
+  [RetailerCode.KL]: "rgb(255, 0, 0)",   // Kaufland: Red
+  [RetailerCode.KO]: "rgb(0, 0, 255)",   // Konzum: Blue
+  [RetailerCode.IS]: "rgb(128, 128, 255)", // Interspar: Light Blue
+  [RetailerCode.PL]: "rgb(128, 128, 128)", // Plodine: Gray
+  [RetailerCode.ES]: "rgb(0, 176, 240)",  // Eurospin: Light Blue
+  [RetailerCode.M]: "rgb(0, 255, 0)"      // Marke: Green
 };
 
 // Helper function to get a lighter or darker variant of a color for duplicate retailers
@@ -42,7 +42,7 @@ const getColorVariant = (color: string, index: number): string => {
 
 // Sort samples according to the required order: LI, KL, KO, IS, PL, ES, M (alphabetical)
 const sortSamples = (report: HedonicReport) => {
-  const retailerOrder: RetailerCode[] = ["LI", "KL", "KO", "IS", "PL", "ES", "M"];
+  const retailerOrder: RetailerCode[] = [RetailerCode.LI, RetailerCode.KL, RetailerCode.KO, RetailerCode.IS, RetailerCode.PL, RetailerCode.ES, RetailerCode.M];
   
   return Object.entries(report)
     .sort((a, b) => {
@@ -69,7 +69,13 @@ const processChartData = (report: HedonicReport) => {
   // Create color map with variant colors for duplicates
   const colorMap = new Map<string, string>();
   const retailerCounts: Record<RetailerCode, number> = {
-    LI: 0, KL: 0, KO: 0, IS: 0, PL: 0, ES: 0, M: 0
+    [RetailerCode.LI]: 0, 
+    [RetailerCode.KL]: 0, 
+    [RetailerCode.KO]: 0, 
+    [RetailerCode.IS]: 0, 
+    [RetailerCode.PL]: 0, 
+    [RetailerCode.ES]: 0, 
+    [RetailerCode.M]: 0
   };
   
   sortedSamples.forEach(([id, sample]) => {
