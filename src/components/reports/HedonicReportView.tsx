@@ -1,3 +1,4 @@
+
 import React from "react";
 import { HedonicReport, RetailerCode } from "@/types";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -18,6 +19,21 @@ const RETAILER_COLORS: Record<RetailerCode, string> = {
   [RetailerCode.PL]: "rgb(128, 128, 128)", // Plodine: Gray
   [RetailerCode.ES]: "rgb(0, 176, 240)",  // Eurospin: Light Blue
   [RetailerCode.M]: "rgb(0, 255, 0)"      // Marke: Green
+};
+
+// Function to determine if a color is dark and needs white text
+const isDarkColor = (color: string): boolean => {
+  // Parse RGB values
+  const match = color.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+  if (!match) return false;
+  
+  const [, r, g, b] = match.map(Number);
+  
+  // Calculate luminance (simplified formula)
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  
+  // Return true if color is dark (needs white text)
+  return luminance < 0.5;
 };
 
 // Helper function to get a lighter or darker variant of a color for duplicate retailers
@@ -65,6 +81,7 @@ const processChartData = (report: HedonicReport) => {
   
   // Create color map with variant colors for duplicates
   const colorMap = new Map<string, string>();
+  const textColorMap = new Map<string, string>(); // Added map for text colors
   const retailerCounts: Record<RetailerCode, number> = {
     [RetailerCode.LI]: 0, 
     [RetailerCode.KL]: 0, 
@@ -81,6 +98,8 @@ const processChartData = (report: HedonicReport) => {
     const baseColor = RETAILER_COLORS[retailerCode];
     const color = count === 0 ? baseColor : getColorVariant(baseColor, count);
     colorMap.set(id, color);
+    // Set text color based on background darkness
+    textColorMap.set(id, isDarkColor(color) ? "#fff" : "#000");
   });
   
   // Create data for the chart
@@ -104,7 +123,7 @@ const processChartData = (report: HedonicReport) => {
     return data;
   });
   
-  return { chartData, sortedSamples, colorMap };
+  return { chartData, sortedSamples, colorMap, textColorMap };
 };
 
 export function HedonicReportView({ report, productName }: HedonicReportViewProps) {
@@ -116,7 +135,7 @@ export function HedonicReportView({ report, productName }: HedonicReportViewProp
     );
   }
 
-  const { chartData, sortedSamples, colorMap } = processChartData(report);
+  const { chartData, sortedSamples, colorMap, textColorMap } = processChartData(report);
   
   return (
     <div className="space-y-6">
@@ -133,7 +152,7 @@ export function HedonicReportView({ report, productName }: HedonicReportViewProp
                   key={id}
                   style={{ 
                     backgroundColor: colorMap.get(id),
-                    color: 'black',
+                    color: textColorMap.get(id),
                     fontWeight: 'bold'
                   }}
                 >
@@ -157,7 +176,7 @@ export function HedonicReportView({ report, productName }: HedonicReportViewProp
                     key={id}
                     style={{ 
                       backgroundColor: `${colorMap.get(id)}`,
-                      color: 'black'
+                      color: textColorMap.get(id)
                     }}
                   >
                     {sample.hedonic[attr.key as keyof typeof sample.hedonic].toFixed(1)}
@@ -203,6 +222,7 @@ export function HedonicReportView({ report, productName }: HedonicReportViewProp
                   verticalAlign="bottom" 
                   align="center"
                   wrapperStyle={{ bottom: -10, lineHeight: '40px', color: 'black' }}
+                  formatter={(value, entry) => <span style={{ color: 'black' }}>{value}</span>}
                 />
                 
                 {sortedSamples.map(([id, sample]) => (
@@ -215,7 +235,7 @@ export function HedonicReportView({ report, productName }: HedonicReportViewProp
                     <LabelList 
                       dataKey={`${sample.brand}_${id}`} 
                       position="top"
-                      style={{ fill: 'black' }}
+                      style={{ fill: textColorMap.get(id) || 'black' }}
                     />
                   </Bar>
                 ))}
