@@ -55,7 +55,7 @@ export function RawDataTab({ eventId }: RawDataTabProps) {
       // Add data rows
       data.forEach(entry => {
         csvContent += Object.values(entry).map(val => 
-          typeof val === "string" ? `"${val.replaceAll('"', '""')}"` : val
+          typeof val === "string" ? `"${val.replace(/"/g, '""')}"` : val
         ).join(",") + "\n";
       });
 
