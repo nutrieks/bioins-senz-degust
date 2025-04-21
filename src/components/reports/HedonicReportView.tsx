@@ -1,14 +1,10 @@
-
 import React from "react";
 import { HedonicReport, RetailerCode } from "@/types";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, LabelList, ResponsiveContainer } from "recharts";
-
-interface HedonicReportViewProps {
-  report: HedonicReport;
-  productName: string;
-}
+import { Button } from "@/components/ui/button";
+import { Download } from "lucide-react";
 
 // Define retailer colors
 const RETAILER_COLORS: Record<RetailerCode, string> = {
@@ -126,7 +122,50 @@ const processChartData = (report: HedonicReport) => {
   return { chartData, sortedSamples, colorMap, textColorMap };
 };
 
-export function HedonicReportView({ report, productName }: HedonicReportViewProps) {
+// NEW: CSV generator for table
+function exportHedonicTableToCSV(sortedSamples: [string, any][], report: HedonicReport, productName: string) {
+  let csv = `Hedonic Table for ${productName}\n`;
+  // header
+  csv += "Atribut," + sortedSamples.map(([_, sample]) => `"${sample.brand}"`).join(",") + "\n";
+  // rows
+  const attributes = [
+    { key: "appearance", label: "Appearance" },
+    { key: "odor", label: "Odour" },
+    { key: "texture", label: "Texture" },
+    { key: "flavor", label: "Flavour" },
+    { key: "overallLiking", label: "Overall liking" }
+  ];
+  attributes.forEach(attr => {
+    csv += `${attr.label},` +
+      sortedSamples.map(([id, sample]) => sample.hedonic[attr.key].toFixed(1)).join(",")
+      + "\n";
+  });
+  downloadCSV(csv, `hedonic_table_${productName}.csv`);
+}
+
+// NEW: CSV generator for chart
+function exportHedonicChartToCSV(chartData: any[], sortedSamples: [string, any][], productName: string) {
+  let csv = `Hedonic Chart Data for ${productName}\n`;
+  // header
+  csv += "Atribut," + sortedSamples.map(([id, sample]) => `"${sample.brand}_${id}"`).join(",") + "\n";
+  chartData.forEach(row => {
+    csv += `${row.name},` + sortedSamples.map(([id, sample]) => row[`${sample.brand}_${id}`]).join(",") + "\n";
+  });
+  downloadCSV(csv, `hedonic_chart_${productName}.csv`);
+}
+
+// CSV download util
+function downloadCSV(content: string, filename: string) {
+  const encodedUri = "data:text/csv;charset=utf-8," + encodeURIComponent(content);
+  const link = document.createElement("a");
+  link.setAttribute("href", encodedUri);
+  link.setAttribute("download", filename);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+export function HedonicReportView({ report, productName }: { report: HedonicReport; productName: string; }) {
   if (!report || Object.keys(report).length === 0) {
     return (
       <div className="text-center p-6">
@@ -140,6 +179,18 @@ export function HedonicReportView({ report, productName }: HedonicReportViewProp
   return (
     <div className="space-y-6">
       <h3 className="text-xl font-bold">Hedonistička skala</h3>
+      
+      {/* Download for table */}
+      <div className="flex justify-end mb-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => exportHedonicTableToCSV(sortedSamples, report, productName)}
+          className="flex items-center"
+        >
+          <Download className="mr-2 h-4 w-4" /> Preuzmi CSV (tablica)
+        </Button>
+      </div>
       
       {/* Hedonic Table */}
       <div className="overflow-x-auto border rounded-lg">
@@ -188,6 +239,18 @@ export function HedonicReportView({ report, productName }: HedonicReportViewProp
         </Table>
       </div>
       
+      {/* Download for chart */}
+      <div className="flex justify-end mb-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => exportHedonicChartToCSV(chartData, sortedSamples, productName)}
+          className="flex items-center"
+        >
+          <Download className="mr-2 h-4 w-4" /> Preuzmi CSV (graf)
+        </Button>
+      </div>
+      
       {/* Hedonic Chart */}
       <Card>
         <CardContent className="pt-6">
@@ -197,7 +260,6 @@ export function HedonicReportView({ report, productName }: HedonicReportViewProp
             <p>Sample: {productName}</p>
             <p>Plot of: mean</p>
           </div>
-          
           <div className="h-96">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
@@ -224,7 +286,6 @@ export function HedonicReportView({ report, productName }: HedonicReportViewProp
                   wrapperStyle={{ bottom: -10, lineHeight: '40px', color: 'black' }}
                   formatter={(value, entry) => <span style={{ color: 'black' }}>{value}</span>}
                 />
-                
                 {sortedSamples.map(([id, sample]) => (
                   <Bar 
                     key={id}

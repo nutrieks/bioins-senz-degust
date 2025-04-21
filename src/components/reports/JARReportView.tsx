@@ -1,13 +1,9 @@
-
 import React from "react";
 import { JARReport, RetailerCode } from "@/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, LabelList, ResponsiveContainer } from "recharts";
-
-interface JARReportViewProps {
-  report: JARReport;
-  productName: string;
-}
+import { Button } from "@/components/ui/button";
+import { Download } from "lucide-react";
 
 // JAR Colors as specified, fixed for each JAR category
 const JAR_COLORS = [
@@ -74,7 +70,32 @@ const processJARData = (attrData: any) => {
   });
 };
 
-export function JARReportView({ report, productName }: JARReportViewProps) {
+// NEW: CSV download helper for each JAR attribute
+function exportJARAttributeChartToCSV(attrData: any, productName: string) {
+  // rows = samples; columns = JAR_LABELS
+  let csv = `JAR Chart: ${attrData.nameEN} (Sample: ${productName})\n`;
+  csv += "Brand," + JAR_LABELS.join(",") + "\n";
+  const samples = Object.entries(attrData.results).map(([sampleId, result]: [string, any]) => ({
+    id: sampleId,
+    ...result
+  }));
+  const sortedSamples = sortSamples(samples);
+  sortedSamples.forEach(sample => {
+    csv += `${sample.brand},${sample.frequencies.join(",")}\n`;
+  });
+  downloadCSV(csv, `JAR_${attrData.nameEN.replace(/\s/g, "_")}_${productName}.csv`);
+}
+function downloadCSV(content: string, filename: string) {
+  const encodedUri = "data:text/csv;charset=utf-8," + encodeURIComponent(content);
+  const link = document.createElement("a");
+  link.setAttribute("href", encodedUri);
+  link.setAttribute("download", filename);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+export function JARReportView({ report, productName }: { report: JARReport; productName: string; }) {
   if (!report || Object.keys(report).length === 0) {
     return (
       <div className="text-center p-6">
@@ -86,13 +107,23 @@ export function JARReportView({ report, productName }: JARReportViewProps) {
   return (
     <div className="space-y-6">
       <h3 className="text-xl font-bold">JAR skala</h3>
-      
       {Object.entries(report).map(([attrId, attrData]) => {
         const chartData = processJARData(attrData);
-        
+
         return (
           <Card key={attrId}>
-            <CardContent className="pt-6">
+            {/* Download for JAR chart */}
+            <div className="flex justify-end pt-6 pr-6">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => exportJARAttributeChartToCSV(attrData, productName)}
+                className="flex items-center"
+              >
+                <Download className="mr-2 h-4 w-4" /> Preuzmi CSV (graf)
+              </Button>
+            </div>
+            <CardContent className="pt-2">
               <div className="text-center mb-4">
                 <h4 className="font-bold">Consumer's reaction to specific attribute</h4>
                 <p>Method: JAR scale</p>
@@ -132,15 +163,12 @@ export function JARReportView({ report, productName }: JARReportViewProps) {
                       wrapperStyle={{ bottom: -10, lineHeight: '40px', color: 'black' }}
                       formatter={(value, entry) => <span style={{ color: 'black' }}>{value}</span>}
                     />
-                    
-                    {/* Create a separate bar for each JAR rating (1-5) */}
                     {JAR_LABELS.map((label, index) => (
                       <Bar
                         key={label}
                         dataKey={label}
                         name={label}
                         fill={JAR_COLORS[index]}
-                        // Not using stackId - these are grouped bars, not stacked
                       >
                         <LabelList 
                           dataKey={label} 
