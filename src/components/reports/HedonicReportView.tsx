@@ -1,6 +1,5 @@
-
 import React from "react";
-import { HedonicReport } from "@/types";
+import { HedonicReport, RetailerCode } from "@/types";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, LabelList, ResponsiveContainer } from "recharts";
