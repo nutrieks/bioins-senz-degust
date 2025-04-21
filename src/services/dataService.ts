@@ -1,4 +1,3 @@
-
 import { 
   User, Event, ProductType, Sample, JARAttribute, 
   Randomization, Evaluation, HedonicScale, JARRating,
@@ -12,8 +11,6 @@ import { generateRandomizationTable, getNextSample } from "./mock/utils";
 
 // Authentication
 export async function login(username: string, password: string): Promise<User | null> {
-  // In a real app, this would verify password against a hashed version
-  // For this mock, we just check if username exists
   const user = users.find(u => u.username === username);
   return user || null;
 }
@@ -67,12 +64,10 @@ export async function createBaseProductType(
   const now = new Date().toISOString();
   const id = `base_product_${Date.now()}`;
   
-  // Create attributes with the new productTypeId
   const attributes = jarAttributes.map(attr => ({
     ...attr,
     id: `attr_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
     productTypeId: id,
-    // Ensure scaleHR and scaleEN are proper tuples with 5 elements
     scaleHR: attr.scaleHR as [string, string, string, string, string],
     scaleEN: attr.scaleEN as [string, string, string, string, string]
   }));
@@ -96,7 +91,6 @@ export async function updateBaseProductType(
   const index = baseProductTypes.findIndex(pt => pt.id === productTypeId);
   if (index === -1) return false;
   
-  // Ensure attributes have the correct productTypeId and proper tuple types
   const updatedAttributes = jarAttributes.map(attr => ({
     ...attr,
     productTypeId,
@@ -117,11 +111,8 @@ export async function deleteProductType(productTypeId: string): Promise<boolean>
   const index = baseProductTypes.findIndex(pt => pt.id === productTypeId);
   if (index === -1) return false;
   
-  // Check if this product type is used in any event
   const isUsed = productTypes.some(pt => pt.baseProductTypeId === productTypeId);
   if (isUsed) {
-    // In a real app, you might want to handle this differently
-    // For now, we'll allow deletion even if it's used (since we're using mock data)
     console.warn("Deleting a product type that is used in events. This could cause issues.");
   }
   
@@ -141,27 +132,18 @@ export async function createProductType(
   baseCode: string,
   displayOrder: number
 ): Promise<ProductType> {
-  // Get the base product type to copy its attributes
   const baseType = baseProductTypes.find(pt => pt.id === baseProductTypeId);
   if (!baseType) throw new Error("Base product type not found");
   
-  // Create a new ID for this product type instance
   const newProductTypeId = `product_${Date.now()}`;
   
-  // Create copies of the JAR attributes with the new productTypeId
   const jarAttributesCopy = baseType.jarAttributes.map(attr => ({
     ...attr,
     id: `attr_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
     productTypeId: newProductTypeId,
-    // Ensure we maintain the tuple types
     scaleHR: [...attr.scaleHR] as [string, string, string, string, string],
     scaleEN: [...attr.scaleEN] as [string, string, string, string, string]
   }));
-
-  // Add the copied attributes to the global jarAttributes array so they can be queried
-  jarAttributesCopy.forEach(attr => {
-    jarAttributes.push(attr);
-  });
   
   const newProductType: ProductType = {
     id: newProductTypeId,
@@ -177,7 +159,6 @@ export async function createProductType(
   
   productTypes.push(newProductType);
   
-  // Update event reference
   const event = events.find(e => e.id === eventId);
   if (event) {
     event.productTypes.push(newProductType);
@@ -208,7 +189,6 @@ export async function createSample(
   
   samples.push(newSample);
   
-  // Update product type reference
   const productType = productTypes.find(pt => pt.id === productTypeId);
   if (productType) {
     productType.samples.push(newSample);
@@ -266,7 +246,6 @@ export async function createJARAttribute(
   
   jarAttributes.push(newAttribute);
   
-  // Update product type reference
   const productType = productTypes.find(pt => pt.id === productTypeId);
   if (productType) {
     productType.jarAttributes.push(newAttribute);
@@ -287,26 +266,18 @@ export async function createRandomization(productTypeId: string): Promise<Random
   const sampleCount = productType.samples.length;
   if (sampleCount === 0) return null;
   
-  // Generate randomization table
   const randomization = generateRandomizationTable(productTypeId, sampleCount);
   
-  // Assign blind codes to samples based on baseCode
-  // Now supporting extended codes beyond A-Z
   productType.samples.forEach((sample, index) => {
-    // Use a combination of the base code and index+1
-    // If base code is multi-character, we can still append the index
     sample.blindCode = `${productType.baseCode}${index + 1}`;
   });
   
   randomizations.push(randomization);
   
-  // Set the hasRandomization property on the product type
   productType.hasRandomization = true;
   
-  // Update product's event status
   const event = events.find(e => e.id === productType.eventId);
   if (event) {
-    // Check if all product types for this event have randomization
     const allRandomized = productTypes
       .filter(pt => pt.eventId === event.id)
       .every(pt => pt.hasRandomization);
@@ -325,7 +296,6 @@ export async function getCompletedEvaluations(
   eventId: string, 
   productTypeId?: string
 ): Promise<string[]> {
-  // Return IDs of samples already evaluated by this user
   let query = evaluations.filter(e => 
     e.userId === userId && e.eventId === eventId
   );
@@ -369,10 +339,8 @@ export async function generateHedonicReport(
 ): Promise<HedonicReport> {
   const report: HedonicReport = {};
   
-  // Get all samples for this product
   const productSamples = samples.filter(s => s.productTypeId === productTypeId);
   
-  // For each sample, calculate average hedonic ratings
   for (const sample of productSamples) {
     const sampleEvaluations = evaluations.filter(
       e => e.sampleId === sample.id && e.productTypeId === productTypeId && e.eventId === eventId
@@ -409,13 +377,10 @@ export async function generateJARReport(
 ): Promise<JARReport> {
   const report: JARReport = {};
   
-  // Get all JAR attributes for this product
   const productAttributes = jarAttributes.filter(a => a.productTypeId === productTypeId);
   
-  // Get all samples for this product
   const productSamples = samples.filter(s => s.productTypeId === productTypeId);
   
-  // For each attribute, calculate frequency distribution of ratings
   for (const attribute of productAttributes) {
     report[attribute.id] = {
       nameEN: attribute.nameEN,
@@ -425,7 +390,6 @@ export async function generateJARReport(
       results: {}
     };
     
-    // For each sample, calculate frequency distribution
     for (const sample of productSamples) {
       const sampleEvaluations = evaluations.filter(
         e => e.sampleId === sample.id && e.productTypeId === productTypeId && e.eventId === eventId
@@ -433,10 +397,8 @@ export async function generateJARReport(
       
       if (sampleEvaluations.length === 0) continue;
       
-      // Initialize frequencies
       const frequencies: [number, number, number, number, number] = [0, 0, 0, 0, 0];
       
-      // Count occurrences of each rating (1-5)
       for (const evaluation of sampleEvaluations) {
         const rating = evaluation.jar[attribute.id];
         if (rating >= 1 && rating <= 5) {
@@ -484,4 +446,45 @@ export async function updateUserStatus(userId: string, isActive: boolean): Promi
   
   user.isActive = isActive;
   return true;
+}
+
+export async function getRawData(eventId: string): Promise<any[]> {
+  try {
+    const eventEvaluations = evaluations.filter(e => e.eventId === eventId);
+    
+    if (eventEvaluations.length === 0) {
+      return [];
+    }
+    
+    return eventEvaluations.map(evaluation => {
+      const sample = samples.find(s => s.id === evaluation.sampleId);
+      const user = users.find(u => u.id === evaluation.userId);
+      const productType = productTypes.find(pt => pt.id === evaluation.productTypeId);
+      
+      const baseData = {
+        timestamp: evaluation.timestamp,
+        evaluator: user?.username || 'Unknown',
+        evaluatorPosition: user?.evaluatorPosition || 0,
+        eventId: evaluation.eventId,
+        productType: productType?.productName || 'Unknown',
+        customerCode: productType?.customerCode || 'Unknown',
+        sampleId: evaluation.sampleId,
+        brand: sample?.brand || 'Unknown',
+        retailerCode: sample?.retailerCode || 'Unknown',
+        blindCode: sample?.blindCode || 'Unknown',
+        appearance: evaluation.hedonic.appearance,
+        odor: evaluation.hedonic.odor,
+        texture: evaluation.hedonic.texture,
+        flavor: evaluation.hedonic.flavor,
+        overallLiking: evaluation.hedonic.overallLiking,
+      };
+      
+      const jarRatings = { ...evaluation.jar };
+      
+      return { ...baseData, ...jarRatings };
+    });
+  } catch (error) {
+    console.error("Error getting raw data:", error);
+    return [];
+  }
 }
