@@ -7,13 +7,14 @@ import { Button } from "@/components/ui/button";
 import { 
   Calendar, 
   ClipboardList, 
-  FileBarChart, 
   Home, 
   LogOut, 
   Menu, 
   Users,
   PlusCircle
 } from "lucide-react";
+
+// Removed FileBarChart import
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -40,7 +41,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     { name: "Početna", href: "/admin", icon: Home, current: location.pathname === '/admin' },
     { name: "Događaji", href: "/admin/events", icon: Calendar, current: location.pathname.includes('/admin/events') },
     { name: "Proizvodi", href: "/admin/products", icon: ClipboardList, current: location.pathname.includes('/admin/products') },
-    { name: "Izvještaji", href: "/admin/reports", icon: FileBarChart, current: location.pathname.includes('/admin/reports') },
+    // Removed "Izvještaji"
     { name: "Korisnici", href: "/admin/users", icon: Users, current: location.pathname.includes('/admin/users') },
   ];
 
@@ -170,3 +171,4 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     </div>
   );
 }
+

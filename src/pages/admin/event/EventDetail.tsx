@@ -21,6 +21,7 @@ import { ProductTypesTab } from "@/components/admin/event/ProductTypesTab";
 import { RandomizationTab } from "@/components/admin/event/RandomizationTab";
 import { ReportsTab } from "@/components/admin/event/ReportsTab";
 import { AdminLayout } from "@/components/layout/AdminLayout";
+import { RawDataTab } from "@/components/admin/event/RawDataTab";
 
 export default function EventDetail() {
   const { eventId } = useParams<{ eventId: string }>();
@@ -409,6 +410,7 @@ export default function EventDetail() {
             <TabsTrigger value="products">Tipovi proizvoda</TabsTrigger>
             <TabsTrigger value="randomization">Randomizacija</TabsTrigger>
             <TabsTrigger value="reports">Izvještaji</TabsTrigger>
+            <TabsTrigger value="rawdata">Sirovi podaci</TabsTrigger>
           </TabsList>
           
           <TabsContent value="products">
@@ -456,6 +458,10 @@ export default function EventDetail() {
           
           <TabsContent value="reports">
             <ReportsTab eventId={eventId || ''} />
+          </TabsContent>
+
+          <TabsContent value="rawdata">
+            <RawDataTab eventId={eventId || ''} />
           </TabsContent>
         </Tabs>
       </div>
