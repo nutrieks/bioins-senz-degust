@@ -1,10 +1,11 @@
-import React from "react";
+import React, { useRef } from "react";
 import { HedonicReport, RetailerCode } from "@/types";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, LabelList, ResponsiveContainer } from "recharts";
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
+import { toPng } from "html-to-image";
 
 // Define retailer colors
 const RETAILER_COLORS: Record<RetailerCode, string> = {
@@ -175,25 +176,61 @@ export function HedonicReportView({ report, productName }: { report: HedonicRepo
   }
 
   const { chartData, sortedSamples, colorMap, textColorMap } = processChartData(report);
-  
+
+  // refs
+  const tableRef = useRef<HTMLDivElement>(null);
+  const chartRef = useRef<HTMLDivElement>(null);
+
+  // Slika tablice
+  const handleDownloadTableImage = async () => {
+    if (tableRef.current) {
+      const dataUrl = await toPng(tableRef.current, { 
+        backgroundColor: "#fff", 
+        pixelRatio: 3,
+        cacheBust: true,
+        style: { fontFamily: "inherit" }
+      });
+      const link = document.createElement('a');
+      link.download = `hedonic_table_${productName}.png`;
+      link.href = dataUrl;
+      link.click();
+    }
+  };
+  // Slika grafa
+  const handleDownloadChartImage = async () => {
+    if (chartRef.current) {
+      // Stilizirano bolje za PNG
+      const dataUrl = await toPng(chartRef.current, {
+        backgroundColor: "#fff",
+        pixelRatio: 3,
+        cacheBust: true,
+        style: { fontFamily: "inherit" }
+      });
+      const link = document.createElement('a');
+      link.download = `hedonic_chart_${productName}.png`;
+      link.href = dataUrl;
+      link.click();
+    }
+  };
+
   return (
     <div className="space-y-6">
       <h3 className="text-xl font-bold">Hedonistička skala</h3>
-      
-      {/* Download for table */}
+
+      {/* Download tablice kao slika */}
       <div className="flex justify-end mb-2">
         <Button
           variant="outline"
           size="sm"
-          onClick={() => exportHedonicTableToCSV(sortedSamples, report, productName)}
+          onClick={handleDownloadTableImage}
           className="flex items-center"
         >
-          <Download className="mr-2 h-4 w-4" /> Preuzmi CSV (tablica)
+          <Download className="mr-2 h-4 w-4" /> Preuzmi sliku (tablica)
         </Button>
       </div>
-      
-      {/* Hedonic Table */}
-      <div className="overflow-x-auto border rounded-lg">
+
+      {/* Tablica za sliku */}
+      <div ref={tableRef} className="overflow-x-auto border rounded-lg bg-white p-3">
         <Table>
           <TableHeader>
             <TableRow>
@@ -238,20 +275,20 @@ export function HedonicReportView({ report, productName }: { report: HedonicRepo
           </TableBody>
         </Table>
       </div>
-      
-      {/* Download for chart */}
+
+      {/* Download grafa kao slika */}
       <div className="flex justify-end mb-2">
         <Button
           variant="outline"
           size="sm"
-          onClick={() => exportHedonicChartToCSV(chartData, sortedSamples, productName)}
+          onClick={handleDownloadChartImage}
           className="flex items-center"
         >
-          <Download className="mr-2 h-4 w-4" /> Preuzmi CSV (graf)
+          <Download className="mr-2 h-4 w-4" /> Preuzmi sliku (graf)
         </Button>
       </div>
-      
-      {/* Hedonic Chart */}
+
+      {/* Graf za sliku */}
       <Card>
         <CardContent className="pt-6">
           <div className="text-center mb-4">
@@ -260,7 +297,7 @@ export function HedonicReportView({ report, productName }: { report: HedonicRepo
             <p>Sample: {productName}</p>
             <p>Plot of: mean</p>
           </div>
-          <div className="h-96">
+          <div ref={chartRef} className="h-96 bg-white p-4 rounded-lg">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
                 data={chartData}

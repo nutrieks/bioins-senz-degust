@@ -1,11 +1,11 @@
-import React from "react";
+import React, { useRef } from "react";
 import { JARReport, RetailerCode } from "@/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, LabelList, ResponsiveContainer } from "recharts";
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
+import { toPng } from "html-to-image";
 
-// JAR Colors as specified, fixed for each JAR category
 const JAR_COLORS = [
   "rgb(255, 128, 128)", // Much too weak (1) - Light red/pink
   "rgb(255, 255, 128)", // Too weak (2) - Light yellow
@@ -14,7 +14,6 @@ const JAR_COLORS = [
   "rgb(255, 0, 0)"      // Much too strong (5) - Red
 ];
 
-// JAR Rating Labels (English)
 const JAR_LABELS = [
   "Much too weak",
   "Too weak",
@@ -23,7 +22,6 @@ const JAR_LABELS = [
   "Much too strong"
 ];
 
-// Sort samples according to the standard order: LI, KL, KO, IS, PL, ES, M
 const sortSamples = (samples: any[]) => {
   const retailerOrder: RetailerCode[] = [RetailerCode.LI, RetailerCode.KL, RetailerCode.KO, RetailerCode.IS, RetailerCode.PL, RetailerCode.ES, RetailerCode.M];
   
@@ -31,7 +29,6 @@ const sortSamples = (samples: any[]) => {
     const retailerA = a.retailerCode;
     const retailerB = b.retailerCode;
     
-    // First sort by retailer code order
     const orderA = retailerOrder.indexOf(retailerA);
     const orderB = retailerOrder.indexOf(retailerB);
     
@@ -39,12 +36,10 @@ const sortSamples = (samples: any[]) => {
       return orderA - orderB;
     }
     
-    // If same retailer code, sort alphabetically by brand
     return a.brand.localeCompare(b.brand);
   });
 };
 
-// Process JAR data for the chart
 const processJARData = (attrData: any) => {
   const samples = Object.entries(attrData.results).map(([sampleId, result]: [string, any]) => ({
     id: sampleId,
@@ -53,15 +48,12 @@ const processJARData = (attrData: any) => {
   
   const sortedSamples = sortSamples(samples);
   
-  // Create chart data - one entry per sample (brand)
   return sortedSamples.map(sample => {
-    // Base data with sample name
     const data: any = { 
       name: sample.brand,
       id: sample.id
     };
     
-    // Add each rating's value (number of votes) as a separate property
     for (let i = 0; i < 5; i++) {
       data[JAR_LABELS[i]] = sample.frequencies[i];
     }
@@ -70,9 +62,7 @@ const processJARData = (attrData: any) => {
   });
 };
 
-// NEW: CSV download helper for each JAR attribute
 function exportJARAttributeChartToCSV(attrData: any, productName: string) {
-  // rows = samples; columns = JAR_LABELS
   let csv = `JAR Chart: ${attrData.nameEN} (Sample: ${productName})\n`;
   csv += "Brand," + JAR_LABELS.join(",") + "\n";
   const samples = Object.entries(attrData.results).map(([sampleId, result]: [string, any]) => ({
@@ -85,6 +75,7 @@ function exportJARAttributeChartToCSV(attrData: any, productName: string) {
   });
   downloadCSV(csv, `JAR_${attrData.nameEN.replace(/\s/g, "_")}_${productName}.csv`);
 }
+
 function downloadCSV(content: string, filename: string) {
   const encodedUri = "data:text/csv;charset=utf-8," + encodeURIComponent(content);
   const link = document.createElement("a");
@@ -109,18 +100,33 @@ export function JARReportView({ report, productName }: { report: JARReport; prod
       <h3 className="text-xl font-bold">JAR skala</h3>
       {Object.entries(report).map(([attrId, attrData]) => {
         const chartData = processJARData(attrData);
+        const chartRef = useRef<HTMLDivElement>(null);
+
+        const handleDownloadChartImage = async () => {
+          if (chartRef.current) {
+            const dataUrl = await toPng(chartRef.current, {
+              backgroundColor: "#fff",
+              pixelRatio: 3,
+              cacheBust: true,
+              style: { fontFamily: "inherit" }
+            });
+            const link = document.createElement('a');
+            link.download = `JAR_${attrData.nameEN.replace(/\s/g, "_")}_${productName}_chart.png`;
+            link.href = dataUrl;
+            link.click();
+          }
+        };
 
         return (
           <Card key={attrId}>
-            {/* Download for JAR chart */}
             <div className="flex justify-end pt-6 pr-6">
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => exportJARAttributeChartToCSV(attrData, productName)}
+                onClick={handleDownloadChartImage}
                 className="flex items-center"
               >
-                <Download className="mr-2 h-4 w-4" /> Preuzmi CSV (graf)
+                <Download className="mr-2 h-4 w-4" /> Preuzmi sliku (graf)
               </Button>
             </div>
             <CardContent className="pt-2">
@@ -131,7 +137,7 @@ export function JARReportView({ report, productName }: { report: JARReport; prod
                 <p>Attribute: {attrData.nameEN}</p>
               </div>
               
-              <div className="h-96">
+              <div ref={chartRef} className="h-96 bg-white p-4 rounded-lg">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
                     data={chartData}
