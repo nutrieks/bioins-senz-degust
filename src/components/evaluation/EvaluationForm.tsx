@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { format } from "date-fns";
@@ -9,7 +10,8 @@ import {
   Form,
   FormField,
   FormItem,
-  FormLabel 
+  FormLabel,
+  FormMessage
 } from "@/components/ui/form";
 import { 
   HedonicRadioGroup, 
@@ -73,7 +75,7 @@ export function EvaluationForm({ eventId, productTypeId, onComplete }: Evaluatio
   const scrollRef = useRef<HTMLDivElement>(null);
   const [formKey, setFormKey] = useState<number>(Date.now()); // Key to force form reset
   
-  // Inicijalizacija obrasca kroz react-hook-form
+  // Inicijalizacija obrasca kroz react-hook-form s validacijom
   const form = useForm<FormData>({
     defaultValues: {
       hedonic: {
@@ -84,7 +86,8 @@ export function EvaluationForm({ eventId, productTypeId, onComplete }: Evaluatio
         overallLiking: ""
       },
       jar: {}
-    }
+    },
+    mode: "onSubmit"
   });
   
   // Reset form when current sample changes
@@ -133,6 +136,64 @@ export function EvaluationForm({ eventId, productTypeId, onComplete }: Evaluatio
   
   const onSubmit = async (data: FormData) => {
     if (!user || !currentSample) return;
+    
+    // Validate all hedonic fields are filled
+    const hedonicFields = ["appearance", "odor", "texture", "flavor", "overallLiking"];
+    const emptyHedonicFields = hedonicFields.filter(field => !data.hedonic[field as keyof typeof data.hedonic]);
+    
+    // Validate all JAR fields are filled (if there are any)
+    const emptyJarFields: string[] = [];
+    if (currentJARAttributes && currentJARAttributes.length > 0) {
+      currentJARAttributes.forEach(attr => {
+        if (!data.jar[attr.id]) {
+          emptyJarFields.push(attr.nameHR);
+        }
+      });
+    }
+    
+    // If any fields are empty, show error and highlight them
+    if (emptyHedonicFields.length > 0 || emptyJarFields.length > 0) {
+      // Map empty hedonic fields to their Croatian names
+      const hedonicFieldNames = {
+        appearance: "Izgled",
+        odor: "Miris",
+        texture: "Tekstura",
+        flavor: "Okus",
+        overallLiking: "Ukupni dojam"
+      };
+      
+      const emptyHedonicNames = emptyHedonicFields.map(
+        field => hedonicFieldNames[field as keyof typeof hedonicFieldNames]
+      );
+      
+      const errorFields = [...emptyHedonicNames, ...emptyJarFields].join(", ");
+      
+      toast({
+        title: "Nepotpuna ocjena",
+        description: `Molimo ispunite sva polja. Nedostaju: ${errorFields}`,
+        variant: "destructive",
+      });
+      
+      // Manually trigger errors for empty hedonic fields
+      emptyHedonicFields.forEach(field => {
+        form.setError(`hedonic.${field}` as any, {
+          type: "required",
+          message: "Obavezno polje"
+        });
+      });
+      
+      // Manually trigger errors for empty JAR fields
+      emptyJarFields.forEach((_, index) => {
+        if (currentJARAttributes && currentJARAttributes[index]) {
+          form.setError(`jar.${currentJARAttributes[index].id}` as any, {
+            type: "required",
+            message: "Obavezno polje"
+          });
+        }
+      });
+      
+      return;
+    }
     
     setIsSubmitting(true);
     
@@ -274,7 +335,7 @@ export function EvaluationForm({ eventId, productTypeId, onComplete }: Evaluatio
                       control={form.control}
                       name="hedonic.appearance"
                       render={({ field }) => (
-                        <FormItem>
+                        <FormItem className={form.formState.errors.hedonic?.appearance ? "pb-2 border-l-2 pl-3 border-destructive" : ""}>
                           <FormLabel className="text-lg font-semibold">Izgled:</FormLabel>
                           <div className="mt-2">
                             <HedonicRadioGroup 
@@ -290,6 +351,7 @@ export function EvaluationForm({ eventId, productTypeId, onComplete }: Evaluatio
                               ))}
                             </HedonicRadioGroup>
                           </div>
+                          <FormMessage />
                         </FormItem>
                       )}
                     />
@@ -298,7 +360,7 @@ export function EvaluationForm({ eventId, productTypeId, onComplete }: Evaluatio
                       control={form.control}
                       name="hedonic.odor"
                       render={({ field }) => (
-                        <FormItem>
+                        <FormItem className={form.formState.errors.hedonic?.odor ? "pb-2 border-l-2 pl-3 border-destructive" : ""}>
                           <FormLabel className="text-lg font-semibold">Miris:</FormLabel>
                           <div className="mt-2">
                             <HedonicRadioGroup 
@@ -314,6 +376,7 @@ export function EvaluationForm({ eventId, productTypeId, onComplete }: Evaluatio
                               ))}
                             </HedonicRadioGroup>
                           </div>
+                          <FormMessage />
                         </FormItem>
                       )}
                     />
@@ -322,7 +385,7 @@ export function EvaluationForm({ eventId, productTypeId, onComplete }: Evaluatio
                       control={form.control}
                       name="hedonic.texture"
                       render={({ field }) => (
-                        <FormItem>
+                        <FormItem className={form.formState.errors.hedonic?.texture ? "pb-2 border-l-2 pl-3 border-destructive" : ""}>
                           <FormLabel className="text-lg font-semibold">Tekstura:</FormLabel>
                           <div className="mt-2">
                             <HedonicRadioGroup 
@@ -338,6 +401,7 @@ export function EvaluationForm({ eventId, productTypeId, onComplete }: Evaluatio
                               ))}
                             </HedonicRadioGroup>
                           </div>
+                          <FormMessage />
                         </FormItem>
                       )}
                     />
@@ -346,7 +410,7 @@ export function EvaluationForm({ eventId, productTypeId, onComplete }: Evaluatio
                       control={form.control}
                       name="hedonic.flavor"
                       render={({ field }) => (
-                        <FormItem>
+                        <FormItem className={form.formState.errors.hedonic?.flavor ? "pb-2 border-l-2 pl-3 border-destructive" : ""}>
                           <FormLabel className="text-lg font-semibold">Okus:</FormLabel>
                           <div className="mt-2">
                             <HedonicRadioGroup 
@@ -362,6 +426,7 @@ export function EvaluationForm({ eventId, productTypeId, onComplete }: Evaluatio
                               ))}
                             </HedonicRadioGroup>
                           </div>
+                          <FormMessage />
                         </FormItem>
                       )}
                     />
@@ -372,7 +437,7 @@ export function EvaluationForm({ eventId, productTypeId, onComplete }: Evaluatio
                       control={form.control}
                       name="hedonic.overallLiking"
                       render={({ field }) => (
-                        <FormItem>
+                        <FormItem className={form.formState.errors.hedonic?.overallLiking ? "pb-2 border-l-2 pl-3 border-destructive" : ""}>
                           <FormLabel className="text-lg font-semibold">Ukupni dojam:</FormLabel>
                           <div className="mt-2">
                             <HedonicRadioGroup 
@@ -388,6 +453,7 @@ export function EvaluationForm({ eventId, productTypeId, onComplete }: Evaluatio
                               ))}
                             </HedonicRadioGroup>
                           </div>
+                          <FormMessage />
                         </FormItem>
                       )}
                     />
@@ -409,7 +475,7 @@ export function EvaluationForm({ eventId, productTypeId, onComplete }: Evaluatio
                           control={form.control}
                           name={`jar.${attribute.id}`}
                           render={({ field }) => (
-                            <FormItem>
+                            <FormItem className={form.formState.errors.jar?.[attribute.id] ? "pb-2 border-l-2 pl-3 border-destructive" : ""}>
                               <FormLabel className="text-lg font-semibold">{attribute.nameHR}:</FormLabel>
                               <div className="mt-2">
                                 <JARRadioGroup 
@@ -425,6 +491,7 @@ export function EvaluationForm({ eventId, productTypeId, onComplete }: Evaluatio
                                   ))}
                                 </JARRadioGroup>
                               </div>
+                              <FormMessage />
                             </FormItem>
                           )}
                         />
