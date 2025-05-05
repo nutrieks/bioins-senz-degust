@@ -1,13 +1,17 @@
+
 import { 
   User, Event, ProductType, Sample, JARAttribute, 
   Randomization, Evaluation, HedonicScale, JARRating,
-  HedonicReport, JARReport, EventStatus, RetailerCode, BaseProductType
+  HedonicReport, JARReport, EventStatus, RetailerCode, BaseProductType, UserRole
 } from "../types";
 import { 
   users, events, productTypes, samples, jarAttributes, 
   randomizations, evaluations, baseProductTypes
 } from "./mock";
 import { generateRandomizationTable, getNextSample } from "./mock/utils";
+
+// Helper function for delaying operations (for simulating network requests)
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 // Authentication
 export async function login(username: string, password: string): Promise<User | null> {
@@ -342,7 +346,7 @@ export async function getEvaluationsStatus(eventId: string) {
     if (!event) throw new Error("Event not found");
     
     // Get all users who are evaluators (not admins)
-    const evaluators = users.filter(user => !user.isAdmin);
+    const evaluators = users.filter(user => user.role === UserRole.EVALUATOR);
     
     // Get all product types for this event
     const eventProductTypes = productTypes.filter(pt => pt.eventId === eventId);
