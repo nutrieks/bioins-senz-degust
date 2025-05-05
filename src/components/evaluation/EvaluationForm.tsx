@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { format } from "date-fns";
@@ -403,7 +402,7 @@ export function EvaluationForm({ eventId, productTypeId, onComplete }: Evaluatio
                     <CardTitle>JAR skala (Just About Right)</CardTitle>
                   </CardHeader>
                   <CardContent className="p-6">
-                    <div className="space-y-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-8">
                       {currentJARAttributes.map((attribute) => (
                         <FormField
                           key={`jar-${attribute.id}-${formKey}`}

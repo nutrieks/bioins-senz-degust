@@ -194,6 +194,7 @@ export function HedonicReportView({ report, productName }: { report: HedonicRepo
                         dataKey={`${sample.brand}_${id}`} 
                         position="top"
                         style={{ fill: textColorMap.get(id) || 'black', fontWeight: 600, fontSize: 16 }}
+                        formatter={(value: number) => value?.toFixed(1) || ""}
                       />
                     </Bar>
                   ))}
@@ -202,7 +203,7 @@ export function HedonicReportView({ report, productName }: { report: HedonicRepo
             </div>
             {/* Legenda ispod grafa */}
             <div
-              className="flex justify-center items-center gap-5 mt-3"
+              className="flex flex-wrap justify-center items-center gap-3 mt-1"
               style={{ fontSize: 15, marginBottom: 7 }}
             >
               {sortedSamples.map(([id, sample]) => (

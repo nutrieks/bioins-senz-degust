@@ -1,3 +1,4 @@
+
 import React, { useRef } from "react";
 import { JARReport, RetailerCode } from "@/types";
 import { Card, CardContent } from "@/components/ui/card";
@@ -106,7 +107,7 @@ export function JARReportView({ report, productName }: { report: JARReport; prod
           if (chartRef.current) {
             const dataUrl = await toPng(chartRef.current, {
               backgroundColor: "#fff",
-              pixelRatio: 3,
+              pixelRatio: 4, // Povećana kvaliteta
               cacheBust: true,
               style: { fontFamily: "inherit" }
             });
@@ -130,62 +131,73 @@ export function JARReportView({ report, productName }: { report: JARReport; prod
               </Button>
             </div>
             <CardContent className="pt-2">
-              <div className="text-center mb-4">
-                <h4 className="font-bold">Consumer's reaction to specific attribute</h4>
-                <p>Method: JAR scale</p>
-                <p>Sample: {productName}</p>
-                <p>Attribute: {attrData.nameEN}</p>
-              </div>
-              
-              <div ref={chartRef} className="h-96 bg-white p-4 rounded-lg">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={chartData}
-                    margin={{
-                      top: 20,
-                      right: 30,
-                      left: 20,
-                      bottom: 70
-                    }}
-                    barGap={2}
-                    barCategoryGap={20}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis 
-                      label={{ value: 'No. of votes', angle: -90, position: 'insideLeft' }}
-                      domain={[0, 12]}
-                      ticks={[0, 2, 4, 6, 8, 10, 12]}
-                    />
-                    <Tooltip 
-                      contentStyle={{ color: 'black' }} 
-                      formatter={(value, name) => [value, name]}
-                      labelFormatter={(label) => `Sample: ${label}`}
-                    />
-                    <Legend 
-                      layout="horizontal" 
-                      verticalAlign="bottom" 
-                      align="center"
-                      wrapperStyle={{ bottom: -10, lineHeight: '40px', color: 'black' }}
-                      formatter={(value, entry) => <span style={{ color: 'black' }}>{value}</span>}
-                    />
-                    {JAR_LABELS.map((label, index) => (
-                      <Bar
-                        key={label}
-                        dataKey={label}
-                        name={label}
-                        fill={JAR_COLORS[index]}
-                      >
-                        <LabelList 
-                          dataKey={label} 
-                          position="top"
-                          style={{ fill: 'black' }}
-                          formatter={(value: number) => value > 0 ? value : ''}
-                        />
-                      </Bar>
-                    ))}
-                  </BarChart>
-                </ResponsiveContainer>
+              <div 
+                ref={chartRef}
+                className="bg-white p-5 rounded-lg shadow"
+                style={{
+                  width: '100%',
+                  maxWidth: 950,
+                  margin: '0 auto'
+                }}
+              >
+                {/* Naslov i opis (dio slike) */}
+                <div className="text-center mb-4">
+                  <h4 className="font-bold text-lg mb-1">Consumer's reaction to specific attribute</h4>
+                  <p className="text-sm">Method: JAR scale</p>
+                  <p className="text-sm">Sample: {productName}</p>
+                  <p className="text-sm mb-3">Attribute: {attrData.nameEN}</p>
+                </div>
+                
+                <div className="h-96">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={chartData}
+                      margin={{
+                        top: 20,
+                        right: 30,
+                        left: 20,
+                        bottom: 70
+                      }}
+                      barGap={2}
+                      barCategoryGap={20}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" />
+                      <YAxis 
+                        label={{ value: 'No. of votes', angle: -90, position: 'insideLeft' }}
+                        domain={[0, 12]}
+                        ticks={[0, 2, 4, 6, 8, 10, 12]}
+                      />
+                      <Tooltip 
+                        contentStyle={{ color: 'black' }} 
+                        formatter={(value, name) => [value, name]}
+                        labelFormatter={(label) => `Sample: ${label}`}
+                      />
+                      <Legend 
+                        layout="horizontal" 
+                        verticalAlign="bottom" 
+                        align="center"
+                        wrapperStyle={{ bottom: -10, lineHeight: '40px', color: 'black' }}
+                        formatter={(value, entry) => <span style={{ color: 'black' }}>{value}</span>}
+                      />
+                      {JAR_LABELS.map((label, index) => (
+                        <Bar
+                          key={label}
+                          dataKey={label}
+                          name={label}
+                          fill={JAR_COLORS[index]}
+                        >
+                          <LabelList 
+                            dataKey={label} 
+                            position="top"
+                            style={{ fill: 'black', fontSize: 14 }}
+                            formatter={(value: number) => value > 0 ? value : ''}
+                          />
+                        </Bar>
+                      ))}
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
               </div>
             </CardContent>
           </Card>
