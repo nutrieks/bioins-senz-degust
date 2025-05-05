@@ -12,7 +12,8 @@ import {
   users, 
   samples, 
   productTypes, 
-  jarAttributes 
+  jarAttributes,
+  events 
 } from "../mock";
 import { delay } from "./events";
 

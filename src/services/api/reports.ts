@@ -7,7 +7,9 @@ import {
 import { 
   samples, 
   evaluations, 
-  jarAttributes 
+  jarAttributes,
+  users,
+  productTypes
 } from "../mock";
 
 // Reporting
