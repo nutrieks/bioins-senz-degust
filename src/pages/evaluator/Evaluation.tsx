@@ -43,6 +43,7 @@ export default function Evaluation() {
         // Dohvati sve tipove proizvoda za događaj
         const types = await getProductTypes(eventId);
         setProductTypes(types);
+        console.log("Fetched product types for event:", types.length, types);
 
         // Dohvati JAR atribute za sve tipove proizvoda
         const allAttributes: JARAttribute[] = [];
@@ -133,7 +134,9 @@ function EvaluationContent({
   useEffect(() => {
     const initializeEvaluation = async () => {
       // Učitaj prvi tip proizvoda i njegove uzorke
+      console.log("Initializing evaluation with event ID:", eventId);
       const hasProductTypes = await loadNextProductType(eventId);
+      console.log("loadNextProductType result:", hasProductTypes);
       setInitialized(true);
       
       if (!hasProductTypes) {
@@ -155,8 +158,10 @@ function EvaluationContent({
     // Sakrij ekran za otkrivanje
     setShowSampleReveal(false);
     
+    console.log("Continue after reveal, loading next product type");
     // Učitaj sljedeći tip proizvoda za ocjenjivanje
     const hasMore = await loadNextProductType(eventId);
+    console.log("Has more product types:", hasMore);
     
     if (!hasMore) {
       // Nema više tipova proizvoda, prikaži konačnu poruku
@@ -176,11 +181,13 @@ function EvaluationContent({
 
   // Ako je ocjenjivanje za sve tipove proizvoda završeno
   if (isComplete) {
+    console.log("Evaluation complete, showing completion message");
     return <CompletionMessage onReturn={handleReturn} />;
   }
 
   // Ako je završeno ocjenjivanje trenutnog tipa proizvoda, prikaži otkrivanje uzoraka
   if (showSampleReveal && currentProductType) {
+    console.log("Showing sample reveal for product type:", currentProductType.id);
     return (
       <SampleRevealScreen 
         eventId={eventId}
@@ -192,6 +199,7 @@ function EvaluationContent({
   }
 
   // Prikaži obrazac za ocjenjivanje trenutnog uzorka
+  console.log("Showing evaluation form for product type:", currentProductType?.id);
   return (
     <EvaluationForm 
       eventId={eventId} 

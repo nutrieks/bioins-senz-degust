@@ -27,7 +27,10 @@ export function validateEvaluationForm(
   if (currentJARAttributes && currentJARAttributes.length > 0) {
     currentJARAttributes.forEach(attr => {
       // Check if the attribute has a value (including zero)
-      if (data.jar[attr.id] === undefined || data.jar[attr.id] === '') {
+      // Note: We need to check for undefined, empty string, and also
+      // make sure that zero (0) is considered a valid value
+      const jarValue = data.jar[attr.id];
+      if (jarValue === undefined || jarValue === '') {
         emptyJarFields.push(attr.nameHR);
       }
     });
@@ -58,7 +61,8 @@ export function validateEvaluationForm(
     // Manually trigger errors for empty JAR fields
     if (currentJARAttributes) {
       currentJARAttributes.forEach(attr => {
-        if (data.jar[attr.id] === undefined || data.jar[attr.id] === '') {
+        const jarValue = data.jar[attr.id];
+        if (jarValue === undefined || jarValue === '') {
           form.setError(`jar.${attr.id}` as any, {
             type: "required",
             message: "Obavezno polje"

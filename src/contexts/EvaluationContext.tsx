@@ -35,6 +35,7 @@ export const EvaluationProvider: React.FC<{
   const [showSampleReveal, setShowSampleReveal] = useState<boolean>(false);
   const [remainingProductTypes, setRemainingProductTypes] = useState<ProductType[]>([]);
   const [allProductTypes, setAllProductTypes] = useState<ProductType[]>([]);
+  const [processedProductTypes, setProcessedProductTypes] = useState<string[]>([]);
 
   // Ensure JAR attributes are loaded correctly when currentSample changes
   useEffect(() => {
@@ -107,6 +108,10 @@ export const EvaluationProvider: React.FC<{
       }
 
       if (complete && productTypeId) {
+        // Current product type is complete, add to processed list
+        if (productTypeId && !processedProductTypes.includes(productTypeId)) {
+          setProcessedProductTypes(prev => [...prev, productTypeId]);
+        }
         setIsComplete(false);
         setShowSampleReveal(true);
       } else {
@@ -121,41 +126,40 @@ export const EvaluationProvider: React.FC<{
     if (!user || !user.id) return false;
 
     try {
+      // Load all product types if not already loaded
       if (allProductTypes.length === 0) {
         const types = await getProductTypes(eventId);
-        console.log("Loading product types:", types);
+        console.log("Loading all product types:", types);
         setAllProductTypes(types);
         
-        const remaining = [...types];
-        setRemainingProductTypes(remaining);
+        // Filter out any types that have already been processed
+        const availableTypes = types.filter(pt => !processedProductTypes.includes(pt.id));
+        console.log("Available product types:", availableTypes);
+        setRemainingProductTypes(availableTypes);
         
-        if (remaining.length > 0) {
-          await loadNextSample(eventId, remaining[0].id);
+        if (availableTypes.length > 0) {
+          console.log("Loading first available product type:", availableTypes[0]);
+          await loadNextSample(eventId, availableTypes[0].id);
           return true;
         }
-      } else if (remainingProductTypes.length > 0) {
-        // Make a copy of remaining product types
-        const updatedRemaining = [...remainingProductTypes];
+      } else {
+        // Get product types not yet processed
+        const availableTypes = allProductTypes.filter(pt => !processedProductTypes.includes(pt.id));
+        console.log("Current product type:", currentProductType?.id);
+        console.log("Processed product types:", processedProductTypes);
+        console.log("Available product types:", availableTypes);
         
-        // Remove current product type if it exists
-        if (currentProductType) {
-          const index = updatedRemaining.findIndex(pt => pt.id === currentProductType.id);
-          if (index !== -1) {
-            updatedRemaining.splice(index, 1);
-          }
-        }
+        setRemainingProductTypes(availableTypes);
         
-        console.log("Remaining product types after filter:", updatedRemaining);
-        setRemainingProductTypes(updatedRemaining);
-        
-        if (updatedRemaining.length > 0) {
-          console.log("Loading next product type:", updatedRemaining[0]);
-          await loadNextSample(eventId, updatedRemaining[0].id);
+        if (availableTypes.length > 0) {
+          console.log("Loading next available product type:", availableTypes[0]);
+          await loadNextSample(eventId, availableTypes[0].id);
           return true;
         }
       }
       
       // Only set isComplete to true if there are no more product types
+      console.log("No more product types available, evaluation complete");
       setIsComplete(true);
       return false;
     } catch (error) {
@@ -174,6 +178,7 @@ export const EvaluationProvider: React.FC<{
     setShowSampleReveal(false);
     setRemainingProductTypes([]);
     setAllProductTypes([]);
+    setProcessedProductTypes([]);
   };
 
   return (
