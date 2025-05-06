@@ -193,7 +193,11 @@ export function HedonicReportView({ report, productName }: { report: HedonicRepo
                       <LabelList 
                         dataKey={`${sample.brand}_${id}`} 
                         position="top"
-                        style={{ fill: textColorMap.get(id) || 'black', fontWeight: 600, fontSize: 16 }}
+                        style={{ 
+                          fill: textColorMap.get(id) || 'black', 
+                          fontWeight: 600, 
+                          fontSize: 16
+                        }}
                         formatter={(value: number) => value?.toFixed(1) || ""}
                       />
                     </Bar>

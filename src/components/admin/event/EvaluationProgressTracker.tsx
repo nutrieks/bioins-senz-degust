@@ -1,7 +1,6 @@
 
 import { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Check } from "lucide-react";
@@ -31,7 +30,6 @@ type EvaluationStatus = {
 
 export function EvaluationProgressTracker({ eventId, refreshInterval = 30000 }: EvaluationProgressTrackerProps) {
   const [evaluationsStatus, setEvaluationsStatus] = useState<EvaluationStatus[]>([]);
-  const [selectedProductTypeIndex, setSelectedProductTypeIndex] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [overallProgress, setOverallProgress] = useState<number>(0);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
@@ -93,7 +91,6 @@ export function EvaluationProgressTracker({ eventId, refreshInterval = 30000 }: 
   };
 
   const productTypes = getUniqueProductTypes();
-  const selectedProductType = productTypes[selectedProductTypeIndex];
 
   if (isLoading && evaluationsStatus.length === 0) {
     return (
@@ -135,26 +132,17 @@ export function EvaluationProgressTracker({ eventId, refreshInterval = 30000 }: 
           <Progress value={overallProgress} className="h-2" />
         </div>
 
-        {productTypes.length > 0 && (
-          <Tabs defaultValue={productTypes[0]?.id} onValueChange={(value) => {
-            const index = productTypes.findIndex(pt => pt.id === value);
-            if (index !== -1) setSelectedProductTypeIndex(index);
-          }}>
-            <TabsList className="mb-4 flex flex-wrap">
-              {productTypes.map((pt) => (
-                <TabsTrigger key={pt.id} value={pt.id}>
-                  {pt.name}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-
+        {productTypes.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {productTypes.map((productType) => (
-              <TabsContent key={productType.id} value={productType.id} className="mt-0">
-                <div className="grid grid-cols-12 gap-2 mt-4 text-center font-medium border-b pb-2">
+              <div key={productType.id} className="border rounded-lg p-4">
+                <h3 className="font-medium text-lg mb-3">{productType.name}</h3>
+                
+                <div className="grid grid-cols-12 gap-2 text-center font-medium border-b pb-2">
                   <div className="col-span-2">Ocjenjivač</div>
                   <div className="col-span-10">Uzorci</div>
                 </div>
-
+                
                 {evaluationsStatus.map((evaluator) => {
                   const productTypeData = evaluator.completedSamples.find(
                     pt => pt.productTypeId === productType.id
@@ -163,7 +151,7 @@ export function EvaluationProgressTracker({ eventId, refreshInterval = 30000 }: 
                   if (!productTypeData) return null;
 
                   return (
-                    <div key={evaluator.userId} className="grid grid-cols-12 gap-2 py-4 border-b">
+                    <div key={`${evaluator.userId}-${productType.id}`} className="grid grid-cols-12 gap-2 py-2 border-b">
                       <div className="col-span-2 flex items-center">
                         <div className="px-2 py-1 rounded-lg bg-muted">
                           {evaluator.position}
@@ -184,12 +172,10 @@ export function EvaluationProgressTracker({ eventId, refreshInterval = 30000 }: 
                     </div>
                   );
                 })}
-              </TabsContent>
+              </div>
             ))}
-          </Tabs>
-        )}
-
-        {productTypes.length === 0 && (
+          </div>
+        ) : (
           <div className="text-center py-8 text-muted-foreground">
             Nema podataka o ocjenjivanju za ovaj događaj.
           </div>
