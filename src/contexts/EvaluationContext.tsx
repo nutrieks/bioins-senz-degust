@@ -123,6 +123,7 @@ export const EvaluationProvider: React.FC<{
     try {
       if (allProductTypes.length === 0) {
         const types = await getProductTypes(eventId);
+        console.log("Loading product types:", types);
         setAllProductTypes(types);
         
         const remaining = [...types];
@@ -133,17 +134,28 @@ export const EvaluationProvider: React.FC<{
           return true;
         }
       } else if (remainingProductTypes.length > 0) {
-        const updatedRemaining = remainingProductTypes.filter(
-          pt => pt.id !== currentProductType?.id
-        );
+        // Make a copy of remaining product types
+        const updatedRemaining = [...remainingProductTypes];
+        
+        // Remove current product type if it exists
+        if (currentProductType) {
+          const index = updatedRemaining.findIndex(pt => pt.id === currentProductType.id);
+          if (index !== -1) {
+            updatedRemaining.splice(index, 1);
+          }
+        }
+        
+        console.log("Remaining product types after filter:", updatedRemaining);
         setRemainingProductTypes(updatedRemaining);
         
         if (updatedRemaining.length > 0) {
+          console.log("Loading next product type:", updatedRemaining[0]);
           await loadNextSample(eventId, updatedRemaining[0].id);
           return true;
         }
       }
       
+      // Only set isComplete to true if there are no more product types
       setIsComplete(true);
       return false;
     } catch (error) {

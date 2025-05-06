@@ -43,8 +43,12 @@ export function JARScaleSection({
                   <FormLabel className="text-lg font-semibold">{attribute.nameHR}:</FormLabel>
                   <div className="mt-2">
                     <JARRadioGroup 
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
+                      onValueChange={(value) => {
+                        console.log(`Setting JAR value for ${attribute.id}:`, value);
+                        field.onChange(value);
+                      }}
+                      value={field.value?.toString()}
+                      defaultValue={field.value?.toString()}
                     >
                       {[1, 2, 3, 4, 5].map((value) => (
                         <JARRadioItem
@@ -55,7 +59,7 @@ export function JARScaleSection({
                       ))}
                     </JARRadioGroup>
                   </div>
-                  <FormMessage />
+                  {errors.jar?.[attribute.id] && <FormMessage>{errors.jar[attribute.id].message}</FormMessage>}
                 </FormItem>
               )}
             />

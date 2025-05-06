@@ -2,7 +2,6 @@
 import { FormData } from "../types";
 import { JARAttribute } from "@/types";
 import { UseFormReturn } from "react-hook-form";
-import { toast } from "@/hooks/use-toast";
 
 // Map hedonic fields to their Croatian names for error messages
 const HEDONIC_FIELD_NAMES = {
@@ -24,11 +23,19 @@ export function validateEvaluationForm(
   
   // Validate all JAR fields are filled (if there are any)
   const emptyJarFields: string[] = [];
+  
   if (currentJARAttributes && currentJARAttributes.length > 0) {
     currentJARAttributes.forEach(attr => {
-      if (!data.jar[attr.id]) {
+      // Check if the attribute has a value (including zero)
+      if (data.jar[attr.id] === undefined || data.jar[attr.id] === '') {
         emptyJarFields.push(attr.nameHR);
       }
+    });
+    
+    console.log("JAR validation check:", {
+      attributes: currentJARAttributes.map(a => a.id),
+      jarData: data.jar,
+      emptyFields: emptyJarFields
     });
   }
   
@@ -49,14 +56,16 @@ export function validateEvaluationForm(
     });
     
     // Manually trigger errors for empty JAR fields
-    emptyJarFields.forEach((_, index) => {
-      if (currentJARAttributes && currentJARAttributes[index]) {
-        form.setError(`jar.${currentJARAttributes[index].id}` as any, {
-          type: "required",
-          message: "Obavezno polje"
-        });
-      }
-    });
+    if (currentJARAttributes) {
+      currentJARAttributes.forEach(attr => {
+        if (data.jar[attr.id] === undefined || data.jar[attr.id] === '') {
+          form.setError(`jar.${attr.id}` as any, {
+            type: "required",
+            message: "Obavezno polje"
+          });
+        }
+      });
+    }
     
     return { isValid: false, errorFields };
   }

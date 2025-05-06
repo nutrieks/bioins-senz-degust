@@ -3,7 +3,6 @@ import { FormData } from "../types";
 import { HedonicScale, JARRating, Sample } from "@/types";
 import { submitEvaluation as submitEvaluationAPI } from "@/services/dataService";
 import { UseFormReturn } from "react-hook-form";
-import { toast } from "@/hooks/use-toast";
 
 export async function handleEvaluationSubmit(
   data: FormData,
@@ -20,6 +19,8 @@ export async function handleEvaluationSubmit(
   setIsSubmitting(true);
   
   try {
+    console.log("Submitting form data:", data);
+    
     // Pretvorba string vrijednosti u brojeve za hedonističku skalu
     const hedonicRatings: HedonicScale = {
       appearance: parseInt(data.hedonic.appearance),
@@ -33,7 +34,15 @@ export async function handleEvaluationSubmit(
     const jarRatings: JARRating = {};
     
     Object.entries(data.jar).forEach(([attrId, value]) => {
-      jarRatings[attrId] = parseInt(value);
+      if (value !== undefined && value !== '') {
+        jarRatings[attrId] = parseInt(value.toString());
+      }
+    });
+    
+    // Log the final ratings before sending
+    console.log("Submitting ratings:", {
+      hedonic: hedonicRatings,
+      jar: jarRatings
     });
     
     // Slanje ocjene na backend
