@@ -3,7 +3,7 @@ import { FormData } from "../types";
 import { HedonicScale, JARRating, Sample } from "@/types";
 import { submitEvaluation as submitEvaluationAPI } from "@/services/dataService";
 import { UseFormReturn } from "react-hook-form";
-import { Toast } from "@/hooks/use-toast";
+import { toast } from "@/hooks/use-toast";
 
 export async function handleEvaluationSubmit(
   data: FormData,
@@ -11,7 +11,7 @@ export async function handleEvaluationSubmit(
   userId: string,
   currentSample: Sample,
   eventId: string,
-  toast: { toast: (props: Toast) => void },
+  toast: { toast: (props: any) => void },
   setIsSubmitting: (value: boolean) => void,
   loadNextSample: (eventId: string, productTypeId?: string) => Promise<void>,
   setFormKey: (value: number) => void,

@@ -2,7 +2,7 @@
 import { FormData } from "../types";
 import { JARAttribute } from "@/types";
 import { UseFormReturn } from "react-hook-form";
-import { Toast } from "@/hooks/use-toast";
+import { toast } from "@/hooks/use-toast";
 
 // Map hedonic fields to their Croatian names for error messages
 const HEDONIC_FIELD_NAMES = {
