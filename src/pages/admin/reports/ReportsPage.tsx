@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,7 @@ import {
   TableRow 
 } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
+import { toPng } from "html-to-image";
 
 export default function ReportsPage() {
   const [events, setEvents] = useState<Event[]>([]);
@@ -25,6 +26,7 @@ export default function ReportsPage() {
   const [randomization, setRandomization] = useState<Randomization | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   
+  const tableRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
   // Fetch all events
@@ -100,38 +102,28 @@ export default function ReportsPage() {
     window.print();
   };
 
-  const handleExportRandomizationTable = () => {
-    if (!randomization || !selectedProductType) return;
+  const handleExportRandomizationTable = async () => {
+    if (!randomization || !selectedProductType || !tableRef.current) return;
     
-    // Create CSV content
-    let csvContent = "data:text/csv;charset=utf-8,";
-    csvContent += `${selectedProductType.productName} - ${selectedProductType.baseCode}\n\n`;
-    csvContent += "Mjesto,";
-    
-    // Headers for rounds
-    const roundCount = Object.keys(randomization.table[1] || {}).length;
-    for (let i = 1; i <= roundCount; i++) {
-      csvContent += `Dijeljenje ${i},`;
+    try {
+      const dataUrl = await toPng(tableRef.current, {
+        backgroundColor: "#fff",
+        pixelRatio: 4,
+        cacheBust: true
+      });
+      
+      const link = document.createElement('a');
+      link.download = `randomizacija_${selectedProductType.baseCode}_${new Date().toISOString().split('T')[0]}.png`;
+      link.href = dataUrl;
+      link.click();
+    } catch (error) {
+      console.error("Error generating image:", error);
+      toast({
+        title: "Greška",
+        description: "Došlo je do pogreške prilikom generiranja slike tablice.",
+        variant: "destructive",
+      });
     }
-    csvContent += "\n";
-    
-    // Data rows
-    for (let position = 1; position <= 12; position++) {
-      csvContent += `${position},`;
-      for (let round = 1; round <= roundCount; round++) {
-        csvContent += `${randomization.table[position]?.[round] || ""},`;
-      }
-      csvContent += "\n";
-    }
-    
-    // Create download link
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `randomizacija_${selectedProductType.baseCode}_${new Date().toISOString().split('T')[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
   };
 
   const formatDate = (dateString: string) => {
@@ -142,6 +134,15 @@ export default function ReportsPage() {
       year: "numeric",
     }).format(date);
   };
+
+  // Create an array of position numbers (1-12)
+  const positions = Array.from({ length: 12 }, (_, i) => i + 1);
+  
+  // Determine how many rounds/distributions we have if randomization exists
+  const rounds = selectedProductType?.samples.length || 0;
+  
+  // Create an array of round numbers (1 to rounds)
+  const roundNumbers = Array.from({ length: rounds }, (_, i) => i + 1);
 
   return (
     <AdminLayout>
@@ -253,13 +254,16 @@ export default function ReportsPage() {
                               className="flex items-center"
                             >
                               <FileDown className="mr-2 h-4 w-4" />
-                              Preuzmi CSV
+                              Preuzmi sliku
                             </Button>
                           </div>
                         </div>
                         
-                        <div className="print:text-black">
-                          <h1 className="text-xl font-bold mb-2 text-center hidden print:block">
+                        <div 
+                          ref={tableRef} 
+                          className="bg-white p-5 rounded-lg print:text-black"
+                        >
+                          <h1 className="text-xl font-bold mb-4 text-center">
                             {selectedProductType.productName} - {selectedProductType.baseCode}
                           </h1>
                           
@@ -270,27 +274,20 @@ export default function ReportsPage() {
                               </TableCaption>
                               <TableHeader>
                                 <TableRow>
-                                  <TableHead className="w-24">Mjesto</TableHead>
-                                  {/* Generate columns based on sample count */}
-                                  {Array.from(
-                                    { length: Object.keys(randomization.table[1] || {}).length },
-                                    (_, i) => i + 1
-                                  ).map((round) => (
-                                    <TableHead key={round}>Dijeljenje {round}</TableHead>
+                                  <TableHead className="w-24">Dijeljenje / Mjesto</TableHead>
+                                  {/* Column headers are now positions (1-12) */}
+                                  {positions.map((position) => (
+                                    <TableHead key={position} className="text-center">Mjesto {position}</TableHead>
                                   ))}
                                 </TableRow>
                               </TableHeader>
                               <TableBody>
-                                {/* Generate a row for each evaluator position (1-12) */}
-                                {Array.from({ length: 12 }, (_, i) => i + 1).map((position) => (
-                                  <TableRow key={position}>
-                                    <TableCell className="font-medium">{position}</TableCell>
-                                    {/* For each round, show the blind code */}
-                                    {Array.from(
-                                      { length: Object.keys(randomization.table[1] || {}).length },
-                                      (_, i) => i + 1
-                                    ).map((round) => (
-                                      <TableCell key={round}>
+                                {/* Now rows are rounds and columns are positions */}
+                                {roundNumbers.map((round) => (
+                                  <TableRow key={round}>
+                                    <TableCell className="font-medium">Dijeljenje {round}</TableCell>
+                                    {positions.map((position) => (
+                                      <TableCell key={position} className="text-center">
                                         {randomization.table[position]?.[round] || "-"}
                                       </TableCell>
                                     ))}
@@ -300,11 +297,11 @@ export default function ReportsPage() {
                             </Table>
                           </div>
                           
-                          <div className="mt-4 text-sm text-muted-foreground print:text-black">
-                            <p>Legenda:</p>
-                            <ul className="list-disc pl-5 mt-1">
+                          <div className="mt-6 text-sm">
+                            <p className="font-medium">Legenda:</p>
+                            <ul className="list-disc pl-5 mt-2">
                               {selectedProductType.samples.map((sample, index) => (
-                                <li key={index}>
+                                <li key={index} className="mt-1">
                                   {sample.blindCode}: {sample.brand} ({sample.retailerCode})
                                 </li>
                               ))}

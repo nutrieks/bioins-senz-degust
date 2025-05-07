@@ -107,6 +107,7 @@ export function HedonicReportView({ report, productName }: { report: HedonicRepo
 
   // refs
   const chartRef = useRef<HTMLDivElement>(null);
+  const tableRef = useRef<HTMLDivElement>(null);
 
   // Slika grafa
   const handleDownloadChartImage = async () => {
@@ -124,24 +125,103 @@ export function HedonicReportView({ report, productName }: { report: HedonicRepo
     }
   };
 
+  // Slika tablice
+  const handleDownloadTableImage = async () => {
+    if (tableRef.current) {
+      const dataUrl = await toPng(tableRef.current, {
+        backgroundColor: "#fff",
+        pixelRatio: 4,
+        cacheBust: true,
+        style: { fontFamily: "inherit" }
+      });
+      const link = document.createElement('a');
+      link.download = `hedonic_table_${productName}.png`;
+      link.href = dataUrl;
+      link.click();
+    }
+  };
+
   return (
     <div className="space-y-6">
       <h3 className="text-xl font-bold">Hedonistička skala</h3>
 
-      <div className="flex justify-end mb-2">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleDownloadChartImage}
-          className="flex items-center"
-        >
-          <Download className="mr-2 h-4 w-4" /> Preuzmi sliku (graf)
-        </Button>
-      </div>
-
-      {/* Graf + naslov + legenda, sve zajedno za download */}
+      {/* Table view */}
       <Card>
         <CardContent className="pt-6">
+          <div className="flex justify-end mb-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleDownloadTableImage}
+              className="flex items-center"
+            >
+              <Download className="mr-2 h-4 w-4" /> Preuzmi sliku (tablica)
+            </Button>
+          </div>
+
+          <div 
+            ref={tableRef}
+            className="bg-white p-5 rounded-lg shadow"
+          >
+            <div className="mb-3 text-center">
+              <h4 className="font-bold text-lg mb-1">Preference data: overall and attribute liking</h4>
+              <p className="text-sm">Method: 9-point hedonic scale</p>
+              <p className="text-sm">Sample: {productName}</p>
+              <p className="text-sm mb-3">Values: mean</p>
+            </div>
+
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-center">Brand</TableHead>
+                    <TableHead className="text-center">Appearance</TableHead>
+                    <TableHead className="text-center">Odour</TableHead>
+                    <TableHead className="text-center">Texture</TableHead>
+                    <TableHead className="text-center">Flavour</TableHead>
+                    <TableHead className="text-center">Overall liking</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {sortedSamples.map(([id, sample]) => (
+                    <TableRow key={id}>
+                      <TableCell 
+                        className="font-medium"
+                        style={{ 
+                          backgroundColor: colorMap.get(id),
+                          color: textColorMap.get(id)
+                        }}
+                      >
+                        {sample.brand}
+                      </TableCell>
+                      <TableCell className="text-center">{sample.hedonic.appearance.toFixed(1)}</TableCell>
+                      <TableCell className="text-center">{sample.hedonic.odor.toFixed(1)}</TableCell>
+                      <TableCell className="text-center">{sample.hedonic.texture.toFixed(1)}</TableCell>
+                      <TableCell className="text-center">{sample.hedonic.flavor.toFixed(1)}</TableCell>
+                      <TableCell className="text-center">{sample.hedonic.overallLiking.toFixed(1)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Chart view */}
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex justify-end mb-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleDownloadChartImage}
+              className="flex items-center"
+            >
+              <Download className="mr-2 h-4 w-4" /> Preuzmi sliku (graf)
+            </Button>
+          </div>
+
           <div 
             ref={chartRef}
             className="bg-white p-5 rounded-lg shadow w-full flex flex-col items-center" 

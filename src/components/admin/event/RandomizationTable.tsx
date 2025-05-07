@@ -126,18 +126,20 @@ export function RandomizationTable({
             </TableCaption>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-24">Mjesto / Dijeljenje</TableHead>
-                {roundNumbers.map((round) => (
-                  <TableHead key={round} className="text-center">Dijeljenje {round}</TableHead>
+                <TableHead className="w-24">Dijeljenje / Mjesto</TableHead>
+                {/* Column headers are now positions (1-12) */}
+                {positions.map((position) => (
+                  <TableHead key={position} className="text-center">Mjesto {position}</TableHead>
                 ))}
               </TableRow>
             </TableHeader>
             <TableBody>
-              {positions.map((position) => (
-                <TableRow key={position}>
-                  <TableCell className="font-medium">Mjesto {position}</TableCell>
-                  {roundNumbers.map((round) => (
-                    <TableCell key={round} className="text-center">
+              {/* Now rows are rounds and columns are positions */}
+              {roundNumbers.map((round) => (
+                <TableRow key={round}>
+                  <TableCell className="font-medium">Dijeljenje {round}</TableCell>
+                  {positions.map((position) => (
+                    <TableCell key={position} className="text-center">
                       {randomizationTable?.[position]?.[round] || "-"}
                     </TableCell>
                   ))}

@@ -1,3 +1,4 @@
+
 // Fisher-Yates shuffle algorithm
 export function shuffle(array: any[]): any[] {
   const result = [...array];
@@ -13,7 +14,6 @@ import { productTypes, samples, randomizations } from './index';
 // Randomization Table Generator
 export function generateRandomizationTable(productTypeId: string, sampleCount: number): { id: string; productTypeId: string; table: any } {
   const table: { [position: number]: { [round: number]: string } } = {};
-  const allPositions = Array.from({ length: 12 }, (_, i) => i + 1);
   
   // Get the product type to access its base code
   const productType = productTypes.find(pt => pt.id === productTypeId);
@@ -27,41 +27,74 @@ export function generateRandomizationTable(productTypeId: string, sampleCount: n
   const sampleIndices = Array.from({ length: sampleCount }, (_, i) => i);
   const allBlindCodes = sampleIndices.map(i => `${baseCode}${i + 1}`);
   
-  // Create a distinct distribution for each position
+  // Create a master distribution pattern that ensures good variability
+  const masterDistribution: string[][] = [];
+  
+  for (let i = 0; i < sampleCount; i++) {
+    // For each round, create a unique shuffled order of blind codes
+    const roundCodes = shuffle([...allBlindCodes]);
+    masterDistribution.push(roundCodes);
+  }
+  
+  // For each position, assign samples based on a shifted version of the master pattern
   for (let position = 1; position <= 12; position++) {
     table[position] = {};
     
-    // Generate a unique shuffled order of blind codes for this position
-    // This ensures each sample appears exactly once in each position's rounds
-    const positionBlindCodes = shuffle([...allBlindCodes]);
+    // Generate a unique shifted pattern for this position
+    // This creates more variability between positions
+    const shift = (position - 1) % sampleCount;
+    const positionPattern = [...masterDistribution];
     
-    // Assign the blind codes to each round
+    // Apply the shift to each round in the position pattern
+    for (let round = 0; round < positionPattern.length; round++) {
+      const shiftedCodes = [...positionPattern[round]];
+      for (let i = 0; i < shiftedCodes.length; i++) {
+        const newIndex = (i + shift) % shiftedCodes.length;
+        shiftedCodes[i] = positionPattern[round][newIndex];
+      }
+      positionPattern[round] = shiftedCodes;
+    }
+    
+    // Shuffle the order of rounds for this position to add more randomness
+    const roundOrder = shuffle([...Array(sampleCount)].map((_, i) => i));
+    
+    // Assign blind codes to each round based on the shuffled position pattern
     for (let round = 1; round <= sampleCount; round++) {
-      table[position][round] = positionBlindCodes[round - 1];
+      const patternIndex = roundOrder[round - 1];
+      table[position][round] = positionPattern[patternIndex][position % sampleCount];
     }
   }
   
-  // Add additional variance between positions
-  // This step ensures we don't have the same pattern across different positions
-  for (let i = 2; i <= 12; i++) {
-    if (i % 3 === 0) {
-      // For every third position, shuffle rounds 1 and 2 if they exist
-      if (sampleCount >= 2) {
-        const temp = table[i][1];
-        table[i][1] = table[i][2];
-        table[i][2] = temp;
-      }
-    } else if (i % 3 === 1) {
-      // For positions with remainder 1, shuffle the middle rounds if enough samples
-      if (sampleCount >= 3) {
-        const middleRound = Math.floor(sampleCount / 2);
-        const nextRound = middleRound + 1;
-        const temp = table[i][middleRound];
-        table[i][middleRound] = table[i][nextRound];
-        table[i][nextRound] = temp;
+  // Check if any position's pattern has a blind code repeating across rounds
+  for (let position = 1; position <= 12; position++) {
+    const codesForThisPosition: string[] = [];
+    for (let round = 1; round <= sampleCount; round++) {
+      codesForThisPosition.push(table[position][round]);
+    }
+    
+    // Check for duplicates in this position
+    const uniqueCodes = new Set(codesForThisPosition);
+    if (uniqueCodes.size < codesForThisPosition.length) {
+      // If duplicates found, regenerate this position's distribution
+      const uniqueBlindCodes = shuffle([...allBlindCodes]);
+      for (let round = 1; round <= sampleCount; round++) {
+        table[position][round] = uniqueBlindCodes[round - 1];
       }
     }
-    // Positions with remainder 2 remain as originally shuffled
+  }
+  
+  // Final validation check to ensure no position has duplicates
+  for (let position = 1; position <= 12; position++) {
+    const codesInThisPosition = Object.values(table[position]);
+    const uniqueCodesInPosition = new Set(codesInThisPosition);
+    if (uniqueCodesInPosition.size !== codesInThisPosition.length) {
+      // This should never happen with the above fixes, but just in case
+      // Create a completely fresh distribution for this position
+      const freshCodes = shuffle([...allBlindCodes]);
+      for (let round = 1; round <= sampleCount; round++) {
+        table[position][round] = freshCodes[round - 1];
+      }
+    }
   }
   
   // Perform a pattern check across positions
