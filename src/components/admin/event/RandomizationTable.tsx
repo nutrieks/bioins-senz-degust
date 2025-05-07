@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { 
   Table, 
   TableBody, 
-  TableCaption, 
   TableCell, 
   TableHead, 
   TableHeader, 
@@ -58,7 +57,7 @@ export function RandomizationTable({
           margin: 1cm;
         }
         body {
-          min-width: 1000px;
+          min-width: 1200px;
           width: 100%;
           -webkit-print-color-adjust: exact;
           print-color-adjust: exact;
@@ -90,7 +89,7 @@ export function RandomizationTable({
         backgroundColor: "#fff",
         pixelRatio: 2,
         cacheBust: true,
-        width: 1200, // Set a wider width for landscape orientation
+        width: 1400, // Increased width for landscape orientation to fit all 12 positions
         height: 800
       });
       
@@ -183,7 +182,7 @@ export function RandomizationTable({
       <div 
         ref={tableRef} 
         className="print:text-black bg-white p-4 rounded-lg w-full"
-        style={{minWidth: "1000px"}}
+        style={{minWidth: "1200px"}} // Increased min-width to ensure all positions fit
       >
         <h1 className="text-xl font-bold mb-2 text-center">
           Raspored dijeljenja proizvoda
@@ -193,7 +192,7 @@ export function RandomizationTable({
         </p>
         
         <div className="overflow-x-auto">
-          <Table>
+          <Table className="w-full table-fixed">
             <TableHeader>
               <TableRow>
                 <TableHead className="w-24">Dijeljenje / Mjesto</TableHead>
@@ -217,14 +216,6 @@ export function RandomizationTable({
               ))}
             </TableBody>
           </Table>
-        </div>
-        
-        <div className="mt-4 text-sm text-black text-center">
-          {selectedProductType.samples.map((sample, index) => (
-            <span key={index} className="inline-block mr-4 mb-2">
-              {sample.blindCode} - {sample.brand}
-            </span>
-          ))}
         </div>
       </div>
     </div>
