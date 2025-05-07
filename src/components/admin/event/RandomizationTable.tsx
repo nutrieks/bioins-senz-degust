@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/table";
 import { ProductType } from "@/types";
 import { Printer, Image, ChevronLeft, ChevronRight } from "lucide-react";
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
 import { toPng } from "html-to-image";
 
 interface RandomizationTableProps {
@@ -46,6 +46,41 @@ export function RandomizationTable({
   const roundNumbers = Array.from({ length: rounds }, (_, i) => i + 1);
 
   const tableRef = useRef<HTMLDivElement>(null);
+
+  // Add print styles using useEffect instead of style jsx
+  useEffect(() => {
+    // Create style element for print media
+    const style = document.createElement('style');
+    style.innerHTML = `
+      @media print {
+        @page {
+          size: landscape;
+          margin: 1cm;
+        }
+        body {
+          min-width: 1000px;
+          width: 100%;
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
+        table {
+          page-break-inside: avoid;
+          width: 100%;
+        }
+        .print-container {
+          width: 100%;
+        }
+      }
+    `;
+    
+    // Append to document head
+    document.head.appendChild(style);
+    
+    // Clean up on component unmount
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []); // Run only once on component mount
 
   const handleExportImage = async () => {
     if (!tableRef.current) return;
@@ -188,29 +223,6 @@ export function RandomizationTable({
           </ul>
         </div>
       </div>
-
-      {/* Add print-specific styling */}
-      <style jsx global>{`
-        @media print {
-          @page {
-            size: landscape;
-            margin: 1cm;
-          }
-          body {
-            min-width: 1000px;
-            width: 100%;
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
-          }
-          table {
-            page-break-inside: avoid;
-            width: 100%;
-          }
-          .print-container {
-            width: 100%;
-          }
-        }
-      `}</style>
     </div>
   );
 }
