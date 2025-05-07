@@ -10,7 +10,9 @@ import {
   TableRow 
 } from "@/components/ui/table";
 import { ProductType } from "@/types";
-import { Printer, FileDown, ChevronLeft, ChevronRight } from "lucide-react";
+import { Printer, Image, ChevronLeft, ChevronRight } from "lucide-react";
+import { useRef } from "react";
+import { toPng } from "html-to-image";
 
 interface RandomizationTableProps {
   selectedProductType: ProductType;
@@ -29,7 +31,6 @@ export function RandomizationTable({
   randomizationTable,
   onNavigateNext,
   onNavigatePrev,
-  onExport,
   onPrint,
   onBack,
   productTypeIndex,
@@ -43,6 +44,29 @@ export function RandomizationTable({
   
   // Create an array of round numbers (1 to rounds)
   const roundNumbers = Array.from({ length: rounds }, (_, i) => i + 1);
+
+  const tableRef = useRef<HTMLDivElement>(null);
+
+  const handleExportImage = async () => {
+    if (!tableRef.current) return;
+    
+    try {
+      const dataUrl = await toPng(tableRef.current, {
+        backgroundColor: "#fff",
+        pixelRatio: 2,
+        cacheBust: true,
+        width: 1200, // Set a wider width for landscape orientation
+        height: 800
+      });
+      
+      const link = document.createElement('a');
+      link.download = `randomizacija_${selectedProductType.baseCode}_${new Date().toISOString().split('T')[0]}.png`;
+      link.href = dataUrl;
+      link.click();
+    } catch (error) {
+      console.error("Error generating image:", error);
+    }
+  };
 
   return (
     <div className="space-y-4 print:space-y-2">
@@ -68,11 +92,11 @@ export function RandomizationTable({
           <Button
             variant="outline"
             size="sm"
-            onClick={onExport}
+            onClick={handleExportImage}
             className="flex items-center"
           >
-            <FileDown className="mr-2 h-4 w-4" />
-            Preuzmi CSV
+            <Image className="mr-2 h-4 w-4" />
+            Preuzmi sliku
           </Button>
           <Button
             variant="outline"
@@ -114,14 +138,18 @@ export function RandomizationTable({
         </div>
       )}
       
-      <div className="print:text-black">
-        <h1 className="text-xl font-bold mb-2 text-center hidden print:block">
+      <div 
+        ref={tableRef} 
+        className="print:text-black bg-white p-4 rounded-lg w-full"
+        style={{minWidth: "900px"}}
+      >
+        <h1 className="text-xl font-bold mb-2 text-center">
           {selectedProductType.productName} - {selectedProductType.baseCode}
         </h1>
         
         <div className="overflow-x-auto">
           <Table>
-            <TableCaption>
+            <TableCaption className="mb-4">
               Randomizacija za {selectedProductType.productName}
             </TableCaption>
             <TableHeader>
@@ -149,8 +177,8 @@ export function RandomizationTable({
           </Table>
         </div>
         
-        <div className="mt-4 text-sm text-muted-foreground print:text-black">
-          <p>Legenda:</p>
+        <div className="mt-4 text-sm text-black">
+          <p className="font-medium">Legenda:</p>
           <ul className="list-disc pl-5 mt-1">
             {selectedProductType.samples.map((sample, index) => (
               <li key={index}>
@@ -160,6 +188,29 @@ export function RandomizationTable({
           </ul>
         </div>
       </div>
+
+      {/* Add print-specific styling */}
+      <style jsx global>{`
+        @media print {
+          @page {
+            size: landscape;
+            margin: 1cm;
+          }
+          body {
+            min-width: 1000px;
+            width: 100%;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+          table {
+            page-break-inside: avoid;
+            width: 100%;
+          }
+          .print-container {
+            width: 100%;
+          }
+        }
+      `}</style>
     </div>
   );
 }
