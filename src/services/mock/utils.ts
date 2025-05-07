@@ -1,4 +1,3 @@
-
 // Fisher-Yates shuffle algorithm
 export function shuffle(array: any[]): any[] {
   const result = [...array];
@@ -16,100 +15,69 @@ export function generateRandomizationTable(productTypeId: string, sampleCount: n
   const table: { [position: number]: { [round: number]: string } } = {};
   const allPositions = Array.from({ length: 12 }, (_, i) => i + 1);
   
-  // Create a master pattern for how samples are distributed
-  // This will help ensure the distribution is varied across positions
-  const masterDistribution = [];
-  
-  // For each sample, create a different shuffled order of positions
-  for (let i = 0; i < sampleCount; i++) {
-    const shuffledPositions = shuffle([...allPositions]);
-    masterDistribution.push(shuffledPositions);
+  // Get the product type to access its base code
+  const productType = productTypes.find(pt => pt.id === productTypeId);
+  if (!productType) {
+    throw new Error(`Product type ${productTypeId} not found`);
   }
   
-  // For each position (1-12)
-  for (let posIndex = 0; posIndex < 12; posIndex++) {
-    const position = posIndex + 1;
+  const baseCode = productType?.baseCode || "X";
+  
+  // Create arrays for all sample indices and their blind codes
+  const sampleIndices = Array.from({ length: sampleCount }, (_, i) => i);
+  const allBlindCodes = sampleIndices.map(i => `${baseCode}${i + 1}`);
+  
+  // Create a distinct distribution for each position
+  for (let position = 1; position <= 12; position++) {
     table[position] = {};
     
-    // Get the product type to access its base code
-    const productType = productTypes.find(pt => pt.id === productTypeId);
-    if (!productType) continue;
+    // Generate a unique shuffled order of blind codes for this position
+    // This ensures each sample appears exactly once in each position's rounds
+    const positionBlindCodes = shuffle([...allBlindCodes]);
     
-    const baseCode = productType?.baseCode || "X";
-    
-    // Create an array of samples (1 to sampleCount)
-    const sampleIndices = Array.from({ length: sampleCount }, (_, i) => i);
-    
-    // Determine the sample for each round based on where this position appears in masterDistribution
-    const positionSamples = [];
-    for (let sampleIndex = 0; sampleIndex < sampleCount; sampleIndex++) {
-      // Find where this position is in the distribution list for this sample
-      const positionInList = masterDistribution[sampleIndex].indexOf(position);
-      // Map this to a sample ID - ensuring varied distribution
-      // We use modulo to ensure we stay within valid sample indices
-      const mappedSampleIndex = (positionInList + sampleIndex) % sampleCount;
-      positionSamples.push(mappedSampleIndex);
+    // Assign the blind codes to each round
+    for (let round = 1; round <= sampleCount; round++) {
+      table[position][round] = positionBlindCodes[round - 1];
     }
-    
-    // Ensure no position has the same sample order by shuffling again if needed
-    let needShuffle = true;
-    let attemptCount = 0;
-    let shuffledSamples;
-
-    // Try different shuffles to find one that isn't uniform with others
-    while (needShuffle && attemptCount < 10) {
-      shuffledSamples = shuffle([...positionSamples]);
-      
-      // Check if the first sample starts with sampleIndex 0
-      // We don't want the first round to consistently be sample 1
-      if (posIndex > 0 && shuffledSamples[0] === 0 && sampleCount > 1) {
-        // If so, swap with a random non-first position
-        const swapTarget = 1 + Math.floor(Math.random() * (shuffledSamples.length - 1));
-        [shuffledSamples[0], shuffledSamples[swapTarget]] = [shuffledSamples[swapTarget], shuffledSamples[0]];
-      }
-      
-      // Introduce more diversity by swapping elements randomly
-      if (sampleCount > 2 && Math.random() > 0.5) {
-        const idx1 = Math.floor(Math.random() * shuffledSamples.length);
-        let idx2 = Math.floor(Math.random() * shuffledSamples.length);
-        while (idx2 === idx1) {
-          idx2 = Math.floor(Math.random() * shuffledSamples.length);
-        }
-        [shuffledSamples[idx1], shuffledSamples[idx2]] = [shuffledSamples[idx2], shuffledSamples[idx1]];
-      }
-      
-      needShuffle = false;
-      attemptCount++;
-    }
-    
-    // Assign blind codes to each round
-    shuffledSamples.forEach((sampleIndex, roundIndex) => {
-      const round = roundIndex + 1;
-      table[position][round] = `${baseCode}${sampleIndex + 1}`;
-    });
   }
   
-  // Post-processing step: Analyze and fix patterns if they occur
-  const patternCheck = checkForPatterns(table, sampleCount);
-  if (patternCheck.hasPattern) {
-    // Fix some identified patterns by swapping rounds
-    for (const position of patternCheck.fixPositions) {
-      if (position <= 0 || position > 12) continue;
-      
-      // Find two rounds to swap
-      let round1 = Math.floor(Math.random() * sampleCount) + 1;
-      let round2 = Math.floor(Math.random() * sampleCount) + 1;
-      
-      // Make sure they're different rounds
-      while (round1 === round2) {
-        round2 = Math.floor(Math.random() * sampleCount) + 1;
+  // Add additional variance between positions
+  // This step ensures we don't have the same pattern across different positions
+  for (let i = 2; i <= 12; i++) {
+    if (i % 3 === 0) {
+      // For every third position, shuffle rounds 1 and 2 if they exist
+      if (sampleCount >= 2) {
+        const temp = table[i][1];
+        table[i][1] = table[i][2];
+        table[i][2] = temp;
       }
-      
-      // Swap the samples between these rounds
-      const temp = table[position][round1];
-      table[position][round1] = table[position][round2];
-      table[position][round2] = temp;
+    } else if (i % 3 === 1) {
+      // For positions with remainder 1, shuffle the middle rounds if enough samples
+      if (sampleCount >= 3) {
+        const middleRound = Math.floor(sampleCount / 2);
+        const nextRound = middleRound + 1;
+        const temp = table[i][middleRound];
+        table[i][middleRound] = table[i][nextRound];
+        table[i][nextRound] = temp;
+      }
     }
+    // Positions with remainder 2 remain as originally shuffled
+  }
+  
+  // Perform a pattern check across positions
+  const patternCount = checkForPatternAcrossPositions(table, sampleCount);
+  if (patternCount > 3) { // If too many positions have the same pattern
+    // Fix by reshuffling some positions
+    const positionsToReshuffle = [3, 7, 9]; // Choose some positions to reshuffle
+    positionsToReshuffle.forEach(pos => {
+      if (pos <= 12) {
+        // Completely reshuffle this position's rounds
+        const newShuffledCodes = shuffle([...allBlindCodes]);
+        for (let round = 1; round <= sampleCount; round++) {
+          table[pos][round] = newShuffledCodes[round - 1];
+        }
+      }
+    });
   }
   
   const randomizationId = `rand_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
@@ -121,71 +89,29 @@ export function generateRandomizationTable(productTypeId: string, sampleCount: n
   };
 }
 
-// Helper function to analyze patterns in the table
-function checkForPatterns(table: any, sampleCount: number): { hasPattern: boolean; fixPositions: number[] } {
-  const fixPositions: number[] = [];
-  let hasPattern = false;
+// Helper function to check for patterns across positions
+function checkForPatternAcrossPositions(table: any, sampleCount: number): number {
+  const patterns = new Map<string, number>();
   
-  // Check for identical rows
-  const rowPatterns: string[] = [];
+  // Generate a pattern string for each position
   for (let position = 1; position <= 12; position++) {
-    const row = table[position];
-    const pattern = Object.values(row).join('-');
-    rowPatterns.push(pattern);
+    const patternArray = [];
+    for (let round = 1; round <= sampleCount; round++) {
+      patternArray.push(table[position][round]);
+    }
+    const patternString = patternArray.join('-');
+    patterns.set(patternString, (patterns.get(patternString) || 0) + 1);
   }
   
-  // Count repeated patterns
-  const patternCounts = new Map<string, number>();
-  rowPatterns.forEach(pattern => {
-    patternCounts.set(pattern, (patternCounts.get(pattern) || 0) + 1);
-  });
-  
-  // Identify rows with repeated patterns that should be fixed
+  // Find the most common pattern
   let maxCount = 0;
-  patternCounts.forEach(count => {
+  patterns.forEach(count => {
     if (count > maxCount) {
       maxCount = count;
     }
   });
   
-  // If we have too many identical patterns, flag them for fixing
-  if (maxCount > 4) {
-    hasPattern = true;
-    
-    // Find the positions with these patterns that should be fixed
-    const patternToFix = [...patternCounts.entries()]
-      .find(([_, count]) => count === maxCount)?.[0];
-      
-    if (patternToFix) {
-      rowPatterns.forEach((pattern, index) => {
-        if (pattern === patternToFix && index < 8) { // Only fix some instances
-          fixPositions.push(index + 1); // +1 because positions are 1-based
-        }
-      });
-    }
-  }
-  
-  // Check for column patterns where the same sample appears in too many consecutive positions
-  for (let round = 1; round <= sampleCount; round++) {
-    const sampleCounts = new Map<string, number>();
-    
-    for (let position = 1; position <= 12; position++) {
-      const sample = table[position][round];
-      sampleCounts.set(sample, (sampleCounts.get(sample) || 0) + 1);
-    }
-    
-    sampleCounts.forEach((count, sample) => {
-      if (count > 6) { // If a sample appears more than half the time in a round
-        hasPattern = true;
-        // Add some random positions to fix
-        for (let i = 0; i < 3; i++) {
-          fixPositions.push(Math.floor(Math.random() * 12) + 1);
-        }
-      }
-    });
-  }
-  
-  return { hasPattern, fixPositions };
+  return maxCount;
 }
 
 // Get next sample for evaluation
