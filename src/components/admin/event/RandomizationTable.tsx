@@ -103,12 +103,19 @@ export function RandomizationTable({
     }
   };
 
+  // Format the date for display
+  const currentDate = new Date().toLocaleDateString('hr-HR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
+  });
+
   return (
     <div className="space-y-4 print:space-y-2">
       <div className="flex justify-between items-center print:hidden">
         <div className="flex items-center">
           <h3 className="text-lg font-medium">
-            Tablica randomizacije: {selectedProductType.productName}
+            Raspored dijeljenja proizvoda: {selectedProductType.productName}
             <span className="ml-2 text-sm text-muted-foreground">
               (Šifra: {selectedProductType.baseCode})
             </span>
@@ -176,28 +183,28 @@ export function RandomizationTable({
       <div 
         ref={tableRef} 
         className="print:text-black bg-white p-4 rounded-lg w-full"
-        style={{minWidth: "900px"}}
+        style={{minWidth: "1000px"}}
       >
         <h1 className="text-xl font-bold mb-2 text-center">
-          {selectedProductType.productName} - {selectedProductType.baseCode}
+          Raspored dijeljenja proizvoda
         </h1>
+        <p className="text-center mb-4">
+          {selectedProductType.baseCode} - {selectedProductType.productName} | Datum: {currentDate}
+        </p>
         
         <div className="overflow-x-auto">
           <Table>
-            <TableCaption className="mb-4">
-              Randomizacija za {selectedProductType.productName}
-            </TableCaption>
             <TableHeader>
               <TableRow>
                 <TableHead className="w-24">Dijeljenje / Mjesto</TableHead>
-                {/* Column headers are now positions (1-12) */}
+                {/* Column headers are positions (1-12) */}
                 {positions.map((position) => (
                   <TableHead key={position} className="text-center">Mjesto {position}</TableHead>
                 ))}
               </TableRow>
             </TableHeader>
             <TableBody>
-              {/* Now rows are rounds and columns are positions */}
+              {/* Rows are rounds and columns are positions */}
               {roundNumbers.map((round) => (
                 <TableRow key={round}>
                   <TableCell className="font-medium">Dijeljenje {round}</TableCell>
@@ -212,15 +219,12 @@ export function RandomizationTable({
           </Table>
         </div>
         
-        <div className="mt-4 text-sm text-black">
-          <p className="font-medium">Legenda:</p>
-          <ul className="list-disc pl-5 mt-1">
-            {selectedProductType.samples.map((sample, index) => (
-              <li key={index}>
-                {sample.blindCode}: {sample.brand} ({sample.retailerCode})
-              </li>
-            ))}
-          </ul>
+        <div className="mt-4 text-sm text-black text-center">
+          {selectedProductType.samples.map((sample, index) => (
+            <span key={index} className="inline-block mr-4 mb-2">
+              {sample.blindCode} - {sample.brand}
+            </span>
+          ))}
         </div>
       </div>
     </div>
