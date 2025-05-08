@@ -57,7 +57,7 @@ export function RandomizationTable({
           margin: 0.5cm;
         }
         body {
-          min-width: 1500px;
+          min-width: 1800px;
           width: 100%;
           -webkit-print-color-adjust: exact;
           print-color-adjust: exact;
@@ -71,8 +71,8 @@ export function RandomizationTable({
           width: 100%;
         }
         th, td {
-          padding: 4px !important;
-          font-size: 0.9rem !important;
+          padding: 2px !important;
+          font-size: 0.85rem !important;
         }
       }
     `;
@@ -94,7 +94,7 @@ export function RandomizationTable({
         backgroundColor: "#fff",
         pixelRatio: 2,
         cacheBust: true,
-        width: 1800, // Increased width further to ensure all 12 positions fit
+        width: 2000, // Increased width further to ensure all 12 positions fit
         height: 800
       });
       
@@ -186,44 +186,42 @@ export function RandomizationTable({
       
       <div 
         ref={tableRef} 
-        className="print:text-black bg-white p-4 rounded-lg w-full"
-        style={{minWidth: "1500px", overflowX: "auto"}} // Further increased min-width to ensure all positions fit
+        className="print:text-black bg-white p-2 rounded-lg"
+        style={{minWidth: "1800px", maxWidth: "100%", overflowX: "auto"}}
       >
         <h1 className="text-xl font-bold mb-2 text-center">
           Raspored dijeljenja proizvoda
         </h1>
-        <p className="text-center mb-4">
+        <p className="text-center mb-3">
           {selectedProductType.baseCode} - {selectedProductType.productName} | Datum: {currentDate}
         </p>
         
-        <div className="overflow-x-auto" style={{width: "100%"}}>
-          <Table className="w-full" style={{tableLayout: "fixed", width: "100%"}}>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-24 text-center">Dijeljenje / Mjesto</TableHead>
-                {/* Column headers are positions (1-12) */}
+        <Table style={{tableLayout: "fixed", width: "100%"}}>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="text-center p-2" style={{width: "8%"}}>Dijeljenje / Mjesto</TableHead>
+              {/* Column headers are positions (1-12) */}
+              {positions.map((position) => (
+                <TableHead key={position} className="text-center p-2" style={{width: "7.66%"}}>
+                  Mjesto {position}
+                </TableHead>
+              ))}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {/* Rows are rounds and columns are positions */}
+            {roundNumbers.map((round) => (
+              <TableRow key={round}>
+                <TableCell className="font-medium text-center p-2">Dijeljenje {round}</TableCell>
                 {positions.map((position) => (
-                  <TableHead key={position} className="text-center px-1" style={{width: "calc(92% / 12)"}}>
-                    Mjesto {position}
-                  </TableHead>
+                  <TableCell key={position} className="text-center p-2">
+                    {randomizationTable?.[position]?.[round] || "-"}
+                  </TableCell>
                 ))}
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {/* Rows are rounds and columns are positions */}
-              {roundNumbers.map((round) => (
-                <TableRow key={round}>
-                  <TableCell className="font-medium text-center">Dijeljenje {round}</TableCell>
-                  {positions.map((position) => (
-                    <TableCell key={position} className="text-center px-1">
-                      {randomizationTable?.[position]?.[round] || "-"}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+            ))}
+          </TableBody>
+        </Table>
       </div>
     </div>
   );
