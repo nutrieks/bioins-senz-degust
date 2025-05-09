@@ -6,6 +6,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, LabelList,
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
 import { toPng } from "html-to-image";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 const JAR_COLORS = [
   "rgb(255, 128, 128)", // Much too weak (1) - Light red/pink
@@ -41,6 +42,11 @@ const sortSamples = (samples: any[]) => {
   });
 };
 
+// Format label for display - showing retailer code + brand
+const formatSampleLabel = (sample: {retailerCode: RetailerCode, brand: string}): string => {
+  return `${sample.retailerCode} ${sample.brand}`;
+};
+
 const processJARData = (attrData: any) => {
   const samples = Object.entries(attrData.results).map(([sampleId, result]: [string, any]) => ({
     id: sampleId,
@@ -51,7 +57,7 @@ const processJARData = (attrData: any) => {
   
   return sortedSamples.map(sample => {
     const data: any = { 
-      name: sample.brand,
+      name: formatSampleLabel(sample),
       id: sample.id
     };
     
@@ -72,7 +78,7 @@ function exportJARAttributeChartToCSV(attrData: any, productName: string) {
   }));
   const sortedSamples = sortSamples(samples);
   sortedSamples.forEach(sample => {
-    csv += `${sample.brand},${sample.frequencies.join(",")}\n`;
+    csv += `${formatSampleLabel(sample)},${sample.frequencies.join(",")}\n`;
   });
   downloadCSV(csv, `JAR_${attrData.nameEN.replace(/\s/g, "_")}_${productName}.csv`);
 }
@@ -102,12 +108,13 @@ export function JARReportView({ report, productName }: { report: JARReport; prod
       {Object.entries(report).map(([attrId, attrData]) => {
         const chartData = processJARData(attrData);
         const chartRef = useRef<HTMLDivElement>(null);
+        const tableRef = useRef<HTMLDivElement>(null);
 
         const handleDownloadChartImage = async () => {
           if (chartRef.current) {
             const dataUrl = await toPng(chartRef.current, {
               backgroundColor: "#fff",
-              pixelRatio: 4, // Povećana kvaliteta
+              pixelRatio: 4,
               cacheBust: true,
               style: { fontFamily: "inherit" }
             });
@@ -118,19 +125,83 @@ export function JARReportView({ report, productName }: { report: JARReport; prod
           }
         };
 
+        const handleDownloadTableImage = async () => {
+          if (tableRef.current) {
+            const dataUrl = await toPng(tableRef.current, {
+              backgroundColor: "#fff",
+              pixelRatio: 4,
+              cacheBust: true,
+              style: { fontFamily: "inherit" }
+            });
+            const link = document.createElement('a');
+            link.download = `JAR_${attrData.nameEN.replace(/\s/g, "_")}_${productName}_table.png`;
+            link.href = dataUrl;
+            link.click();
+          }
+        };
+
         return (
-          <Card key={attrId}>
-            <div className="flex justify-end pt-6 pr-6">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleDownloadChartImage}
-                className="flex items-center"
+          <Card key={attrId} className="mb-8">
+            <CardContent className="pt-6">
+              <div className="flex justify-between mb-4">
+                <h4 className="text-lg font-semibold">{attrData.nameEN}</h4>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleDownloadChartImage}
+                    className="flex items-center"
+                  >
+                    <Download className="mr-2 h-4 w-4" /> Preuzmi graf
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleDownloadTableImage}
+                    className="flex items-center"
+                  >
+                    <Download className="mr-2 h-4 w-4" /> Preuzmi tablicu
+                  </Button>
+                </div>
+              </div>
+
+              {/* Table view */}
+              <div 
+                ref={tableRef}
+                className="bg-white p-5 rounded-lg shadow mb-6"
               >
-                <Download className="mr-2 h-4 w-4" /> Preuzmi sliku (graf)
-              </Button>
-            </div>
-            <CardContent className="pt-2">
+                <div className="mb-3 text-center">
+                  <h4 className="font-bold text-lg mb-1">Consumer's reaction to specific attribute</h4>
+                  <p className="text-sm">Method: JAR scale</p>
+                  <p className="text-sm">Sample: {productName}</p>
+                  <p className="text-sm mb-3">Attribute: {attrData.nameEN}</p>
+                </div>
+
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Brand</TableHead>
+                      {JAR_LABELS.map((label) => (
+                        <TableHead key={label} className="text-center">{label}</TableHead>
+                      ))}
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {chartData.map((item) => (
+                      <TableRow key={item.id}>
+                        <TableCell className="font-medium">{item.name}</TableCell>
+                        {JAR_LABELS.map((label, index) => (
+                          <TableCell key={label} className="text-center" style={{ backgroundColor: `${JAR_COLORS[index]}40` }}>
+                            {item[label]}
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+              
+              {/* Chart view */}
               <div 
                 ref={chartRef}
                 className="bg-white p-5 rounded-lg shadow"

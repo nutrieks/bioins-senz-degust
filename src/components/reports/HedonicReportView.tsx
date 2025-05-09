@@ -40,6 +40,11 @@ const getColorVariant = (color: string, index: number): string => {
   return `rgb(${r}, ${g}, ${b})`;
 };
 
+// Format label for display - showing retailer code + brand
+const formatSampleLabel = (sample: {retailerCode: RetailerCode, brand: string}): string => {
+  return `${sample.retailerCode} ${sample.brand}`;
+};
+
 const sortSamples = (report: HedonicReport) => {
   const retailerOrder: RetailerCode[] = [RetailerCode.LI, RetailerCode.KL, RetailerCode.KO, RetailerCode.IS, RetailerCode.PL, RetailerCode.ES, RetailerCode.M];
   return Object.entries(report)
@@ -68,6 +73,7 @@ const processChartData = (report: HedonicReport) => {
     [RetailerCode.ES]: 0, 
     [RetailerCode.M]: 0
   };
+  
   sortedSamples.forEach(([id, sample]) => {
     const retailerCode = sample.retailerCode;
     const count = retailerCounts[retailerCode]++;
@@ -76,6 +82,7 @@ const processChartData = (report: HedonicReport) => {
     colorMap.set(id, color);
     textColorMap.set(id, isDarkColor(color) ? "#fff" : "#000");
   });
+  
   const attributes = [
     { key: "appearance", label: "Appearance" },
     { key: "odor", label: "Odour" },
@@ -83,14 +90,16 @@ const processChartData = (report: HedonicReport) => {
     { key: "flavor", label: "Flavour" },
     { key: "overallLiking", label: "Overall liking" }
   ];
+  
   const chartData = attributes.map(attr => {
     const data: any = { name: attr.label };
     sortedSamples.forEach(([id, sample]) => {
-      const sampleKey = `${sample.brand}_${id}`;
+      const sampleKey = `${sample.retailerCode} ${sample.brand}_${id}`;
       data[sampleKey] = Number(sample.hedonic[attr.key as keyof typeof sample.hedonic].toFixed(1));
     });
     return data;
   });
+  
   return { chartData, sortedSamples, colorMap, textColorMap };
 };
 
@@ -192,7 +201,7 @@ export function HedonicReportView({ report, productName }: { report: HedonicRepo
                           color: textColorMap.get(id)
                         }}
                       >
-                        {sample.brand}
+                        {formatSampleLabel(sample)}
                       </TableCell>
                       <TableCell className="text-center">{sample.hedonic.appearance.toFixed(1)}</TableCell>
                       <TableCell className="text-center">{sample.hedonic.odor.toFixed(1)}</TableCell>
@@ -261,27 +270,39 @@ export function HedonicReportView({ report, productName }: { report: HedonicRepo
                     tick={{ fontSize: 15 }}
                   />
                   <Tooltip contentStyle={{ color: 'black' }} />
-                  {sortedSamples.map(([id, sample]) => (
-                    <Bar 
-                      key={id}
-                      dataKey={`${sample.brand}_${id}`}
-                      name={sample.brand}
-                      fill={colorMap.get(id)}
-                      radius={[5, 5, 0, 0]}
-                      maxBarSize={60}
-                    >
-                      <LabelList 
-                        dataKey={`${sample.brand}_${id}`} 
-                        position="top"
-                        style={{ 
-                          fill: textColorMap.get(id) || 'black', 
-                          fontWeight: 600, 
-                          fontSize: 16
-                        }}
-                        formatter={(value: number) => value?.toFixed(1) || ""}
-                      />
-                    </Bar>
-                  ))}
+                  {sortedSamples.map(([id, sample]) => {
+                    const labelKey = `${sample.retailerCode} ${sample.brand}_${id}`;
+                    return (
+                      <Bar 
+                        key={id}
+                        dataKey={labelKey}
+                        name={formatSampleLabel(sample)}
+                        fill={colorMap.get(id)}
+                        radius={[5, 5, 0, 0]}
+                        maxBarSize={60}
+                      >
+                        <LabelList 
+                          dataKey={labelKey} 
+                          position="top" 
+                          content={(props: any) => {
+                            const { x, y, width, height, value } = props;
+                            return (
+                              <text 
+                                x={x + width / 2} 
+                                y={y - 4} 
+                                fill="black"
+                                textAnchor="middle" 
+                                fontSize={16}
+                                fontWeight={600}
+                              >
+                                {value.toFixed(1)}
+                              </text>
+                            );
+                          }}
+                        />
+                      </Bar>
+                    );
+                  })}
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -302,7 +323,7 @@ export function HedonicReportView({ report, productName }: { report: HedonicRepo
                       display: "inline-block"
                     }}
                   />
-                  <span style={{ color: "#111", fontWeight: 500 }}>{sample.brand}</span>
+                  <span style={{ color: "#111", fontWeight: 500 }}>{formatSampleLabel(sample)}</span>
                 </span>
               ))}
             </div>
