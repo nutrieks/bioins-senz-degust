@@ -94,6 +94,7 @@ const processChartData = (report: HedonicReport) => {
   const chartData = attributes.map(attr => {
     const data: any = { name: attr.label };
     sortedSamples.forEach(([id, sample]) => {
+      // Use retailer code + brand name format for keys
       const sampleKey = `${sample.retailerCode} ${sample.brand}_${id}`;
       data[sampleKey] = Number(sample.hedonic[attr.key as keyof typeof sample.hedonic].toFixed(1));
     });
@@ -183,12 +184,12 @@ export function HedonicReportView({ report, productName }: { report: HedonicRepo
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="text-center">Brand</TableHead>
-                    <TableHead className="text-center">Appearance</TableHead>
-                    <TableHead className="text-center">Odour</TableHead>
-                    <TableHead className="text-center">Texture</TableHead>
-                    <TableHead className="text-center">Flavour</TableHead>
-                    <TableHead className="text-center">Overall liking</TableHead>
+                    <TableHead className="font-bold text-center">Brand</TableHead>
+                    <TableHead className="font-bold text-center">Appearance</TableHead>
+                    <TableHead className="font-bold text-center">Odour</TableHead>
+                    <TableHead className="font-bold text-center">Texture</TableHead>
+                    <TableHead className="font-bold text-center">Flavour</TableHead>
+                    <TableHead className="font-bold text-center">Overall liking</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -295,7 +296,7 @@ export function HedonicReportView({ report, productName }: { report: HedonicRepo
                                 fontSize={16}
                                 fontWeight={600}
                               >
-                                {value.toFixed(1)}
+                                {value?.toFixed(1)}
                               </text>
                             );
                           }}
