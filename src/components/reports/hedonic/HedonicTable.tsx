@@ -71,24 +71,54 @@ export function HedonicTable({ report, productName }: HedonicTableProps) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {sortedSamples.map(([id, sample]) => (
-                  <TableRow key={id}>
-                    <TableCell 
-                      className="font-medium"
-                      style={{ 
-                        backgroundColor: colorMap.get(id),
-                        color: textColorMap.get(id)
-                      }}
-                    >
-                      {formatSampleLabel(sample)}
-                    </TableCell>
-                    <TableCell className="text-center">{sample.hedonic.appearance.toFixed(1)}</TableCell>
-                    <TableCell className="text-center">{sample.hedonic.odor.toFixed(1)}</TableCell>
-                    <TableCell className="text-center">{sample.hedonic.texture.toFixed(1)}</TableCell>
-                    <TableCell className="text-center">{sample.hedonic.flavor.toFixed(1)}</TableCell>
-                    <TableCell className="text-center">{sample.hedonic.overallLiking.toFixed(1)}</TableCell>
-                  </TableRow>
-                ))}
+                {sortedSamples.map(([id, sample]) => {
+                  const bgColor = colorMap.get(id) || "";
+                  const textColor = textColorMap.get(id) || "#000";
+                  
+                  return (
+                    <TableRow key={id}>
+                      <TableCell 
+                        className="font-medium"
+                        style={{ 
+                          backgroundColor: bgColor,
+                          color: textColor
+                        }}
+                      >
+                        {formatSampleLabel(sample)}
+                      </TableCell>
+                      <TableCell 
+                        className="text-center"
+                        style={{ backgroundColor: bgColor, color: textColor }}
+                      >
+                        {sample.hedonic.appearance.toFixed(1)}
+                      </TableCell>
+                      <TableCell 
+                        className="text-center"
+                        style={{ backgroundColor: bgColor, color: textColor }}
+                      >
+                        {sample.hedonic.odor.toFixed(1)}
+                      </TableCell>
+                      <TableCell 
+                        className="text-center"
+                        style={{ backgroundColor: bgColor, color: textColor }}
+                      >
+                        {sample.hedonic.texture.toFixed(1)}
+                      </TableCell>
+                      <TableCell 
+                        className="text-center"
+                        style={{ backgroundColor: bgColor, color: textColor }}
+                      >
+                        {sample.hedonic.flavor.toFixed(1)}
+                      </TableCell>
+                      <TableCell 
+                        className="text-center"
+                        style={{ backgroundColor: bgColor, color: textColor }}
+                      >
+                        {sample.hedonic.overallLiking.toFixed(1)}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </div>

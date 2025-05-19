@@ -112,31 +112,44 @@ export function JARReportView({ report, productName }: { report: JARReport; prod
 
         const handleDownloadChartImage = async () => {
           if (chartRef.current) {
-            const dataUrl = await toPng(chartRef.current, {
-              backgroundColor: "#fff",
-              pixelRatio: 4,
-              cacheBust: true,
-              style: { fontFamily: "inherit" }
-            });
-            const link = document.createElement('a');
-            link.download = `JAR_${attrData.nameEN.replace(/\s/g, "_")}_${productName}_chart.png`;
-            link.href = dataUrl;
-            link.click();
+            try {
+              // Give the chart some time to render completely
+              await new Promise(resolve => setTimeout(resolve, 300));
+              
+              const dataUrl = await toPng(chartRef.current, {
+                backgroundColor: "#fff",
+                pixelRatio: 4,
+                cacheBust: true,
+                style: { fontFamily: "inherit" },
+                width: chartRef.current.offsetWidth,
+                height: chartRef.current.offsetHeight
+              });
+              const link = document.createElement('a');
+              link.download = `JAR_${attrData.nameEN.replace(/\s/g, "_")}_${productName}_chart.png`;
+              link.href = dataUrl;
+              link.click();
+            } catch (error) {
+              console.error("Error generating chart image:", error);
+            }
           }
         };
 
         const handleDownloadTableImage = async () => {
           if (tableRef.current) {
-            const dataUrl = await toPng(tableRef.current, {
-              backgroundColor: "#fff",
-              pixelRatio: 4,
-              cacheBust: true,
-              style: { fontFamily: "inherit" }
-            });
-            const link = document.createElement('a');
-            link.download = `JAR_${attrData.nameEN.replace(/\s/g, "_")}_${productName}_table.png`;
-            link.href = dataUrl;
-            link.click();
+            try {
+              const dataUrl = await toPng(tableRef.current, {
+                backgroundColor: "#fff",
+                pixelRatio: 4,
+                cacheBust: true,
+                style: { fontFamily: "inherit" }
+              });
+              const link = document.createElement('a');
+              link.download = `JAR_${attrData.nameEN.replace(/\s/g, "_")}_${productName}_table.png`;
+              link.href = dataUrl;
+              link.click();
+            } catch (error) {
+              console.error("Error generating table image:", error);
+            }
           }
         };
 
@@ -211,7 +224,7 @@ export function JARReportView({ report, productName }: { report: JARReport; prod
                   margin: '0 auto'
                 }}
               >
-                {/* Naslov i opis (dio slike) */}
+                {/* Title and description (part of image) */}
                 <div className="text-center mb-4">
                   <h4 className="font-bold text-lg mb-1">Consumer's reaction to specific attribute</h4>
                   <p className="text-sm">Method: JAR scale</p>
