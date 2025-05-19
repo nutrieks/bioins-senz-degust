@@ -102,6 +102,38 @@ export function JARReportView({ report, productName }: { report: JARReport; prod
     );
   }
 
+  const captureElementAsImage = async (element: HTMLElement | null, filename: string) => {
+    if (!element) return;
+    
+    try {
+      // Wait for the component to be fully rendered
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Get the dimensions of the element
+      const width = element.offsetWidth;
+      const height = element.offsetHeight;
+      
+      console.log(`Capturing element with dimensions: ${width}x${height}`);
+      
+      const dataUrl = await toPng(element, {
+        backgroundColor: "#fff",
+        pixelRatio: 4,
+        cacheBust: true,
+        style: { fontFamily: "inherit" },
+        width: width || 950, // Use element width or fallback to 950
+        height: height || 600, // Use element height or fallback to 600
+        quality: 1.0
+      });
+      
+      const link = document.createElement('a');
+      link.download = filename;
+      link.href = dataUrl;
+      link.click();
+    } catch (error) {
+      console.error("Error generating image:", error);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <h3 className="text-xl font-bold">JAR skala</h3>
@@ -111,46 +143,17 @@ export function JARReportView({ report, productName }: { report: JARReport; prod
         const tableRef = useRef<HTMLDivElement>(null);
 
         const handleDownloadChartImage = async () => {
-          if (chartRef.current) {
-            try {
-              // Give the chart some time to render completely
-              await new Promise(resolve => setTimeout(resolve, 300));
-              
-              const dataUrl = await toPng(chartRef.current, {
-                backgroundColor: "#fff",
-                pixelRatio: 4,
-                cacheBust: true,
-                style: { fontFamily: "inherit" },
-                width: chartRef.current.offsetWidth,
-                height: chartRef.current.offsetHeight
-              });
-              const link = document.createElement('a');
-              link.download = `JAR_${attrData.nameEN.replace(/\s/g, "_")}_${productName}_chart.png`;
-              link.href = dataUrl;
-              link.click();
-            } catch (error) {
-              console.error("Error generating chart image:", error);
-            }
-          }
+          await captureElementAsImage(
+            chartRef.current, 
+            `JAR_${attrData.nameEN.replace(/\s/g, "_")}_${productName}_chart.png`
+          );
         };
 
         const handleDownloadTableImage = async () => {
-          if (tableRef.current) {
-            try {
-              const dataUrl = await toPng(tableRef.current, {
-                backgroundColor: "#fff",
-                pixelRatio: 4,
-                cacheBust: true,
-                style: { fontFamily: "inherit" }
-              });
-              const link = document.createElement('a');
-              link.download = `JAR_${attrData.nameEN.replace(/\s/g, "_")}_${productName}_table.png`;
-              link.href = dataUrl;
-              link.click();
-            } catch (error) {
-              console.error("Error generating table image:", error);
-            }
-          }
+          await captureElementAsImage(
+            tableRef.current,
+            `JAR_${attrData.nameEN.replace(/\s/g, "_")}_${productName}_table.png`
+          );
         };
 
         return (
@@ -221,6 +224,7 @@ export function JARReportView({ report, productName }: { report: JARReport; prod
                 style={{
                   width: '100%',
                   maxWidth: 950,
+                  height: 600,
                   margin: '0 auto'
                 }}
               >
@@ -232,7 +236,7 @@ export function JARReportView({ report, productName }: { report: JARReport; prod
                   <p className="text-sm mb-3">Attribute: {attrData.nameEN}</p>
                 </div>
                 
-                <div className="h-96">
+                <div style={{ height: 500 }}>
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart
                       data={chartData}
