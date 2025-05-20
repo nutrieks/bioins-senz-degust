@@ -17,9 +17,9 @@ export function JARChart({ data, attrData, productName }: JARChartProps) {
   const handleDownloadChartImage = async () => {
     if (!chartRef.current) return;
     
-    // Add a fixed width and height for consistency
-    const width = 950;
-    const height = 600;
+    // Povećane fiksne dimenzije za bolji prikaz
+    const width = 1200;
+    const height = 800;
     
     await captureElementAsImage(
       chartRef.current, 
@@ -47,8 +47,8 @@ export function JARChart({ data, attrData, productName }: JARChartProps) {
         className="bg-white p-5 rounded-lg shadow"
         style={{
           width: '100%',
-          maxWidth: 950,
-          height: 600,
+          maxWidth: 1200, // Povećana maksimalna širina
+          height: 800,    // Povećana visina
           margin: '0 auto'
         }}
       >
@@ -60,25 +60,32 @@ export function JARChart({ data, attrData, productName }: JARChartProps) {
           <p className="text-sm mb-3">Attribute: {attrData.nameEN}</p>
         </div>
         
-        <div style={{ height: 500 }}>
+        <div style={{ height: 700 }}> {/* Povećana visina samog grafa */}
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
               data={data}
               margin={{
                 top: 20,
-                right: 30,
-                left: 20,
-                bottom: 70
+                right: 50, // Povećani margine
+                left: 50,
+                bottom: 100 // Povećana donja margina za bolje prikazivanje x-osi
               }}
-              barGap={2}
-              barCategoryGap={20}
+              barGap={10}  // Povećan razmak između grupa stupaca
+              barCategoryGap={30} // Povećan razmak između kategorija
             >
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
+              <XAxis 
+                dataKey="name" 
+                tick={{ fontSize: 12 }}
+                interval={0}
+                textAnchor="end"
+                angle={-45} // Rotacija teksta na x-osi za bolje prikazivanje
+                height={80} // Više prostora za etikete x-osi
+              />
               <YAxis 
-                label={{ value: 'No. of votes', angle: -90, position: 'insideLeft' }}
-                domain={[0, 12]}
-                ticks={[0, 2, 4, 6, 8, 10, 12]}
+                label={{ value: 'No. of votes', angle: -90, position: 'insideLeft', style: { textAnchor: 'middle' } }}
+                domain={[0, 'dataMax + 2']} // Dinamički raspon s dodatnim prostorom
+                padding={{ top: 20 }}
               />
               <Tooltip 
                 contentStyle={{ color: 'black' }} 
@@ -98,11 +105,12 @@ export function JARChart({ data, attrData, productName }: JARChartProps) {
                   dataKey={label}
                   name={label}
                   fill={JAR_COLORS[index]}
+                  maxBarSize={80} // Kontrolira maksimalnu širinu stupca
                 >
                   <LabelList 
                     dataKey={label} 
                     position="top"
-                    style={{ fill: 'black', fontSize: 14 }}
+                    style={{ fill: 'black', fontSize: 14, fontWeight: 'bold' }}
                     formatter={(value: number) => value > 0 ? value : ''}
                   />
                 </Bar>

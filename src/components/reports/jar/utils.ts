@@ -95,10 +95,10 @@ export const captureElementAsImage = async (
   if (!element) return;
   
   try {
-    // Wait for the component to be fully rendered
+    // Čekanje da se komponenta potpuno renderira
     await new Promise(resolve => setTimeout(resolve, 1000));
     
-    // Get the dimensions of the element if not provided
+    // Dobivanje dimenzija elementa ako nisu navedene
     const elementWidth = width || element.offsetWidth;
     const elementHeight = height || element.offsetHeight;
     
@@ -106,13 +106,18 @@ export const captureElementAsImage = async (
     
     const { toPng } = await import('html-to-image');
     
-    // Apply specific styling to ensure the element is properly rendered
+    // Primjena određenog stila za osiguranje pravilnog renderiranja elementa
+    const originalStyle = element.getAttribute('style') || '';
     element.style.backgroundColor = "#fff";
+    element.style.width = `${elementWidth}px`;
+    element.style.height = `${elementHeight}px`;
+    element.style.position = 'relative';
+    element.style.overflow = 'visible';
     
-    // Make sure to include the entire chart
+    // Osiguranje da se uključi cijeli graf
     const dataUrl = await toPng(element, {
       backgroundColor: "#fff",
-      pixelRatio: 4,
+      pixelRatio: 2,
       cacheBust: true,
       style: { 
         fontFamily: "inherit",
@@ -120,11 +125,14 @@ export const captureElementAsImage = async (
       width: elementWidth,
       height: elementHeight,
       quality: 1.0,
-      canvasWidth: elementWidth * 2,
-      canvasHeight: elementHeight * 2
+      canvasWidth: elementWidth,
+      canvasHeight: elementHeight
     });
     
-    // Use a short delay to ensure the image has been processed
+    // Vraćanje originalnog stila
+    element.setAttribute('style', originalStyle);
+    
+    // Kratka pauza za osiguranje da je slika obrađena
     await new Promise(resolve => setTimeout(resolve, 500));
     
     const link = document.createElement('a');

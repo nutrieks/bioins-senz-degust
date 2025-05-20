@@ -17,13 +17,15 @@ export function JARTable({ data, attrData, productName }: JARTableProps) {
   const handleDownloadTableImage = async () => {
     if (!tableRef.current) return;
     
-    // Add a fixed width for consistency
+    // Dodano fiksne dimenzije za konzistentnost
     const width = 950;
+    const height = 600;
     
     await captureElementAsImage(
       tableRef.current,
       `JAR_${attrData.nameEN.replace(/\s/g, "_")}_${productName}_table.png`,
-      width
+      width,
+      height
     );
   };
 
