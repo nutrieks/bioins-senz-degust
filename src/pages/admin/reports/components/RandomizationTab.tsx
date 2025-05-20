@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Event, ProductType, Randomization } from "@/types";
+import { Event as AppEvent, ProductType, Randomization } from "@/types";
 import { EventSelector } from "./EventSelector";
 import { ProductTypeSelector } from "./ProductTypeSelector";
 import { RandomizationTableView } from "./RandomizationTableView";
@@ -9,12 +9,12 @@ import { getRandomization } from "@/services/dataService";
 import { useToast } from "@/hooks/use-toast";
 
 interface RandomizationTabProps {
-  events: Event[];
+  events: AppEvent[];
   isLoading: boolean;
 }
 
 export function RandomizationTab({ events, isLoading }: RandomizationTabProps) {
-  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<AppEvent | null>(null);
   const [selectedProductType, setSelectedProductType] = useState<ProductType | null>(null);
   const [randomization, setRandomization] = useState<Randomization | null>(null);
   const [isLoadingRandomization, setIsLoadingRandomization] = useState(false);
@@ -50,8 +50,8 @@ export function RandomizationTab({ events, isLoading }: RandomizationTabProps) {
     }
   }, [selectedProductType, toast]);
 
-  const handleEventSelect = (event: Event) => {
-    setSelectedEvent(event);
+  const handleEventSelect = (appEvent: AppEvent) => {
+    setSelectedEvent(appEvent);
   };
 
   const handleProductTypeSelect = (productType: ProductType) => {

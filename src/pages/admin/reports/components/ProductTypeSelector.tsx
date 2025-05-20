@@ -1,5 +1,5 @@
 
-import { ProductType } from "@/types";
+import { Event, ProductType } from "@/types";
 
 interface ProductTypeSelectorProps {
   selectedEvent: Event | null;
@@ -19,13 +19,13 @@ export function ProductTypeSelector({
   return (
     <div className="flex-1 p-4 border rounded-md">
       <h3 className="text-lg font-medium mb-3">Tipovi proizvoda</h3>
-      {selectedEvent.productTypes.length === 0 ? (
+      {selectedEvent.productTypes && selectedEvent.productTypes.length === 0 ? (
         <p className="text-muted-foreground">
           Ovaj događaj nema tipova proizvoda.
         </p>
       ) : (
         <div className="space-y-2">
-          {selectedEvent.productTypes.map((productType) => (
+          {selectedEvent.productTypes && selectedEvent.productTypes.map((productType) => (
             <button
               key={productType.id}
               onClick={() => onProductTypeSelect(productType)}

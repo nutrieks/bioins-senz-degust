@@ -1,12 +1,12 @@
 
 import { useState, useEffect } from "react";
-import { Event } from "@/types";
+import { Event as AppEvent } from "@/types";
 import { Calendar } from "lucide-react";
 
 interface EventSelectorProps {
-  events: Event[];
-  selectedEvent: Event | null;
-  onEventSelect: (event: Event) => void;
+  events: AppEvent[];
+  selectedEvent: AppEvent | null;
+  onEventSelect: (event: AppEvent) => void;
   isLoading: boolean;
 }
 

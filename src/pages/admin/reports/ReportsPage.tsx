@@ -3,13 +3,13 @@ import { useEffect, useState } from "react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getEvents } from "@/services/dataService";
-import { Event, EventStatus } from "@/types";
+import { Event as AppEvent, EventStatus } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { RandomizationTab } from "./components/RandomizationTab";
 import { ComingSoonTab } from "./components/ComingSoonTab";
 
 export default function ReportsPage() {
-  const [events, setEvents] = useState<Event[]>([]);
+  const [events, setEvents] = useState<AppEvent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
