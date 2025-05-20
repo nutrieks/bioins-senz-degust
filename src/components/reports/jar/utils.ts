@@ -86,29 +86,46 @@ export function downloadCSV(content: string, filename: string) {
   document.body.removeChild(link);
 }
 
-export const captureElementAsImage = async (element: HTMLElement | null, filename: string) => {
+export const captureElementAsImage = async (
+  element: HTMLElement | null, 
+  filename: string,
+  width?: number,
+  height?: number
+) => {
   if (!element) return;
   
   try {
     // Wait for the component to be fully rendered
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise(resolve => setTimeout(resolve, 1000));
     
-    // Get the dimensions of the element
-    const width = element.offsetWidth;
-    const height = element.offsetHeight;
+    // Get the dimensions of the element if not provided
+    const elementWidth = width || element.offsetWidth;
+    const elementHeight = height || element.offsetHeight;
     
-    console.log(`Capturing element with dimensions: ${width}x${height}`);
+    console.log(`Capturing element with dimensions: ${elementWidth}x${elementHeight}`);
     
     const { toPng } = await import('html-to-image');
+    
+    // Apply specific styling to ensure the element is properly rendered
+    element.style.backgroundColor = "#fff";
+    
+    // Make sure to include the entire chart
     const dataUrl = await toPng(element, {
       backgroundColor: "#fff",
       pixelRatio: 4,
       cacheBust: true,
-      style: { fontFamily: "inherit" },
-      width: width || 950, // Use element width or fallback to 950
-      height: height || 600, // Use element height or fallback to 600
-      quality: 1.0
+      style: { 
+        fontFamily: "inherit",
+      },
+      width: elementWidth,
+      height: elementHeight,
+      quality: 1.0,
+      canvasWidth: elementWidth * 2,
+      canvasHeight: elementHeight * 2
     });
+    
+    // Use a short delay to ensure the image has been processed
+    await new Promise(resolve => setTimeout(resolve, 500));
     
     const link = document.createElement('a');
     link.download = filename;

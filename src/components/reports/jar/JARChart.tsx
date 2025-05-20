@@ -15,9 +15,17 @@ export function JARChart({ data, attrData, productName }: JARChartProps) {
   const chartRef = useRef<HTMLDivElement>(null);
 
   const handleDownloadChartImage = async () => {
+    if (!chartRef.current) return;
+    
+    // Add a fixed width and height for consistency
+    const width = 950;
+    const height = 600;
+    
     await captureElementAsImage(
       chartRef.current, 
-      `JAR_${attrData.nameEN.replace(/\s/g, "_")}_${productName}_chart.png`
+      `JAR_${attrData.nameEN.replace(/\s/g, "_")}_${productName}_chart.png`,
+      width,
+      height
     );
   };
 

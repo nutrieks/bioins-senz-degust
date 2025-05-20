@@ -15,9 +15,15 @@ export function JARTable({ data, attrData, productName }: JARTableProps) {
   const tableRef = useRef<HTMLDivElement>(null);
 
   const handleDownloadTableImage = async () => {
+    if (!tableRef.current) return;
+    
+    // Add a fixed width for consistency
+    const width = 950;
+    
     await captureElementAsImage(
       tableRef.current,
-      `JAR_${attrData.nameEN.replace(/\s/g, "_")}_${productName}_table.png`
+      `JAR_${attrData.nameEN.replace(/\s/g, "_")}_${productName}_table.png`,
+      width
     );
   };
 
@@ -37,6 +43,11 @@ export function JARTable({ data, attrData, productName }: JARTableProps) {
       <div 
         ref={tableRef}
         className="bg-white p-5 rounded-lg shadow mb-6"
+        style={{
+          width: '100%',
+          maxWidth: 950,
+          margin: '0 auto'
+        }}
       >
         <div className="mb-3 text-center">
           <h4 className="font-bold text-lg mb-1">Consumer's reaction to specific attribute</h4>
