@@ -17,9 +17,9 @@ export function JARTable({ data, attrData, productName }: JARTableProps) {
   const handleDownloadTableImage = async () => {
     if (!tableRef.current) return;
     
-    // Dodano fiksne dimenzije za konzistentnost
-    const width = 950;
-    const height = 600;
+    // Povećane fiksne dimenzije za bolje prikazivanje
+    const width = 1200;
+    const height = 700;
     
     await captureElementAsImage(
       tableRef.current,
@@ -47,7 +47,7 @@ export function JARTable({ data, attrData, productName }: JARTableProps) {
         className="bg-white p-5 rounded-lg shadow mb-6"
         style={{
           width: '100%',
-          maxWidth: 950,
+          maxWidth: 1200,
           margin: '0 auto'
         }}
       >
@@ -61,18 +61,22 @@ export function JARTable({ data, attrData, productName }: JARTableProps) {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Brand</TableHead>
+              <TableHead className="text-lg">Brand</TableHead>
               {JAR_LABELS.map((label) => (
-                <TableHead key={label} className="text-center">{label}</TableHead>
+                <TableHead key={label} className="text-center text-lg">{label}</TableHead>
               ))}
             </TableRow>
           </TableHeader>
           <TableBody>
             {data.map((item) => (
               <TableRow key={item.id}>
-                <TableCell className="font-medium">{item.name}</TableCell>
+                <TableCell className="font-medium text-base">{item.name}</TableCell>
                 {JAR_LABELS.map((label, index) => (
-                  <TableCell key={label} className="text-center" style={{ backgroundColor: `${JAR_COLORS[index]}40` }}>
+                  <TableCell 
+                    key={label} 
+                    className="text-center text-base font-semibold" 
+                    style={{ backgroundColor: `${JAR_COLORS[index]}40` }}
+                  >
                     {item[label]}
                   </TableCell>
                 ))}

@@ -95,8 +95,8 @@ export const captureElementAsImage = async (
   if (!element) return;
   
   try {
-    // Čekanje da se komponenta potpuno renderira
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // Dulje čekanje da se komponenta potpuno renderira
+    await new Promise(resolve => setTimeout(resolve, 1500));
     
     // Dobivanje dimenzija elementa ako nisu navedene
     const elementWidth = width || element.offsetWidth;
@@ -114,10 +114,10 @@ export const captureElementAsImage = async (
     element.style.position = 'relative';
     element.style.overflow = 'visible';
     
-    // Osiguranje da se uključi cijeli graf
+    // Dodana opcija za bolju kvalitetu i podršku za zoom
     const dataUrl = await toPng(element, {
       backgroundColor: "#fff",
-      pixelRatio: 2,
+      pixelRatio: 3, // Povećan pixelRatio za bolju kvalitetu slike
       cacheBust: true,
       style: { 
         fontFamily: "inherit",
@@ -126,14 +126,15 @@ export const captureElementAsImage = async (
       height: elementHeight,
       quality: 1.0,
       canvasWidth: elementWidth,
-      canvasHeight: elementHeight
+      canvasHeight: elementHeight,
+      skipAutoScale: true
     });
     
     // Vraćanje originalnog stila
     element.setAttribute('style', originalStyle);
     
-    // Kratka pauza za osiguranje da je slika obrađena
-    await new Promise(resolve => setTimeout(resolve, 500));
+    // Duža pauza za osiguranje da je slika obrađena
+    await new Promise(resolve => setTimeout(resolve, 1000));
     
     const link = document.createElement('a');
     link.download = filename;
