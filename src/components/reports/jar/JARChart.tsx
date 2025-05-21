@@ -17,9 +17,9 @@ export function JARChart({ data, attrData, productName }: JARChartProps) {
   const handleDownloadChartImage = async () => {
     if (!chartRef.current) return;
     
-    // Još veće fiksne dimenzije za bolji prikaz, osiguravajući vidljivost cijelog grafa
-    const width = 1500; // Povećano s 1200 na 1500
-    const height = 900; // Povećano s 800 na 900
+    // Use even larger dimensions for better image quality and proper rendering
+    const width = 1800;
+    const height = 1200;
     
     await captureElementAsImage(
       chartRef.current, 
@@ -44,52 +44,54 @@ export function JARChart({ data, attrData, productName }: JARChartProps) {
       
       <div 
         ref={chartRef}
-        className="bg-white p-5 rounded-lg shadow"
+        className="bg-white p-8 rounded-lg shadow"
         style={{
           width: '100%',
-          maxWidth: 1500, // Povećano s 1200 na 1500
-          height: 900,    // Povećano s 800 na 900
-          margin: '0 auto'
+          maxWidth: 1800,
+          height: 1200,
+          margin: '0 auto',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center'
         }}
       >
-        {/* Title and description (part of image) */}
-        <div className="text-center mb-4">
-          <h4 className="font-bold text-lg mb-1">Consumer's reaction to specific attribute</h4>
-          <p className="text-sm">Method: JAR scale</p>
-          <p className="text-sm">Sample: {productName}</p>
-          <p className="text-sm mb-3">Attribute: {attrData.nameEN}</p>
+        {/* Title and description (part of image) - with increased top space */}
+        <div className="text-center mb-8">
+          <h4 className="font-bold text-2xl mb-2">Consumer's reaction to specific attribute</h4>
+          <p className="text-lg mb-1">Method: JAR scale</p>
+          <p className="text-lg mb-1">Sample: {productName}</p>
+          <p className="text-lg mb-4">Attribute: {attrData.nameEN}</p>
         </div>
         
-        <div style={{ height: 800 }}> {/* Povećana visina samog grafa */}
+        <div className="flex-1 flex items-center justify-center" style={{ minHeight: 900, width: '100%' }}>
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
               data={data}
               margin={{
-                top: 20,
-                right: 120, // Značajno povećane desne margine za osiguranje vidljivosti
-                left: 60,
-                bottom: 150 // Značajno povećana donja margina za bolje prikazivanje x-osi
+                top: 50,
+                right: 160,
+                left: 80,
+                bottom: 180
               }}
-              barGap={15}  // Povećan razmak između grupa stupaca
-              barCategoryGap={60} // Povećan razmak između kategorija
+              barGap={25}
+              barCategoryGap={80}
+              layout="vertical"
             >
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis 
-                dataKey="name" 
-                tick={{ fontSize: 14 }} // Povećan font
-                interval={0}
-                textAnchor="end"
-                angle={-45} // Rotacija teksta na x-osi za bolje prikazivanje
-                height={120} // Značajno više prostora za etikete x-osi
+                type="number"
+                tick={{ fontSize: 16 }}
+                domain={[0, 'dataMax + 2']}
+                label={{ value: 'No. of votes', position: 'insideBottom', offset: -10, fontSize: 16, fontWeight: 'bold' }}
               />
               <YAxis 
-                label={{ value: 'No. of votes', angle: -90, position: 'insideLeft', style: { textAnchor: 'middle' } }}
-                domain={[0, 'dataMax + 3']} // Više prostora na vrhu grafa
-                padding={{ top: 30 }}
-                tick={{ fontSize: 14 }} // Povećan font
+                type="category"
+                dataKey="name"
+                tick={{ fontSize: 18 }}
+                width={150}
               />
               <Tooltip 
-                contentStyle={{ color: 'black', fontSize: '14px' }} 
+                contentStyle={{ color: 'black', fontSize: '16px', fontWeight: 'bold' }} 
                 formatter={(value, name) => [value, name]}
                 labelFormatter={(label) => `Sample: ${label}`}
               />
@@ -97,8 +99,8 @@ export function JARChart({ data, attrData, productName }: JARChartProps) {
                 layout="horizontal" 
                 verticalAlign="bottom" 
                 align="center"
-                wrapperStyle={{ bottom: -10, lineHeight: '40px', color: 'black', fontSize: '14px' }}
-                formatter={(value, entry) => <span style={{ color: 'black', fontSize: '14px' }}>{value}</span>}
+                wrapperStyle={{ bottom: -10, lineHeight: '40px', fontSize: '16px', fontWeight: 'bold' }}
+                formatter={(value, entry) => <span style={{ color: 'black', fontSize: '16px', fontWeight: 'bold' }}>{value}</span>}
               />
               {JAR_LABELS.map((label, index) => (
                 <Bar
@@ -106,12 +108,13 @@ export function JARChart({ data, attrData, productName }: JARChartProps) {
                   dataKey={label}
                   name={label}
                   fill={JAR_COLORS[index]}
-                  maxBarSize={100} // Povećana maksimalna širina stupca za bolju vidljivost
+                  maxBarSize={80}
+                  layout="vertical"
                 >
                   <LabelList 
                     dataKey={label} 
-                    position="top"
-                    style={{ fill: 'black', fontSize: 16, fontWeight: 'bold' }} // Povećan font oznaka
+                    position="right"
+                    style={{ fill: 'black', fontSize: 18, fontWeight: 'bold' }} 
                     formatter={(value: number) => value > 0 ? value : ''}
                   />
                 </Bar>

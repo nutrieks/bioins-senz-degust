@@ -95,10 +95,10 @@ export const captureElementAsImage = async (
   if (!element) return;
   
   try {
-    // Dulje čekanje da se komponenta potpuno renderira
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    // Longer wait to ensure the component is fully rendered
+    await new Promise(resolve => setTimeout(resolve, 2000));
     
-    // Dobivanje dimenzija elementa ako nisu navedene
+    // Use provided dimensions or get from element
     const elementWidth = width || element.offsetWidth;
     const elementHeight = height || element.offsetHeight;
     
@@ -106,21 +106,28 @@ export const captureElementAsImage = async (
     
     const { toPng } = await import('html-to-image');
     
-    // Primjena određenog stila za osiguranje pravilnog renderiranja elementa
+    // Apply specific styling for ensuring proper rendering
     const originalStyle = element.getAttribute('style') || '';
-    element.style.backgroundColor = "#fff";
+    
+    // Set explicit styles for the capture
     element.style.width = `${elementWidth}px`;
     element.style.height = `${elementHeight}px`;
+    element.style.backgroundColor = "#ffffff";
     element.style.position = 'relative';
     element.style.overflow = 'visible';
+    element.style.display = 'flex';
+    element.style.flexDirection = 'column';
+    element.style.justifyContent = 'center';
+    element.style.padding = '40px';
     
-    // Dodana opcija za bolju kvalitetu i podršku za zoom
+    // Improved options for better image quality and support for zoom
     const dataUrl = await toPng(element, {
-      backgroundColor: "#fff",
-      pixelRatio: 3, // Povećan pixelRatio za bolju kvalitetu slike
+      backgroundColor: "#ffffff",
+      pixelRatio: 3,
       cacheBust: true,
       style: { 
         fontFamily: "inherit",
+        boxShadow: "none",
       },
       width: elementWidth,
       height: elementHeight,
@@ -130,11 +137,11 @@ export const captureElementAsImage = async (
       skipAutoScale: true
     });
     
-    // Vraćanje originalnog stila
+    // Restore original style
     element.setAttribute('style', originalStyle);
     
-    // Duža pauza za osiguranje da je slika obrađena
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // Longer pause to ensure image is processed
+    await new Promise(resolve => setTimeout(resolve, 1500));
     
     const link = document.createElement('a');
     link.download = filename;

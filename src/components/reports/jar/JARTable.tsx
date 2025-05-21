@@ -17,9 +17,9 @@ export function JARTable({ data, attrData, productName }: JARTableProps) {
   const handleDownloadTableImage = async () => {
     if (!tableRef.current) return;
     
-    // Povećane fiksne dimenzije za bolje prikazivanje
-    const width = 1200;
-    const height = 700;
+    // Increased fixed dimensions for better display
+    const width = 1800;
+    const height = 1000;
     
     await captureElementAsImage(
       tableRef.current,
@@ -44,37 +44,40 @@ export function JARTable({ data, attrData, productName }: JARTableProps) {
 
       <div 
         ref={tableRef}
-        className="bg-white p-5 rounded-lg shadow mb-6"
+        className="bg-white p-8 rounded-lg shadow mb-6"
         style={{
           width: '100%',
-          maxWidth: 1200,
-          margin: '0 auto'
+          maxWidth: 1800,
+          margin: '0 auto',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center'
         }}
       >
-        <div className="mb-3 text-center">
-          <h4 className="font-bold text-lg mb-1">Consumer's reaction to specific attribute</h4>
-          <p className="text-sm">Method: JAR scale</p>
-          <p className="text-sm">Sample: {productName}</p>
-          <p className="text-sm mb-3">Attribute: {attrData.nameEN}</p>
+        <div className="mb-6 text-center">
+          <h4 className="font-bold text-2xl mb-2">Consumer's reaction to specific attribute</h4>
+          <p className="text-lg mb-1">Method: JAR scale</p>
+          <p className="text-lg mb-1">Sample: {productName}</p>
+          <p className="text-lg mb-4">Attribute: {attrData.nameEN}</p>
         </div>
 
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="text-lg">Brand</TableHead>
+              <TableHead className="text-xl font-bold">Brand</TableHead>
               {JAR_LABELS.map((label) => (
-                <TableHead key={label} className="text-center text-lg">{label}</TableHead>
+                <TableHead key={label} className="text-center text-xl font-bold">{label}</TableHead>
               ))}
             </TableRow>
           </TableHeader>
           <TableBody>
             {data.map((item) => (
               <TableRow key={item.id}>
-                <TableCell className="font-medium text-base">{item.name}</TableCell>
+                <TableCell className="font-medium text-lg">{item.name}</TableCell>
                 {JAR_LABELS.map((label, index) => (
                   <TableCell 
                     key={label} 
-                    className="text-center text-base font-semibold" 
+                    className="text-center text-lg font-semibold" 
                     style={{ backgroundColor: `${JAR_COLORS[index]}40` }}
                   >
                     {item[label]}
