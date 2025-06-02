@@ -95,10 +95,9 @@ export const captureElementAsImage = async (
   if (!element) return;
   
   try {
-    // Longer wait to ensure the component is fully rendered
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    // Wait longer for complete rendering
+    await new Promise(resolve => setTimeout(resolve, 3000));
     
-    // Use provided dimensions or get from element
     const elementWidth = width || element.offsetWidth;
     const elementHeight = height || element.offsetHeight;
     
@@ -106,10 +105,10 @@ export const captureElementAsImage = async (
     
     const { toPng } = await import('html-to-image');
     
-    // Apply specific styling for ensuring proper rendering
+    // Store original styles
     const originalStyle = element.getAttribute('style') || '';
     
-    // Set explicit styles for the capture
+    // Apply specific capture styles with better centering
     element.style.width = `${elementWidth}px`;
     element.style.height = `${elementHeight}px`;
     element.style.backgroundColor = "#ffffff";
@@ -117,31 +116,34 @@ export const captureElementAsImage = async (
     element.style.overflow = 'visible';
     element.style.display = 'flex';
     element.style.flexDirection = 'column';
-    element.style.justifyContent = 'center';
-    element.style.padding = '40px';
+    element.style.justifyContent = 'flex-start';
+    element.style.alignItems = 'center';
+    element.style.boxSizing = 'border-box';
     
-    // Improved options for better image quality and support for zoom
+    // Enhanced capture options
     const dataUrl = await toPng(element, {
       backgroundColor: "#ffffff",
-      pixelRatio: 3,
+      pixelRatio: 2,
       cacheBust: true,
       style: { 
         fontFamily: "inherit",
         boxShadow: "none",
+        transform: 'scale(1)',
       },
       width: elementWidth,
       height: elementHeight,
       quality: 1.0,
       canvasWidth: elementWidth,
       canvasHeight: elementHeight,
-      skipAutoScale: true
+      skipAutoScale: true,
+      includeQueryParams: true
     });
     
-    // Restore original style
+    // Restore original styles
     element.setAttribute('style', originalStyle);
     
-    // Longer pause to ensure image is processed
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    // Wait for processing
+    await new Promise(resolve => setTimeout(resolve, 1000));
     
     const link = document.createElement('a');
     link.download = filename;

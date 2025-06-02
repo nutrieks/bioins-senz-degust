@@ -17,9 +17,9 @@ export function JARChart({ data, attrData, productName }: JARChartProps) {
   const handleDownloadChartImage = async () => {
     if (!chartRef.current) return;
     
-    // Use even larger dimensions for better image quality and proper rendering
-    const width = 1800;
-    const height = 1200;
+    // Larger dimensions for complete chart capture
+    const width = 2000;
+    const height = 1400;
     
     await captureElementAsImage(
       chartRef.current, 
@@ -47,15 +47,19 @@ export function JARChart({ data, attrData, productName }: JARChartProps) {
         className="bg-white p-8 rounded-lg shadow"
         style={{
           width: '100%',
-          maxWidth: 1800,
-          height: 1200,
+          maxWidth: 2000,
+          height: 1400,
           margin: '0 auto',
           display: 'flex',
           flexDirection: 'column',
-          justifyContent: 'center'
+          justifyContent: 'flex-start',
+          paddingTop: '60px',
+          paddingBottom: '60px',
+          paddingLeft: '60px',
+          paddingRight: '60px'
         }}
       >
-        {/* Title and description (part of image) - with increased top space */}
+        {/* Title and description */}
         <div className="text-center mb-8">
           <h4 className="font-bold text-2xl mb-2">Consumer's reaction to specific attribute</h4>
           <p className="text-lg mb-1">Method: JAR scale</p>
@@ -63,7 +67,7 @@ export function JARChart({ data, attrData, productName }: JARChartProps) {
           <p className="text-lg mb-4">Attribute: {attrData.nameEN}</p>
         </div>
         
-        <div className="flex-1 flex items-center justify-center" style={{ minHeight: 900, width: '100%' }}>
+        <div className="flex-1 flex items-center justify-center" style={{ minHeight: 1000, width: '100%' }}>
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
               data={data}
@@ -75,17 +79,14 @@ export function JARChart({ data, attrData, productName }: JARChartProps) {
               }}
               barGap={25}
               barCategoryGap={80}
-              layout="vertical"
             >
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis 
-                type="number"
                 tick={{ fontSize: 16 }}
                 domain={[0, 'dataMax + 2']}
                 label={{ value: 'No. of votes', position: 'insideBottom', offset: -10, fontSize: 16, fontWeight: 'bold' }}
               />
               <YAxis 
-                type="category"
                 dataKey="name"
                 tick={{ fontSize: 18 }}
                 width={150}
@@ -109,7 +110,6 @@ export function JARChart({ data, attrData, productName }: JARChartProps) {
                   name={label}
                   fill={JAR_COLORS[index]}
                   maxBarSize={80}
-                  layout="vertical"
                 >
                   <LabelList 
                     dataKey={label} 
