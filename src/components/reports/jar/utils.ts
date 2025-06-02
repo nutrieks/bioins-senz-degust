@@ -95,8 +95,8 @@ export const captureElementAsImage = async (
   if (!element) return;
   
   try {
-    // Wait longer for complete rendering
-    await new Promise(resolve => setTimeout(resolve, 3000));
+    // Duže čekanje za potpuno renderiranje
+    await new Promise(resolve => setTimeout(resolve, 4000));
     
     const elementWidth = width || element.offsetWidth;
     const elementHeight = height || element.offsetHeight;
@@ -105,10 +105,10 @@ export const captureElementAsImage = async (
     
     const { toPng } = await import('html-to-image');
     
-    // Store original styles
+    // Spremanje originalnih stilova
     const originalStyle = element.getAttribute('style') || '';
     
-    // Apply specific capture styles with better centering
+    // Primjena specifičnih stilova za hvatanje s boljim centriranjem
     element.style.width = `${elementWidth}px`;
     element.style.height = `${elementHeight}px`;
     element.style.backgroundColor = "#ffffff";
@@ -116,14 +116,15 @@ export const captureElementAsImage = async (
     element.style.overflow = 'visible';
     element.style.display = 'flex';
     element.style.flexDirection = 'column';
-    element.style.justifyContent = 'flex-start';
+    element.style.justifyContent = 'center';
     element.style.alignItems = 'center';
     element.style.boxSizing = 'border-box';
+    element.style.padding = '80px';
     
-    // Enhanced capture options
+    // Poboljšane opcije hvatanja
     const dataUrl = await toPng(element, {
       backgroundColor: "#ffffff",
-      pixelRatio: 2,
+      pixelRatio: 2.5,
       cacheBust: true,
       style: { 
         fontFamily: "inherit",
@@ -139,11 +140,11 @@ export const captureElementAsImage = async (
       includeQueryParams: true
     });
     
-    // Restore original styles
+    // Vraćanje originalnih stilova
     element.setAttribute('style', originalStyle);
     
-    // Wait for processing
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // Čekanje za obradu
+    await new Promise(resolve => setTimeout(resolve, 1500));
     
     const link = document.createElement('a');
     link.download = filename;
