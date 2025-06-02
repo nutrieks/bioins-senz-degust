@@ -1,3 +1,4 @@
+
 import { RetailerCode } from "@/types";
 
 export const JAR_COLORS = [
@@ -87,7 +88,9 @@ export function downloadCSV(content: string, filename: string) {
 
 export const captureElementAsImage = async (
   element: HTMLElement | null, 
-  filename: string
+  filename: string,
+  width?: number,
+  height?: number
 ) => {
   if (!element) return;
   
@@ -96,17 +99,26 @@ export const captureElementAsImage = async (
     
     const { toPng } = await import('html-to-image');
     
-    const dataUrl = await toPng(element, {
+    const options: any = {
       backgroundColor: "#ffffff",
       pixelRatio: 2,
       cacheBust: true,
-      width: 1200,
-      height: 800,
       style: {
         transform: 'scale(1)',
         transformOrigin: 'top left'
       }
-    });
+    };
+
+    // Use provided dimensions if available, otherwise use defaults
+    if (width && height) {
+      options.width = width;
+      options.height = height;
+    } else {
+      options.width = 1200;
+      options.height = 800;
+    }
+    
+    const dataUrl = await toPng(element, options);
     
     const link = document.createElement('a');
     link.download = filename;
