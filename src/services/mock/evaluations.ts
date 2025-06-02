@@ -1,4 +1,3 @@
-
 import { Evaluation } from "@/types";
 
 export const evaluations: Evaluation[] = [
@@ -135,7 +134,7 @@ export const evaluations: Evaluation[] = [
     timestamp: "2025-04-15T11:15:00Z"
   },
   // NEW CHOCOLATE EVALUATIONS FOR EVENT3
-  // Milka evaluations
+  // Milka evaluations (4 evaluators x 3 samples = 12 evaluations)
   {
     id: "eval7",
     userId: "evaluator1",
@@ -170,9 +169,9 @@ export const evaluations: Evaluation[] = [
       overallLiking: 7
     },
     jar: {
-      "attr5": 3,
-      "attr6": 3,
-      "attr7": 4
+      "attr5": 4, // Too sweet
+      "attr6": 3, // Just right
+      "attr7": 4  // Too hard
     },
     timestamp: "2025-05-01T10:15:00Z"
   },
@@ -190,9 +189,9 @@ export const evaluations: Evaluation[] = [
       overallLiking: 9
     },
     jar: {
-      "attr5": 3,
-      "attr6": 2,
-      "attr7": 3
+      "attr5": 3, // Just right
+      "attr6": 2, // Too mild
+      "attr7": 3  // Just right
     },
     timestamp: "2025-05-01T10:30:00Z"
   },
@@ -210,9 +209,9 @@ export const evaluations: Evaluation[] = [
       overallLiking: 8
     },
     jar: {
-      "attr5": 4,
-      "attr6": 3,
-      "attr7": 3
+      "attr5": 4, // Too sweet
+      "attr6": 3, // Just right
+      "attr7": 3  // Just right
     },
     timestamp: "2025-05-01T10:45:00Z"
   },
@@ -231,9 +230,9 @@ export const evaluations: Evaluation[] = [
       overallLiking: 9
     },
     jar: {
-      "attr5": 3,
-      "attr6": 4,
-      "attr7": 4
+      "attr5": 2, // Too weak
+      "attr6": 4, // Too bitter
+      "attr7": 4  // Too hard
     },
     timestamp: "2025-05-01T11:00:00Z"
   },
@@ -251,9 +250,9 @@ export const evaluations: Evaluation[] = [
       overallLiking: 8
     },
     jar: {
-      "attr5": 2,
-      "attr6": 3,
-      "attr7": 3
+      "attr5": 3, // Just right
+      "attr6": 3, // Just right
+      "attr7": 3  // Just right
     },
     timestamp: "2025-05-01T11:15:00Z"
   },
@@ -271,9 +270,9 @@ export const evaluations: Evaluation[] = [
       overallLiking: 9
     },
     jar: {
-      "attr5": 3,
-      "attr6": 3,
-      "attr7": 3
+      "attr5": 3, // Just right
+      "attr6": 3, // Just right
+      "attr7": 3  // Just right
     },
     timestamp: "2025-05-01T11:30:00Z"
   },
@@ -291,9 +290,9 @@ export const evaluations: Evaluation[] = [
       overallLiking: 8
     },
     jar: {
-      "attr5": 3,
-      "attr6": 4,
-      "attr7": 3
+      "attr5": 1, // Much too weak
+      "attr6": 4, // Too bitter
+      "attr7": 3  // Just right
     },
     timestamp: "2025-05-01T11:45:00Z"
   },
@@ -312,9 +311,9 @@ export const evaluations: Evaluation[] = [
       overallLiking: 8
     },
     jar: {
-      "attr5": 3,
-      "attr6": 3,
-      "attr7": 2
+      "attr5": 3, // Just right
+      "attr6": 3, // Just right
+      "attr7": 2  // Too soft
     },
     timestamp: "2025-05-01T12:00:00Z"
   },
@@ -332,9 +331,9 @@ export const evaluations: Evaluation[] = [
       overallLiking: 7
     },
     jar: {
-      "attr5": 2,
-      "attr6": 4,
-      "attr7": 4
+      "attr5": 3, // Just right
+      "attr6": 4, // Too bitter
+      "attr7": 4  // Too hard
     },
     timestamp: "2025-05-01T12:15:00Z"
   },
@@ -352,9 +351,9 @@ export const evaluations: Evaluation[] = [
       overallLiking: 8
     },
     jar: {
-      "attr5": 3,
-      "attr6": 3,
-      "attr7": 3
+      "attr5": 3, // Just right
+      "attr6": 3, // Just right
+      "attr7": 3  // Just right
     },
     timestamp: "2025-05-01T12:30:00Z"
   },
@@ -372,9 +371,9 @@ export const evaluations: Evaluation[] = [
       overallLiking: 9
     },
     jar: {
-      "attr5": 3,
-      "attr6": 2,
-      "attr7": 3
+      "attr5": 3, // Just right
+      "attr6": 1, // Much too mild
+      "attr7": 3  // Just right
     },
     timestamp: "2025-05-01T12:45:00Z"
   }

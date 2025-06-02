@@ -59,33 +59,40 @@ export function JARChart({ data, attrData, productName }: JARChartProps) {
               layout="horizontal"
               margin={{
                 top: 20,
-                right: 80,
-                left: 100,
-                bottom: 50
+                right: 100,
+                left: 120,
+                bottom: 80
               }}
             >
-              <CartesianGrid strokeDasharray="3 3" />
+              <CartesianGrid strokeDasharray="3 3" horizontal={false} />
               <XAxis 
                 type="number"
                 tick={{ fontSize: 12 }}
-                label={{ value: 'No. of votes', position: 'insideBottom', offset: -5 }}
+                domain={[0, 'dataMax']}
+                label={{ value: 'No. of votes', position: 'insideBottom', offset: -10, fontSize: 14 }}
               />
               <YAxis 
                 type="category"
                 dataKey="name"
                 tick={{ fontSize: 12 }}
-                width={90}
+                width={110}
+                interval={0}
               />
               <Tooltip 
-                contentStyle={{ color: 'black' }} 
-                formatter={(value, name) => [value, name]}
-                labelFormatter={(label) => `Sample: ${label}`}
+                contentStyle={{ 
+                  color: 'black', 
+                  backgroundColor: 'white',
+                  border: '1px solid #ccc',
+                  borderRadius: '4px'
+                }} 
+                formatter={(value: number, name: string) => [value, name]}
+                labelFormatter={(label) => `Brand: ${label}`}
               />
               <Legend 
                 layout="horizontal" 
                 verticalAlign="bottom" 
                 align="center"
-                wrapperStyle={{ paddingTop: '20px' }}
+                wrapperStyle={{ paddingTop: '20px', fontSize: '12px' }}
               />
               {JAR_LABELS.map((label, index) => (
                 <Bar
@@ -98,7 +105,7 @@ export function JARChart({ data, attrData, productName }: JARChartProps) {
                   <LabelList 
                     dataKey={label} 
                     position="right"
-                    style={{ fill: 'black', fontSize: 12 }} 
+                    style={{ fill: 'black', fontSize: 11, fontWeight: 'bold' }} 
                     formatter={(value: number) => value > 0 ? value : ''}
                   />
                 </Bar>
