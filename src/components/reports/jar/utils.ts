@@ -1,4 +1,3 @@
-
 import { RetailerCode } from "@/types";
 
 export const JAR_COLORS = [
@@ -88,63 +87,26 @@ export function downloadCSV(content: string, filename: string) {
 
 export const captureElementAsImage = async (
   element: HTMLElement | null, 
-  filename: string,
-  width?: number,
-  height?: number
+  filename: string
 ) => {
   if (!element) return;
   
   try {
-    // Duže čekanje za potpuno renderiranje
-    await new Promise(resolve => setTimeout(resolve, 4000));
-    
-    const elementWidth = width || element.offsetWidth;
-    const elementHeight = height || element.offsetHeight;
-    
-    console.log(`Capturing element with dimensions: ${elementWidth}x${elementHeight}`);
+    await new Promise(resolve => setTimeout(resolve, 1000));
     
     const { toPng } = await import('html-to-image');
     
-    // Spremanje originalnih stilova
-    const originalStyle = element.getAttribute('style') || '';
-    
-    // Primjena specifičnih stilova za hvatanje s boljim centriranjem
-    element.style.width = `${elementWidth}px`;
-    element.style.height = `${elementHeight}px`;
-    element.style.backgroundColor = "#ffffff";
-    element.style.position = 'relative';
-    element.style.overflow = 'visible';
-    element.style.display = 'flex';
-    element.style.flexDirection = 'column';
-    element.style.justifyContent = 'center';
-    element.style.alignItems = 'center';
-    element.style.boxSizing = 'border-box';
-    element.style.padding = '80px';
-    
-    // Poboljšane opcije hvatanja
     const dataUrl = await toPng(element, {
       backgroundColor: "#ffffff",
-      pixelRatio: 2.5,
+      pixelRatio: 2,
       cacheBust: true,
-      style: { 
-        fontFamily: "inherit",
-        boxShadow: "none",
+      width: 1200,
+      height: 800,
+      style: {
         transform: 'scale(1)',
-      },
-      width: elementWidth,
-      height: elementHeight,
-      quality: 1.0,
-      canvasWidth: elementWidth,
-      canvasHeight: elementHeight,
-      skipAutoScale: true,
-      includeQueryParams: true
+        transformOrigin: 'top left'
+      }
     });
-    
-    // Vraćanje originalnih stilova
-    element.setAttribute('style', originalStyle);
-    
-    // Čekanje za obradu
-    await new Promise(resolve => setTimeout(resolve, 1500));
     
     const link = document.createElement('a');
     link.download = filename;
