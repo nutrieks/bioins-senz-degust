@@ -33,5 +33,29 @@ export const jarAttributes: JARAttribute[] = [
     nameEN: "Hardness",
     scaleHR: ["Puno premekano", "Premekano", "Baš kako treba", "Pretvrdo", "Puno pretvrdo"] as [string, string, string, string, string],
     scaleEN: ["Much too soft", "Too soft", "Just About Right", "Too hard", "Much too hard"] as [string, string, string, string, string]
+  },
+  {
+    id: "attr5",
+    productTypeId: "product2",
+    nameHR: "Slatkoća",
+    nameEN: "Sweetness",
+    scaleHR: ["Puno premalo slatko", "Premalo slatko", "Baš kako treba", "Preslatko", "Puno preslatko"] as [string, string, string, string, string],
+    scaleEN: ["Much too weak", "Too weak", "Just About Right", "Too strong", "Much too strong"] as [string, string, string, string, string]
+  },
+  {
+    id: "attr6",
+    productTypeId: "product2",
+    nameHR: "Gorčina",
+    nameEN: "Bitterness",
+    scaleHR: ["Puno preblago", "Preblago", "Baš kako treba", "Pregorko", "Puno pregorko"] as [string, string, string, string, string],
+    scaleEN: ["Much too mild", "Too mild", "Just About Right", "Too bitter", "Much too bitter"] as [string, string, string, string, string]
+  },
+  {
+    id: "attr7",
+    productTypeId: "product2",
+    nameHR: "Tekstura",
+    nameEN: "Texture",
+    scaleHR: ["Puno premekano", "Premekano", "Baš kako treba", "Pretvrdo", "Puno pretvrdo"] as [string, string, string, string, string],
+    scaleEN: ["Much too soft", "Too soft", "Just About Right", "Too hard", "Much too hard"] as [string, string, string, string, string]
   }
 ];

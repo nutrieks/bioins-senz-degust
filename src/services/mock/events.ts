@@ -17,5 +17,13 @@ export const events: Event[] = [
     productTypes: [],
     createdAt: "2025-04-08T14:30:00Z",
     randomizationComplete: true
+  },
+  {
+    id: "event3",
+    date: "2025-05-01",
+    status: EventStatus.COMPLETED,
+    productTypes: [],
+    createdAt: "2025-04-25T09:00:00Z",
+    randomizationComplete: true
   }
 ];

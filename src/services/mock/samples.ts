@@ -44,5 +44,47 @@ export const samples: Sample[] = [
       ]
     },
     blindCode: "D3"
+  },
+  {
+    id: "sample4",
+    productTypeId: "product2",
+    brand: "Milka",
+    retailerCode: RetailerCode.LI,
+    images: {
+      prepared: "https://images.unsplash.com/photo-1606312619070-d48b4c652a52",
+      packaging: "https://images.unsplash.com/photo-1549007994-cb92caebd54b",
+      details: [
+        "https://images.unsplash.com/photo-1606312619070-d48b4c652a52"
+      ]
+    },
+    blindCode: "C1"
+  },
+  {
+    id: "sample5",
+    productTypeId: "product2",
+    brand: "Lindt",
+    retailerCode: RetailerCode.KL,
+    images: {
+      prepared: "https://images.unsplash.com/photo-1511381939415-e44015466834",
+      packaging: "https://images.unsplash.com/photo-1549007994-cb92caebd54b",
+      details: [
+        "https://images.unsplash.com/photo-1511381939415-e44015466834"
+      ]
+    },
+    blindCode: "C2"
+  },
+  {
+    id: "sample6",
+    productTypeId: "product2",
+    brand: "Toblerone",
+    retailerCode: RetailerCode.KO,
+    images: {
+      prepared: "https://images.unsplash.com/photo-1564424224827-cd24b8915874",
+      packaging: "https://images.unsplash.com/photo-1549007994-cb92caebd54b",
+      details: [
+        "https://images.unsplash.com/photo-1564424224827-cd24b8915874"
+      ]
+    },
+    blindCode: "C3"
   }
 ];

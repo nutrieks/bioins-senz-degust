@@ -1,3 +1,4 @@
+
 import { Evaluation } from "@/types";
 
 export const evaluations: Evaluation[] = [
@@ -132,5 +133,249 @@ export const evaluations: Evaluation[] = [
       "attr4": 3
     },
     timestamp: "2025-04-15T11:15:00Z"
+  },
+  // NEW CHOCOLATE EVALUATIONS FOR EVENT3
+  // Milka evaluations
+  {
+    id: "eval7",
+    userId: "evaluator1",
+    sampleId: "sample4",
+    productTypeId: "product2",
+    eventId: "event3",
+    hedonic: {
+      appearance: 8,
+      odor: 7,
+      texture: 8,
+      flavor: 9,
+      overallLiking: 8
+    },
+    jar: {
+      "attr5": 4, // Too sweet
+      "attr6": 2, // Too mild
+      "attr7": 3  // Just right
+    },
+    timestamp: "2025-05-01T10:00:00Z"
+  },
+  {
+    id: "eval8",
+    userId: "evaluator2",
+    sampleId: "sample4",
+    productTypeId: "product2",
+    eventId: "event3",
+    hedonic: {
+      appearance: 7,
+      odor: 8,
+      texture: 7,
+      flavor: 8,
+      overallLiking: 7
+    },
+    jar: {
+      "attr5": 3,
+      "attr6": 3,
+      "attr7": 4
+    },
+    timestamp: "2025-05-01T10:15:00Z"
+  },
+  {
+    id: "eval9",
+    userId: "evaluator3",
+    sampleId: "sample4",
+    productTypeId: "product2",
+    eventId: "event3",
+    hedonic: {
+      appearance: 9,
+      odor: 8,
+      texture: 8,
+      flavor: 9,
+      overallLiking: 9
+    },
+    jar: {
+      "attr5": 3,
+      "attr6": 2,
+      "attr7": 3
+    },
+    timestamp: "2025-05-01T10:30:00Z"
+  },
+  {
+    id: "eval10",
+    userId: "evaluator4",
+    sampleId: "sample4",
+    productTypeId: "product2",
+    eventId: "event3",
+    hedonic: {
+      appearance: 8,
+      odor: 7,
+      texture: 8,
+      flavor: 8,
+      overallLiking: 8
+    },
+    jar: {
+      "attr5": 4,
+      "attr6": 3,
+      "attr7": 3
+    },
+    timestamp: "2025-05-01T10:45:00Z"
+  },
+  // Lindt evaluations
+  {
+    id: "eval11",
+    userId: "evaluator1",
+    sampleId: "sample5",
+    productTypeId: "product2",
+    eventId: "event3",
+    hedonic: {
+      appearance: 9,
+      odor: 9,
+      texture: 8,
+      flavor: 9,
+      overallLiking: 9
+    },
+    jar: {
+      "attr5": 3,
+      "attr6": 4,
+      "attr7": 4
+    },
+    timestamp: "2025-05-01T11:00:00Z"
+  },
+  {
+    id: "eval12",
+    userId: "evaluator2",
+    sampleId: "sample5",
+    productTypeId: "product2",
+    eventId: "event3",
+    hedonic: {
+      appearance: 8,
+      odor: 8,
+      texture: 9,
+      flavor: 8,
+      overallLiking: 8
+    },
+    jar: {
+      "attr5": 2,
+      "attr6": 3,
+      "attr7": 3
+    },
+    timestamp: "2025-05-01T11:15:00Z"
+  },
+  {
+    id: "eval13",
+    userId: "evaluator3",
+    sampleId: "sample5",
+    productTypeId: "product2",
+    eventId: "event3",
+    hedonic: {
+      appearance: 9,
+      odor: 9,
+      texture: 9,
+      flavor: 9,
+      overallLiking: 9
+    },
+    jar: {
+      "attr5": 3,
+      "attr6": 3,
+      "attr7": 3
+    },
+    timestamp: "2025-05-01T11:30:00Z"
+  },
+  {
+    id: "eval14",
+    userId: "evaluator4",
+    sampleId: "sample5",
+    productTypeId: "product2",
+    eventId: "event3",
+    hedonic: {
+      appearance: 8,
+      odor: 8,
+      texture: 8,
+      flavor: 8,
+      overallLiking: 8
+    },
+    jar: {
+      "attr5": 3,
+      "attr6": 4,
+      "attr7": 3
+    },
+    timestamp: "2025-05-01T11:45:00Z"
+  },
+  // Toblerone evaluations
+  {
+    id: "eval15",
+    userId: "evaluator1",
+    sampleId: "sample6",
+    productTypeId: "product2",
+    eventId: "event3",
+    hedonic: {
+      appearance: 8,
+      odor: 7,
+      texture: 7,
+      flavor: 8,
+      overallLiking: 8
+    },
+    jar: {
+      "attr5": 3,
+      "attr6": 3,
+      "attr7": 2
+    },
+    timestamp: "2025-05-01T12:00:00Z"
+  },
+  {
+    id: "eval16",
+    userId: "evaluator2",
+    sampleId: "sample6",
+    productTypeId: "product2",
+    eventId: "event3",
+    hedonic: {
+      appearance: 7,
+      odor: 8,
+      texture: 6,
+      flavor: 7,
+      overallLiking: 7
+    },
+    jar: {
+      "attr5": 2,
+      "attr6": 4,
+      "attr7": 4
+    },
+    timestamp: "2025-05-01T12:15:00Z"
+  },
+  {
+    id: "eval17",
+    userId: "evaluator3",
+    sampleId: "sample6",
+    productTypeId: "product2",
+    eventId: "event3",
+    hedonic: {
+      appearance: 8,
+      odor: 8,
+      texture: 7,
+      flavor: 8,
+      overallLiking: 8
+    },
+    jar: {
+      "attr5": 3,
+      "attr6": 3,
+      "attr7": 3
+    },
+    timestamp: "2025-05-01T12:30:00Z"
+  },
+  {
+    id: "eval18",
+    userId: "evaluator4",
+    sampleId: "sample6",
+    productTypeId: "product2",
+    eventId: "event3",
+    hedonic: {
+      appearance: 9,
+      odor: 8,
+      texture: 8,
+      flavor: 9,
+      overallLiking: 9
+    },
+    jar: {
+      "attr5": 3,
+      "attr6": 2,
+      "attr7": 3
+    },
+    timestamp: "2025-05-01T12:45:00Z"
   }
 ];

@@ -19,9 +19,13 @@ export function JARChart({ data, attrData, productName }: JARChartProps) {
     
     await captureElementAsImage(
       chartRef.current, 
-      `JAR_${attrData.nameEN.replace(/\s/g, "_")}_${productName}_chart.png`
+      `JAR_${attrData.nameEN.replace(/\s/g, "_")}_${productName}_chart.png`,
+      1400,
+      900
     );
   };
+
+  console.log("JAR Chart data:", data);
 
   return (
     <div className="mb-6">
@@ -39,6 +43,7 @@ export function JARChart({ data, attrData, productName }: JARChartProps) {
       <div 
         ref={chartRef}
         className="bg-white p-8 rounded-lg shadow"
+        style={{ width: '100%', minHeight: '600px' }}
       >
         <div className="text-center mb-6">
           <h4 className="font-bold text-xl mb-2">Consumer's reaction to specific attribute</h4>
@@ -47,26 +52,29 @@ export function JARChart({ data, attrData, productName }: JARChartProps) {
           <p className="text-sm mb-4">Attribute: {attrData.nameEN}</p>
         </div>
         
-        <div style={{ width: '100%', height: 400 }}>
+        <div style={{ width: '100%', height: 450 }}>
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
               data={data}
+              layout="horizontal"
               margin={{
                 top: 20,
-                right: 30,
-                left: 80,
+                right: 80,
+                left: 100,
                 bottom: 50
               }}
             >
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis 
+                type="number"
                 tick={{ fontSize: 12 }}
                 label={{ value: 'No. of votes', position: 'insideBottom', offset: -5 }}
               />
               <YAxis 
+                type="category"
                 dataKey="name"
                 tick={{ fontSize: 12 }}
-                width={70}
+                width={90}
               />
               <Tooltip 
                 contentStyle={{ color: 'black' }} 
@@ -77,7 +85,7 @@ export function JARChart({ data, attrData, productName }: JARChartProps) {
                 layout="horizontal" 
                 verticalAlign="bottom" 
                 align="center"
-                wrapperStyle={{ bottom: -15 }}
+                wrapperStyle={{ paddingTop: '20px' }}
               />
               {JAR_LABELS.map((label, index) => (
                 <Bar
@@ -85,6 +93,7 @@ export function JARChart({ data, attrData, productName }: JARChartProps) {
                   dataKey={label}
                   name={label}
                   fill={JAR_COLORS[index]}
+                  stackId="jar"
                 >
                   <LabelList 
                     dataKey={label} 
