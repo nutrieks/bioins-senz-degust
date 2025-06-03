@@ -19,9 +19,7 @@ export function JARChart({ data, attrData, productName }: JARChartProps) {
     
     await captureElementAsImage(
       chartRef.current, 
-      `JAR_${attrData.nameEN.replace(/\s/g, "_")}_${productName}_chart.png`,
-      1000,
-      1200
+      `JAR_${attrData.nameEN.replace(/\s/g, "_")}_${productName}_chart.png`
     );
   };
 
@@ -55,8 +53,13 @@ export function JARChart({ data, attrData, productName }: JARChartProps) {
       
       <div 
         ref={chartRef}
-        className="bg-white p-6 rounded-lg shadow"
-        style={{ width: '1000px', height: '1200px', margin: '0 auto' }}
+        className="bg-white rounded-lg shadow"
+        style={{ 
+          width: '1000px', 
+          height: '1200px', 
+          margin: '0 auto',
+          padding: '40px 30px 30px 30px'
+        }}
       >
         <div className="text-center mb-8">
           <h4 className="font-bold text-xl mb-3">Consumer's reaction to specific attribute</h4>
@@ -65,66 +68,66 @@ export function JARChart({ data, attrData, productName }: JARChartProps) {
           <p className="text-sm mb-6">Attribute: {attrData.nameEN}</p>
         </div>
         
-        <div style={{ width: '100%', height: '950px' }}>
-          <BarChart
-            width={940}
-            height={950}
-            data={data}
-            margin={{
-              top: 30,
-              right: 40,
-              left: 40,
-              bottom: 150
-            }}
-            barCategoryGap="25%"
-            barGap={3}
-          >
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis 
-              dataKey="name"
-              angle={-45}
-              textAnchor="end"
-              height={120}
-              tick={{ fontSize: 11 }}
-              interval={0}
-            />
-            <YAxis 
-              tick={{ fontSize: 11 }}
-              label={{ value: 'No. of votes', angle: -90, position: 'insideLeft', fontSize: 13 }}
-            />
-            <Tooltip 
-              contentStyle={{ 
-                color: 'black', 
-                backgroundColor: 'white',
-                border: '1px solid #ccc',
-                borderRadius: '4px',
-                fontSize: '12px'
-              }} 
-              formatter={(value: number, name: string) => [value, name]}
-              labelFormatter={(label) => `Brand: ${label}`}
-            />
-            <Legend 
-              layout="horizontal" 
-              verticalAlign="bottom" 
-              align="center"
-              wrapperStyle={{ paddingTop: '25px', fontSize: '11px' }}
-            />
-            {JAR_LABELS.map((label, index) => (
-              <Bar
-                key={label}
-                dataKey={label}
-                name={label}
-                fill={JAR_COLORS[index]}
-              >
-                <LabelList 
-                  dataKey={label} 
-                  position="top"
-                  style={{ fill: 'black', fontSize: 10, fontWeight: 'bold' }} 
-                  formatter={(value: number) => value > 0 ? value : ''}
-                />
-              </Bar>
-            ))}
-          </BarChart>
+        <div style={{ width: '100%', height: '1000px' }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              data={data}
+              margin={{
+                top: 30,
+                right: 40,
+                left: 60,
+                bottom: 180
+              }}
+              barCategoryGap="25%"
+              barGap={3}
+            >
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis 
+                dataKey="name"
+                angle={-45}
+                textAnchor="end"
+                height={150}
+                tick={{ fontSize: 11 }}
+                interval={0}
+              />
+              <YAxis 
+                tick={{ fontSize: 11 }}
+                label={{ value: 'No. of votes', angle: -90, position: 'insideLeft', fontSize: 13 }}
+              />
+              <Tooltip 
+                contentStyle={{ 
+                  color: 'black', 
+                  backgroundColor: 'white',
+                  border: '1px solid #ccc',
+                  borderRadius: '4px',
+                  fontSize: '12px'
+                }} 
+                formatter={(value: number, name: string) => [value, name]}
+                labelFormatter={(label) => `Brand: ${label}`}
+              />
+              <Legend 
+                layout="horizontal" 
+                verticalAlign="bottom" 
+                align="center"
+                wrapperStyle={{ paddingTop: '30px', fontSize: '11px' }}
+              />
+              {JAR_LABELS.map((label, index) => (
+                <Bar
+                  key={label}
+                  dataKey={label}
+                  name={label}
+                  fill={JAR_COLORS[index]}
+                >
+                  <LabelList 
+                    dataKey={label} 
+                    position="top"
+                    style={{ fill: 'black', fontSize: 10, fontWeight: 'bold' }} 
+                    formatter={(value: number) => value > 0 ? value : ''}
+                  />
+                </Bar>
+              ))}
+            </BarChart>
+          </ResponsiveContainer>
         </div>
       </div>
     </div>

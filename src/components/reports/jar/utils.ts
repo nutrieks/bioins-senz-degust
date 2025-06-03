@@ -127,22 +127,17 @@ export const captureElementAsImage = async (
     
     const options: any = {
       backgroundColor: "#ffffff",
-      pixelRatio: 2,
+      pixelRatio: 3,
       cacheBust: true,
+      useCORS: true,
       style: {
         transform: 'scale(1)',
         transformOrigin: 'top left'
       }
     };
 
-    // Use provided dimensions if available, otherwise use defaults
-    if (width && height) {
-      options.width = width;
-      options.height = height;
-    } else {
-      options.width = 1200;
-      options.height = 800;
-    }
+    // Don't set fixed width/height - let it capture the full element
+    // The element's actual dimensions will be used
     
     const dataUrl = await toPng(element, options);
     
