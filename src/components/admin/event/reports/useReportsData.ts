@@ -59,8 +59,8 @@ export function useReportsData(eventId: string) {
       setIsLoading(true);
       try {
         const [hedonicData, jarData] = await Promise.all([
-          generateHedonicReport(eventId, selectedProductType),
-          generateJARReport(eventId, selectedProductType)
+          generateHedonicReport(selectedProductType),
+          generateJARReport(selectedProductType)
         ]);
         
         setHedonicReport(hedonicData);

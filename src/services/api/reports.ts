@@ -1,3 +1,4 @@
+
 import { 
   HedonicReport, 
   JARReport, 
@@ -13,6 +14,7 @@ import {
   jarAttributes, 
   productTypes 
 } from "../mock";
+import { users } from "../mock/users";
 import { delay } from "./events";
 
 // Reporting
@@ -29,30 +31,29 @@ export async function generateHedonicReport(productTypeId: string): Promise<Hedo
 
   const report: HedonicReport = {};
 
-  ['appearance', 'odor', 'texture', 'flavor', 'overallLiking'].forEach(attribute => {
-    const sampleResults: any = {};
+  productSamples.forEach(sample => {
+    const sampleEvals = productEvaluations.filter(e => e.sampleId === sample.id);
     
-    productSamples.forEach(sample => {
-      const sampleEvals = productEvaluations.filter(e => e.sampleId === sample.id);
-      
-      if (sampleEvals.length > 0) {
-        const scores = sampleEvals.map(e => (e.hedonic as any)[attribute]);
-        const average = scores.reduce((sum, score) => sum + score, 0) / scores.length;
-        
-        sampleResults[sample.id] = {
-          brand: sample.brand,
-          retailerCode: sample.retailerCode,
-          average: Math.round(average * 100) / 100,
-          count: scores.length,
-          scores: scores
-        };
-      }
-    });
-    
-    report[attribute] = {
-      nameEN: attribute.charAt(0).toUpperCase() + attribute.slice(1),
-      results: sampleResults
-    };
+    if (sampleEvals.length > 0) {
+      const avgAppearance = sampleEvals.reduce((sum, e) => sum + e.hedonic.appearance, 0) / sampleEvals.length;
+      const avgOdor = sampleEvals.reduce((sum, e) => sum + e.hedonic.odor, 0) / sampleEvals.length;
+      const avgTexture = sampleEvals.reduce((sum, e) => sum + e.hedonic.texture, 0) / sampleEvals.length;
+      const avgFlavor = sampleEvals.reduce((sum, e) => sum + e.hedonic.flavor, 0) / sampleEvals.length;
+      const avgOverall = sampleEvals.reduce((sum, e) => sum + e.hedonic.overallLiking, 0) / sampleEvals.length;
+
+      report[sample.id] = {
+        brand: sample.brand,
+        retailerCode: sample.retailerCode,
+        blindCode: sample.blindCode || '',
+        hedonic: {
+          appearance: Math.round(avgAppearance * 100) / 100,
+          odor: Math.round(avgOdor * 100) / 100,
+          texture: Math.round(avgTexture * 100) / 100,
+          flavor: Math.round(avgFlavor * 100) / 100,
+          overallLiking: Math.round(avgOverall * 100) / 100
+        }
+      };
+    }
   });
 
   return report;
@@ -106,8 +107,8 @@ export async function generateJARReport(productTypeId: string): Promise<JARRepor
         sampleResults[sample.id] = {
           brand: sample.brand,
           retailerCode: sample.retailerCode,
-          frequencies: frequencies,
-          count: sampleEvals.length
+          blindCode: sample.blindCode || '',
+          frequencies: frequencies as [number, number, number, number, number]
         };
       }
     });
@@ -115,6 +116,8 @@ export async function generateJARReport(productTypeId: string): Promise<JARRepor
     report[attribute.id] = {
       nameEN: attribute.nameEN,
       nameHR: attribute.nameHR,
+      scaleEN: attribute.scaleEN,
+      scaleHR: attribute.scaleHR,
       results: sampleResults
     };
     
