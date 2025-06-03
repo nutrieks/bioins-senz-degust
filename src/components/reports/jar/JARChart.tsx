@@ -75,6 +75,8 @@ export function JARChart({ data, attrData, productName }: JARChartProps) {
                 left: 20,
                 bottom: 120
               }}
+              barCategoryGap="20%"
+              barGap={2}
             >
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis 
@@ -111,7 +113,6 @@ export function JARChart({ data, attrData, productName }: JARChartProps) {
                   dataKey={label}
                   name={label}
                   fill={JAR_COLORS[index]}
-                  stackId="jar"
                 >
                   <LabelList 
                     dataKey={label} 
