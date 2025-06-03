@@ -3,7 +3,8 @@ import React, { useRef } from "react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, LabelList, ResponsiveContainer } from "recharts";
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
-import { JAR_LABELS, JAR_COLORS, captureElementAsImage } from "./utils";
+import { toPng } from "html-to-image";
+import { JAR_LABELS, JAR_COLORS } from "./utils";
 
 interface JARChartProps {
   data: any[];
@@ -15,12 +16,18 @@ export function JARChart({ data, attrData, productName }: JARChartProps) {
   const chartRef = useRef<HTMLDivElement>(null);
 
   const handleDownloadChartImage = async () => {
-    if (!chartRef.current) return;
-    
-    await captureElementAsImage(
-      chartRef.current, 
-      `JAR_${attrData.nameEN.replace(/\s/g, "_")}_${productName}_chart.png`
-    );
+    if (chartRef.current) {
+      const dataUrl = await toPng(chartRef.current, {
+        backgroundColor: "#fff",
+        pixelRatio: 4,
+        cacheBust: true,
+        style: { fontFamily: "inherit" }
+      });
+      const link = document.createElement('a');
+      link.download = `JAR_${attrData.nameEN.replace(/\s/g, "_")}_${productName}_chart.png`;
+      link.href = dataUrl;
+      link.click();
+    }
   };
 
   console.log("JAR Chart received data:", data);
@@ -53,22 +60,23 @@ export function JARChart({ data, attrData, productName }: JARChartProps) {
       
       <div 
         ref={chartRef}
-        className="bg-white rounded-lg shadow"
-        style={{ 
-          width: '1000px', 
-          height: '1200px', 
-          margin: '0 auto',
-          padding: '40px 30px 30px 30px'
+        className="bg-white p-5 rounded-lg shadow w-full flex flex-col items-center" 
+        style={{
+          width: '100%',
+          maxWidth: 950,
+          margin: '0 auto'
         }}
       >
-        <div className="text-center mb-8">
-          <h4 className="font-bold text-xl mb-3">Consumer's reaction to specific attribute</h4>
-          <p className="text-sm mb-2">Method: JAR scale</p>
-          <p className="text-sm mb-2">Sample: {productName}</p>
-          <p className="text-sm mb-6">Attribute: {attrData.nameEN}</p>
+        {/* Title and description */}
+        <div className="mb-3 text-center">
+          <h4 className="font-bold text-lg mb-1">Consumer's reaction to specific attribute</h4>
+          <p className="text-sm">Method: JAR scale</p>
+          <p className="text-sm">Sample: {productName}</p>
+          <p className="text-sm mb-1">Attribute: {attrData.nameEN}</p>
         </div>
         
-        <div style={{ width: '100%', height: '1000px' }}>
+        {/* Chart */}
+        <div className="w-full" style={{ height: 500, maxWidth: 870 }}>
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
               data={data}
