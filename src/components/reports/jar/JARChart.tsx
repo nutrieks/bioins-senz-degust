@@ -25,7 +25,20 @@ export function JARChart({ data, attrData, productName }: JARChartProps) {
     );
   };
 
-  console.log("JAR Chart data:", data);
+  console.log("JAR Chart received data:", data);
+  console.log("JAR Chart received attrData:", attrData);
+  console.log("JAR Chart productName:", productName);
+
+  // Check if we have valid data
+  if (!data || data.length === 0) {
+    return (
+      <div className="mb-6 p-4 border rounded-lg">
+        <p className="text-center text-muted-foreground">
+          Nema podataka za prikaz JAR grafa
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="mb-6">

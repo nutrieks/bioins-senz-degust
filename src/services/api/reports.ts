@@ -1,135 +1,127 @@
-
 import { 
   HedonicReport, 
   JARReport, 
-  RetailerCode 
+  ProductType, 
+  Sample,
+  JARAttribute,
+  Evaluation,
+  RetailerCode
 } from "../../types";
 import { 
-  samples, 
   evaluations, 
-  jarAttributes,
-  users,
-  productTypes
+  samples, 
+  jarAttributes, 
+  productTypes 
 } from "../mock";
+import { delay } from "./events";
 
 // Reporting
-export async function generateHedonicReport(
-  eventId: string, 
-  productTypeId: string
-): Promise<HedonicReport> {
-  const report: HedonicReport = {};
+export async function generateHedonicReport(productTypeId: string): Promise<HedonicReport> {
+  await delay(800);
   
-  const productSamples = samples.filter(s => s.productTypeId === productTypeId);
-  
-  for (const sample of productSamples) {
-    const sampleEvaluations = evaluations.filter(
-      e => e.sampleId === sample.id && e.productTypeId === productTypeId && e.eventId === eventId
-    );
-    
-    if (sampleEvaluations.length === 0) continue;
-    
-    const appearance = sampleEvaluations.reduce((sum, e) => sum + e.hedonic.appearance, 0) / sampleEvaluations.length;
-    const odor = sampleEvaluations.reduce((sum, e) => sum + e.hedonic.odor, 0) / sampleEvaluations.length;
-    const texture = sampleEvaluations.reduce((sum, e) => sum + e.hedonic.texture, 0) / sampleEvaluations.length;
-    const flavor = sampleEvaluations.reduce((sum, e) => sum + e.hedonic.flavor, 0) / sampleEvaluations.length;
-    const overallLiking = sampleEvaluations.reduce((sum, e) => sum + e.hedonic.overallLiking, 0) / sampleEvaluations.length;
-    
-    report[sample.id] = {
-      brand: sample.brand,
-      retailerCode: sample.retailerCode,
-      blindCode: sample.blindCode || "",
-      hedonic: {
-        appearance,
-        odor,
-        texture,
-        flavor,
-        overallLiking
-      }
-    };
+  const productType = productTypes.find(pt => pt.id === productTypeId);
+  if (!productType) {
+    throw new Error("Product type not found");
   }
-  
+
+  const productSamples = samples.filter(s => s.productTypeId === productTypeId);
+  const productEvaluations = evaluations.filter(e => e.productTypeId === productTypeId);
+
+  const report: HedonicReport = {};
+
+  ['appearance', 'odor', 'texture', 'flavor', 'overallLiking'].forEach(attribute => {
+    const sampleResults: any = {};
+    
+    productSamples.forEach(sample => {
+      const sampleEvals = productEvaluations.filter(e => e.sampleId === sample.id);
+      
+      if (sampleEvals.length > 0) {
+        const scores = sampleEvals.map(e => (e.hedonic as any)[attribute]);
+        const average = scores.reduce((sum, score) => sum + score, 0) / scores.length;
+        
+        sampleResults[sample.id] = {
+          brand: sample.brand,
+          retailerCode: sample.retailerCode,
+          average: Math.round(average * 100) / 100,
+          count: scores.length,
+          scores: scores
+        };
+      }
+    });
+    
+    report[attribute] = {
+      nameEN: attribute.charAt(0).toUpperCase() + attribute.slice(1),
+      results: sampleResults
+    };
+  });
+
   return report;
 }
 
-export async function generateJARReport(
-  eventId: string, 
-  productTypeId: string
-): Promise<JARReport> {
-  console.log(`Generating JAR report for event ${eventId}, product type ${productTypeId}`);
-  const report: JARReport = {};
+export async function generateJARReport(productTypeId: string): Promise<JARReport> {
+  await delay(800);
   
-  const productAttributes = jarAttributes.filter(a => a.productTypeId === productTypeId);
-  console.log(`Found ${productAttributes.length} JAR attributes for product type ${productTypeId}`);
+  console.log("Generating JAR report for productTypeId:", productTypeId);
   
-  const productSamples = samples.filter(s => s.productTypeId === productTypeId);
-  console.log(`Found ${productSamples.length} samples for product type ${productTypeId}`);
-  
-  // If no attributes found, create a dummy one for testing/demo purposes
-  if (productAttributes.length === 0) {
-    console.log("No real JAR attributes found, adding a sample attribute for demo");
-    const dummyAttributeId = "dummyAttr1";
-    report[dummyAttributeId] = {
-      nameEN: "Sweetness",
-      nameHR: "Slatkoća",
-      scaleEN: ["Much too weak", "Too weak", "Just about right", "Too strong", "Much too strong"],
-      scaleHR: ["Premalo", "Slabo", "Taman", "Prejako", "Daleko prejako"],
-      results: {}
-    };
-    
-    for (const sample of productSamples) {
-      // Create dummy JAR frequency data for each sample
-      report[dummyAttributeId].results[sample.id] = {
-        brand: sample.brand,
-        retailerCode: sample.retailerCode,
-        blindCode: sample.blindCode || "",
-        frequencies: [2, 3, 5, 2, 0] // Example frequency distribution
-      };
-    }
-    
-    return report;
+  const productType = productTypes.find(pt => pt.id === productTypeId);
+  if (!productType) {
+    throw new Error("Product type not found");
   }
-  
-  for (const attribute of productAttributes) {
-    console.log(`Processing attribute ${attribute.nameEN}`);
+
+  const productSamples = samples.filter(s => s.productTypeId === productTypeId);
+  const productJARAttributes = jarAttributes.filter(ja => ja.productTypeId === productTypeId);
+  const productEvaluations = evaluations.filter(e => e.productTypeId === productTypeId);
+
+  console.log("Found samples:", productSamples);
+  console.log("Found JAR attributes:", productJARAttributes);
+  console.log("Found evaluations:", productEvaluations);
+
+  const report: JARReport = {};
+
+  productJARAttributes.forEach(attribute => {
+    console.log(`Processing JAR attribute: ${attribute.nameEN} (${attribute.id})`);
+    
+    const sampleResults: any = {};
+    
+    productSamples.forEach(sample => {
+      console.log(`Processing sample: ${sample.brand} (${sample.id})`);
+      
+      const sampleEvals = productEvaluations.filter(e => e.sampleId === sample.id);
+      console.log(`Found ${sampleEvals.length} evaluations for sample ${sample.id}`);
+      
+      if (sampleEvals.length > 0) {
+        // Initialize frequency array [1,2,3,4,5] -> [0,0,0,0,0]
+        const frequencies = [0, 0, 0, 0, 0];
+        
+        // Count frequencies for this attribute
+        sampleEvals.forEach(evaluation => {
+          const jarValue = evaluation.jar[attribute.id];
+          if (jarValue && jarValue >= 1 && jarValue <= 5) {
+            frequencies[jarValue - 1]++; // Convert 1-5 to 0-4 index
+          }
+        });
+        
+        console.log(`Sample ${sample.brand} frequencies for ${attribute.nameEN}:`, frequencies);
+        
+        sampleResults[sample.id] = {
+          brand: sample.brand,
+          retailerCode: sample.retailerCode,
+          frequencies: frequencies,
+          count: sampleEvals.length
+        };
+      }
+    });
+    
     report[attribute.id] = {
       nameEN: attribute.nameEN,
       nameHR: attribute.nameHR,
-      scaleEN: attribute.scaleEN,
-      scaleHR: attribute.scaleHR,
-      results: {}
+      results: sampleResults
     };
     
-    for (const sample of productSamples) {
-      const sampleEvaluations = evaluations.filter(
-        e => e.sampleId === sample.id && e.productTypeId === productTypeId && e.eventId === eventId
-      );
-      
-      if (sampleEvaluations.length === 0) {
-        console.log(`No evaluations found for sample ${sample.id}`);
-        continue;
-      }
-      
-      const frequencies: [number, number, number, number, number] = [0, 0, 0, 0, 0];
-      
-      for (const evaluation of sampleEvaluations) {
-        const rating = evaluation.jar[attribute.id];
-        if (rating >= 1 && rating <= 5) {
-          frequencies[rating - 1]++;
-        }
-      }
-      
-      console.log(`Sample ${sample.brand}: JAR frequencies = [${frequencies.join(', ')}]`);
-      
-      report[attribute.id].results[sample.id] = {
-        brand: sample.brand,
-        retailerCode: sample.retailerCode,
-        blindCode: sample.blindCode || "",
-        frequencies
-      };
-    }
-  }
-  
-  console.log("Final JAR report:", Object.keys(report).length, "attributes");
+    console.log(`JAR attribute ${attribute.nameEN} results:`, report[attribute.id]);
+  });
+
+  console.log("Final JAR report:", report);
   return report;
 }
 

@@ -1,4 +1,3 @@
-
 import { RetailerCode } from "@/types";
 
 export const JAR_COLORS = [
@@ -41,25 +40,50 @@ export const formatSampleLabel = (sample: {retailerCode: RetailerCode, brand: st
 };
 
 export const processJARData = (attrData: any) => {
-  const samples = Object.entries(attrData.results).map(([sampleId, result]: [string, any]) => ({
-    id: sampleId,
-    ...result
-  }));
+  console.log("Processing JAR data:", attrData);
   
+  // Check if attrData and results exist
+  if (!attrData || !attrData.results) {
+    console.error("No attrData.results found:", attrData);
+    return [];
+  }
+  
+  // Convert results object to array of samples
+  const samples = Object.entries(attrData.results).map(([sampleId, result]: [string, any]) => {
+    console.log(`Processing sample ${sampleId}:`, result);
+    return {
+      id: sampleId,
+      brand: result.brand,
+      retailerCode: result.retailerCode,
+      frequencies: result.frequencies
+    };
+  });
+  
+  console.log("Samples before sorting:", samples);
+  
+  // Sort samples using the existing sort function
   const sortedSamples = sortSamples(samples);
   
-  return sortedSamples.map(sample => {
+  console.log("Samples after sorting:", sortedSamples);
+  
+  // Transform to chart data format
+  const chartData = sortedSamples.map(sample => {
     const data: any = { 
       name: formatSampleLabel(sample),
       id: sample.id
     };
     
+    // Add frequency data for each JAR label
     for (let i = 0; i < 5; i++) {
-      data[JAR_LABELS[i]] = sample.frequencies[i];
+      data[JAR_LABELS[i]] = sample.frequencies[i] || 0;
     }
     
+    console.log("Chart data for sample:", data);
     return data;
   });
+  
+  console.log("Final chart data:", chartData);
+  return chartData;
 };
 
 export function exportJARAttributeChartToCSV(attrData: any, productName: string) {
@@ -67,7 +91,9 @@ export function exportJARAttributeChartToCSV(attrData: any, productName: string)
   csv += "Brand," + JAR_LABELS.join(",") + "\n";
   const samples = Object.entries(attrData.results).map(([sampleId, result]: [string, any]) => ({
     id: sampleId,
-    ...result
+    brand: result.brand,
+    retailerCode: result.retailerCode,
+    frequencies: result.frequencies
   }));
   const sortedSamples = sortSamples(samples);
   sortedSamples.forEach(sample => {
