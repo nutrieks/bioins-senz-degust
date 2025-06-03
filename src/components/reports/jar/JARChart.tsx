@@ -1,6 +1,6 @@
 
 import React, { useRef } from "react";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, LabelList, ResponsiveContainer } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, LabelList, ResponsiveContainer } from "recharts";
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
 import { toPng } from "html-to-image";
@@ -84,7 +84,7 @@ export function JARChart({ data, attrData, productName }: JARChartProps) {
                 top: 30,
                 right: 40,
                 left: 60,
-                bottom: 180
+                bottom: 60
               }}
               barCategoryGap="25%"
               barGap={3}
@@ -94,7 +94,7 @@ export function JARChart({ data, attrData, productName }: JARChartProps) {
                 dataKey="name"
                 angle={-45}
                 textAnchor="end"
-                height={150}
+                height={60}
                 tick={{ fontSize: 11 }}
                 interval={0}
               />
@@ -113,12 +113,6 @@ export function JARChart({ data, attrData, productName }: JARChartProps) {
                 formatter={(value: number, name: string) => [value, name]}
                 labelFormatter={(label) => `Brand: ${label}`}
               />
-              <Legend 
-                layout="horizontal" 
-                verticalAlign="bottom" 
-                align="center"
-                wrapperStyle={{ paddingTop: '30px', fontSize: '11px' }}
-              />
               {JAR_LABELS.map((label, index) => (
                 <Bar
                   key={label}
@@ -136,6 +130,28 @@ export function JARChart({ data, attrData, productName }: JARChartProps) {
               ))}
             </BarChart>
           </ResponsiveContainer>
+        </div>
+        
+        {/* Custom Legend */}
+        <div
+          className="flex flex-wrap justify-center items-center gap-3 mt-4"
+          style={{ fontSize: 15, marginBottom: 7 }}
+        >
+          {JAR_LABELS.map((label, index) => (
+            <span className="flex items-center gap-2" key={label}>
+              <span
+                className="inline-block rounded-[3px]"
+                style={{
+                  width: 22,
+                  height: 17,
+                  backgroundColor: JAR_COLORS[index],
+                  border: "1px solid #aaa",
+                  display: "inline-block"
+                }}
+              />
+              <span style={{ color: "#111", fontWeight: 500 }}>{label}</span>
+            </span>
+          ))}
         </div>
       </div>
     </div>
