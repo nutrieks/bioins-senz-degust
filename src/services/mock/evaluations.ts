@@ -133,6 +133,262 @@ export const evaluations: Evaluation[] = [
     },
     timestamp: "2025-04-15T11:15:00Z"
   },
+  // ADDITIONAL EVALUATIONS FOR EVENT2 to have more data for JAR charts
+  // More evaluators for sample1 (LI Jamnica)
+  {
+    id: "eval19",
+    userId: "evaluator7",
+    sampleId: "sample1",
+    productTypeId: "product1",
+    eventId: "event2",
+    hedonic: {
+      appearance: 8,
+      odor: 7,
+      texture: 7,
+      flavor: 8,
+      overallLiking: 7
+    },
+    jar: {
+      "attr1": 3, // Just About Right
+      "attr2": 4, // Too salty
+      "attr3": 3, // Just About Right
+      "attr4": 3  // Just About Right
+    },
+    timestamp: "2025-04-15T11:30:00Z"
+  },
+  {
+    id: "eval20",
+    userId: "evaluator8",
+    sampleId: "sample1",
+    productTypeId: "product1",
+    eventId: "event2",
+    hedonic: {
+      appearance: 7,
+      odor: 8,
+      texture: 8,
+      flavor: 7,
+      overallLiking: 7
+    },
+    jar: {
+      "attr1": 2, // Too weak
+      "attr2": 3, // Just About Right
+      "attr3": 4, // Too dry
+      "attr4": 2  // Too weak
+    },
+    timestamp: "2025-04-15T11:45:00Z"
+  },
+  {
+    id: "eval21",
+    userId: "evaluator9",
+    sampleId: "sample1",
+    productTypeId: "product1",
+    eventId: "event2",
+    hedonic: {
+      appearance: 9,
+      odor: 8,
+      texture: 8,
+      flavor: 9,
+      overallLiking: 8
+    },
+    jar: {
+      "attr1": 3, // Just About Right
+      "attr2": 2, // Too weak
+      "attr3": 3, // Just About Right
+      "attr4": 4  // Too strong
+    },
+    timestamp: "2025-04-15T12:00:00Z"
+  },
+  {
+    id: "eval22",
+    userId: "evaluator10",
+    sampleId: "sample1",
+    productTypeId: "product1",
+    eventId: "event2",
+    hedonic: {
+      appearance: 8,
+      odor: 7,
+      texture: 9,
+      flavor: 8,
+      overallLiking: 8
+    },
+    jar: {
+      "attr1": 4, // Too strong
+      "attr2": 3, // Just About Right
+      "attr3": 2, // Too wet
+      "attr4": 3  // Just About Right
+    },
+    timestamp: "2025-04-15T12:15:00Z"
+  },
+  // More evaluators for sample2 (KL Kraš)
+  {
+    id: "eval23",
+    userId: "evaluator7",
+    sampleId: "sample2",
+    productTypeId: "product1",
+    eventId: "event2",
+    hedonic: {
+      appearance: 7,
+      odor: 7,
+      texture: 8,
+      flavor: 7,
+      overallLiking: 7
+    },
+    jar: {
+      "attr1": 3, // Just About Right
+      "attr2": 4, // Too salty
+      "attr3": 3, // Just About Right
+      "attr4": 2  // Too weak
+    },
+    timestamp: "2025-04-15T12:30:00Z"
+  },
+  {
+    id: "eval24",
+    userId: "evaluator8",
+    sampleId: "sample2",
+    productTypeId: "product1",
+    eventId: "event2",
+    hedonic: {
+      appearance: 8,
+      odor: 8,
+      texture: 7,
+      flavor: 8,
+      overallLiking: 8
+    },
+    jar: {
+      "attr1": 2, // Too weak
+      "attr2": 3, // Just About Right
+      "attr3": 4, // Too dry
+      "attr4": 3  // Just About Right
+    },
+    timestamp: "2025-04-15T12:45:00Z"
+  },
+  {
+    id: "eval25",
+    userId: "evaluator9",
+    sampleId: "sample2",
+    productTypeId: "product1",
+    eventId: "event2",
+    hedonic: {
+      appearance: 6,
+      odor: 7,
+      texture: 6,
+      flavor: 7,
+      overallLiking: 6
+    },
+    jar: {
+      "attr1": 1, // Much too weak
+      "attr2": 4, // Too salty
+      "attr3": 5, // Much too dry
+      "attr4": 2  // Too weak
+    },
+    timestamp: "2025-04-15T13:00:00Z"
+  },
+  {
+    id: "eval26",
+    userId: "evaluator10",
+    sampleId: "sample2",
+    productTypeId: "product1",
+    eventId: "event2",
+    hedonic: {
+      appearance: 7,
+      odor: 6,
+      texture: 7,
+      flavor: 6,
+      overallLiking: 7
+    },
+    jar: {
+      "attr1": 3, // Just About Right
+      "attr2": 5, // Much too salty
+      "attr3": 3, // Just About Right
+      "attr4": 4  // Too strong
+    },
+    timestamp: "2025-04-15T13:15:00Z"
+  },
+  // More evaluators for sample3 (KO Podravka)
+  {
+    id: "eval27",
+    userId: "evaluator7",
+    sampleId: "sample3",
+    productTypeId: "product1",
+    eventId: "event2",
+    hedonic: {
+      appearance: 9,
+      odor: 9,
+      texture: 9,
+      flavor: 9,
+      overallLiking: 9
+    },
+    jar: {
+      "attr1": 3, // Just About Right
+      "attr2": 3, // Just About Right
+      "attr3": 3, // Just About Right
+      "attr4": 3  // Just About Right
+    },
+    timestamp: "2025-04-15T13:30:00Z"
+  },
+  {
+    id: "eval28",
+    userId: "evaluator8",
+    sampleId: "sample3",
+    productTypeId: "product1",
+    eventId: "event2",
+    hedonic: {
+      appearance: 8,
+      odor: 8,
+      texture: 8,
+      flavor: 8,
+      overallLiking: 8
+    },
+    jar: {
+      "attr1": 4, // Too strong
+      "attr2": 2, // Too weak
+      "attr3": 2, // Too wet
+      "attr4": 4  // Too strong
+    },
+    timestamp: "2025-04-15T13:45:00Z"
+  },
+  {
+    id: "eval29",
+    userId: "evaluator9",
+    sampleId: "sample3",
+    productTypeId: "product1",
+    eventId: "event2",
+    hedonic: {
+      appearance: 9,
+      odor: 8,
+      texture: 9,
+      flavor: 8,
+      overallLiking: 9
+    },
+    jar: {
+      "attr1": 3, // Just About Right
+      "attr2": 3, // Just About Right
+      "attr3": 3, // Just About Right
+      "attr4": 2  // Too weak
+    },
+    timestamp: "2025-04-15T14:00:00Z"
+  },
+  {
+    id: "eval30",
+    userId: "evaluator10",
+    sampleId: "sample3",
+    productTypeId: "product1",
+    eventId: "event2",
+    hedonic: {
+      appearance: 8,
+      odor: 9,
+      texture: 8,
+      flavor: 9,
+      overallLiking: 8
+    },
+    jar: {
+      "attr1": 2, // Too weak
+      "attr2": 4, // Too salty
+      "attr3": 4, // Too dry
+      "attr4": 3  // Just About Right
+    },
+    timestamp: "2025-04-15T14:15:00Z"
+  },
   // NEW CHOCOLATE EVALUATIONS FOR EVENT3
   // Milka evaluations (4 evaluators x 3 samples = 12 evaluations)
   {

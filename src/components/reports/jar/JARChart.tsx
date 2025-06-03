@@ -69,27 +69,25 @@ export function JARChart({ data, attrData, productName }: JARChartProps) {
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
               data={data}
-              layout="horizontal"
               margin={{
                 top: 20,
-                right: 100,
-                left: 120,
-                bottom: 80
+                right: 30,
+                left: 20,
+                bottom: 120
               }}
             >
-              <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+              <CartesianGrid strokeDasharray="3 3" />
               <XAxis 
-                type="number"
+                dataKey="name"
+                angle={-45}
+                textAnchor="end"
+                height={100}
                 tick={{ fontSize: 12 }}
-                domain={[0, 'dataMax']}
-                label={{ value: 'No. of votes', position: 'insideBottom', offset: -10, fontSize: 14 }}
+                interval={0}
               />
               <YAxis 
-                type="category"
-                dataKey="name"
                 tick={{ fontSize: 12 }}
-                width={110}
-                interval={0}
+                label={{ value: 'No. of votes', angle: -90, position: 'insideLeft', fontSize: 14 }}
               />
               <Tooltip 
                 contentStyle={{ 
@@ -117,7 +115,7 @@ export function JARChart({ data, attrData, productName }: JARChartProps) {
                 >
                   <LabelList 
                     dataKey={label} 
-                    position="right"
+                    position="top"
                     style={{ fill: 'black', fontSize: 11, fontWeight: 'bold' }} 
                     formatter={(value: number) => value > 0 ? value : ''}
                   />
