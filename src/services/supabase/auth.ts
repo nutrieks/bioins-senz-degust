@@ -7,7 +7,7 @@ export async function loginWithSupabase(username: string, password: string): Pro
   try {
     // First, get the user from our custom users table
     const { data: userData, error: userError } = await supabase
-      .from('users' as any)
+      .from('users')
       .select('*')
       .eq('username', username)
       .eq('password', password)
@@ -40,13 +40,13 @@ export async function loginWithSupabase(username: string, password: string): Pro
 export async function getUsers(): Promise<User[]> {
   try {
     const { data, error } = await supabase
-      .from('users' as any)
+      .from('users')
       .select('*')
       .order('username')
 
     if (error) throw error
 
-    return data.map((userData: any) => ({
+    return (data || []).map((userData: any) => ({
       id: userData.id,
       username: userData.username,
       role: userData.role as UserRole,
@@ -68,7 +68,7 @@ export async function createUser(
   const password = role === UserRole.ADMIN ? "BioinsADMIN" : `Bioins${evaluatorPosition}`
   
   const { data, error } = await supabase
-    .from('users' as any)
+    .from('users')
     .insert({
       username,
       role,
@@ -94,7 +94,7 @@ export async function createUser(
 export async function updateUserStatus(userId: string, isActive: boolean): Promise<boolean> {
   try {
     const { error } = await supabase
-      .from('users' as any)
+      .from('users')
       .update({ is_active: isActive })
       .eq('id', userId)
 
@@ -108,7 +108,7 @@ export async function updateUserStatus(userId: string, isActive: boolean): Promi
 export async function updateUserPassword(userId: string, newPassword: string): Promise<boolean> {
   try {
     const { error } = await supabase
-      .from('users' as any)
+      .from('users')
       .update({ password: newPassword })
       .eq('id', userId)
 
