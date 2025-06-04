@@ -1,5 +1,5 @@
 
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 import { Sample, RetailerCode } from "@/types";
 
 // Generate blind code for a sample (e.g., A1, A2, B1, B2...)
