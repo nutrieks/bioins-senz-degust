@@ -1,4 +1,3 @@
-
 import { HedonicReport, RetailerCode } from "@/types";
 
 // Define retailer colors
@@ -9,7 +8,12 @@ export const RETAILER_COLORS: Record<RetailerCode, string> = {
   [RetailerCode.IS]: "rgb(128, 128, 255)", // Interspar: Light Blue
   [RetailerCode.PL]: "rgb(128, 128, 128)", // Plodine: Gray
   [RetailerCode.ES]: "rgb(0, 176, 240)",  // Eurospin: Light Blue
-  [RetailerCode.M]: "rgb(0, 255, 0)"      // Marke: Green
+  [RetailerCode.M]: "rgb(0, 255, 0)",     // Marke: Green
+  [RetailerCode.MI]: "rgb(255, 165, 0)",  // Milka: Orange
+  [RetailerCode.TO]: "rgb(139, 69, 19)",  // Toblerone: Brown
+  [RetailerCode.DU]: "rgb(255, 20, 147)", // Dukat: Deep Pink
+  [RetailerCode.VI]: "rgb(75, 0, 130)",   // Vindija: Indigo
+  [RetailerCode.ME]: "rgb(255, 215, 0)"   // Meggle: Gold
 };
 
 // Function to determine if a color is dark and needs white text
@@ -39,7 +43,7 @@ export const formatSampleLabel = (sample: {retailerCode: RetailerCode, brand: st
 };
 
 export const sortSamples = (report: HedonicReport) => {
-  const retailerOrder: RetailerCode[] = [RetailerCode.LI, RetailerCode.KL, RetailerCode.KO, RetailerCode.IS, RetailerCode.PL, RetailerCode.ES, RetailerCode.M];
+  const retailerOrder: RetailerCode[] = [RetailerCode.LI, RetailerCode.KL, RetailerCode.KO, RetailerCode.IS, RetailerCode.PL, RetailerCode.ES, RetailerCode.M, RetailerCode.MI, RetailerCode.TO, RetailerCode.DU, RetailerCode.VI, RetailerCode.ME];
   return Object.entries(report)
     .sort((a, b) => {
       const retailerA = a[1].retailerCode;
@@ -64,7 +68,12 @@ export const processChartData = (report: HedonicReport) => {
     [RetailerCode.IS]: 0, 
     [RetailerCode.PL]: 0, 
     [RetailerCode.ES]: 0, 
-    [RetailerCode.M]: 0
+    [RetailerCode.M]: 0,
+    [RetailerCode.MI]: 0,
+    [RetailerCode.TO]: 0,
+    [RetailerCode.DU]: 0,
+    [RetailerCode.VI]: 0,
+    [RetailerCode.ME]: 0
   };
   
   sortedSamples.forEach(([id, sample]) => {
