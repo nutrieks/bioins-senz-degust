@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { ChangePasswordDialog } from "@/components/admin/users/ChangePasswordDialog";
 import { UserStatusToggle } from "@/components/admin/users/UserStatusToggle";
+import { UserSyncButton } from "@/components/admin/users/UserSyncButton";
 import { getUsers } from "@/services/dataService";
 import { User, UserRole } from "@/types";
 import { Key, Users } from "lucide-react";
@@ -77,6 +78,18 @@ export default function UsersPage() {
           <Users className="h-5 w-5" />
           <h1 className="text-2xl font-bold">Upravljanje korisnicima</h1>
         </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Sinkronizacija korisnika</CardTitle>
+            <div className="text-sm text-muted-foreground">
+              Ako login ne funkcionira, sinkronizirajte korisnike s Supabase Auth sistemom.
+            </div>
+          </CardHeader>
+          <CardContent>
+            <UserSyncButton />
+          </CardContent>
+        </Card>
 
         <Card>
           <CardHeader>
