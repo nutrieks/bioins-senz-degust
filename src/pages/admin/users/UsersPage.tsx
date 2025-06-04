@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { ChangePasswordDialog } from "@/components/admin/users/ChangePasswordDialog";
 import { UserStatusToggle } from "@/components/admin/users/UserStatusToggle";
 import { UserSyncButton } from "@/components/admin/users/UserSyncButton";
+import { PublicSyncButton } from "@/components/admin/users/PublicSyncButton";
 import { getUsers } from "@/services/dataService";
 import { User, UserRole } from "@/types";
 import { Key, Users } from "lucide-react";
@@ -81,9 +82,23 @@ export default function UsersPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Sinkronizacija korisnika</CardTitle>
+            <CardTitle>Hitna sinkronizacija korisnika</CardTitle>
+            <div className="text-sm text-muted-foreground">
+              Koristite ovu javnu funkciju za početnu sinkronizaciju korisnika s Supabase Auth sistemom.
+              Nakon što se korisnici sinkroniziraju, moći ćete se prijaviti normalno.
+            </div>
+          </CardHeader>
+          <CardContent>
+            <PublicSyncButton />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Standardna sinkronizacija korisnika</CardTitle>
             <div className="text-sm text-muted-foreground">
               Ako login ne funkcionira, sinkronizirajte korisnike s Supabase Auth sistemom.
+              (Ova funkcija radi samo kada ste prijavljeni)
             </div>
           </CardHeader>
           <CardContent>
