@@ -1,3 +1,4 @@
+
 export enum UserRole {
   ADMIN = "admin",
   EVALUATOR = "evaluator"
@@ -17,7 +18,12 @@ export enum RetailerCode {
   IS = "IS",
   PL = "PL",
   ES = "ES",
-  M = "M"
+  M = "M",
+  MI = "MI",
+  TO = "TO",
+  DU = "DU",
+  VI = "VI",
+  ME = "ME"
 }
 
 export type User = {
