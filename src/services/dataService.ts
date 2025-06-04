@@ -30,12 +30,12 @@ export {
   createProductType
 } from './supabase/productTypes';
 
-// Sample services - keeping mock for now, will implement next
+// Sample services - now using Supabase
 export {
   getSamples,
   createSample,
   updateSampleImages
-} from './api/samples';
+} from './supabase/samples';
 
 // JAR Attribute services - keeping mock for now, will implement next
 export {
