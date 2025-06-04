@@ -3,20 +3,45 @@ import { supabase } from '@/integrations/supabase/client'
 import { User, UserRole } from '@/types'
 
 // Authentication
-export async function loginWithSupabase(username: string, password: string): Promise<User | null> {
+export async function loginWithSupabase(identifier: string, password: string): Promise<User | null> {
   try {
-    // First, get the user from our custom users table
+    // Convert identifier to email format for Supabase Auth
+    let email = identifier;
+    if (identifier === "ADMIN") {
+      email = "admin@bioins.local";
+    } else if (/^([1-9]|1[0-2])$/.test(identifier)) {
+      email = `evaluator${identifier}@bioins.local`;
+    } else {
+      console.log('Invalid identifier format');
+      return null;
+    }
+
+    console.log('Attempting Supabase Auth login with email:', email);
+    
+    // Sign in with Supabase Auth
+    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (authError || !authData.user) {
+      console.log('Supabase Auth error:', authError);
+      return null;
+    }
+
+    // Get user data from our users table
     const { data: userData, error: userError } = await supabase
       .from('users')
       .select('*')
-      .eq('username', username)
-      .eq('password', password)
+      .eq('id', authData.user.id)
       .eq('is_active', true)
-      .single()
+      .single();
 
     if (userError || !userData) {
-      console.log('User not found or password incorrect')
-      return null
+      console.log('User not found in users table:', userError);
+      // Sign out if user data not found
+      await supabase.auth.signOut();
+      return null;
     }
 
     // Convert database user to app user
@@ -27,12 +52,12 @@ export async function loginWithSupabase(username: string, password: string): Pro
       evaluatorPosition: userData.evaluator_position || undefined,
       isActive: userData.is_active,
       password: userData.password
-    }
+    };
 
-    return user
+    return user;
   } catch (error) {
-    console.error('Login error:', error)
-    return null
+    console.error('Login error:', error);
+    return null;
   }
 }
 
@@ -67,9 +92,23 @@ export async function createUser(
 ): Promise<User> {
   const password = role === UserRole.ADMIN ? "BioinsADMIN" : `Bioins${evaluatorPosition}`
   
+  // Create email for Supabase Auth
+  let email = role === UserRole.ADMIN ? "admin@bioins.local" : `evaluator${evaluatorPosition}@bioins.local`;
+  
+  // First create user in Supabase Auth
+  const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+    email,
+    password,
+    email_confirm: true
+  });
+
+  if (authError || !authData.user) throw authError;
+
+  // Then create user in our users table with the same ID
   const { data, error } = await supabase
     .from('users')
     .insert({
+      id: authData.user.id,
       username,
       role,
       evaluator_position: evaluatorPosition,
@@ -79,7 +118,11 @@ export async function createUser(
     .select()
     .single()
 
-  if (error) throw error
+  if (error) {
+    // Clean up auth user if users table insert fails
+    await supabase.auth.admin.deleteUser(authData.user.id);
+    throw error;
+  }
 
   return {
     id: data.id,
@@ -107,6 +150,17 @@ export async function updateUserStatus(userId: string, isActive: boolean): Promi
 
 export async function updateUserPassword(userId: string, newPassword: string): Promise<boolean> {
   try {
+    // Update password in Supabase Auth
+    const { error: authError } = await supabase.auth.admin.updateUserById(userId, {
+      password: newPassword
+    });
+
+    if (authError) {
+      console.error('Error updating auth password:', authError);
+      return false;
+    }
+
+    // Update password in our users table
     const { error } = await supabase
       .from('users')
       .update({ password: newPassword })
@@ -116,5 +170,14 @@ export async function updateUserPassword(userId: string, newPassword: string): P
   } catch (error) {
     console.error('Error updating user password:', error)
     return false
+  }
+}
+
+// Logout function
+export async function logout(): Promise<void> {
+  try {
+    await supabase.auth.signOut();
+  } catch (error) {
+    console.error('Logout error:', error);
   }
 }

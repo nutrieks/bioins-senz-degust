@@ -1,7 +1,9 @@
+
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { User, UserRole } from "../types";
 import { useToast } from "@/hooks/use-toast";
-import { loginWithSupabase } from "@/services/supabase/auth";
+import { loginWithSupabase, logout as logoutSupabase } from "@/services/supabase/auth";
+import { supabase } from "@/integrations/supabase/client";
 
 interface AuthContextType {
   user: User | null;
@@ -18,16 +20,57 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { toast } = useToast();
 
   useEffect(() => {
-    // Check for stored user on component mount
-    const storedUser = localStorage.getItem("sensorUser");
-    if (storedUser) {
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch (e) {
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session?.user) {
+        // Get user data from our users table
+        try {
+          const { data: userData, error } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', session.user.id)
+            .eq('is_active', true)
+            .single();
+
+          if (!error && userData) {
+            const appUser: User = {
+              id: userData.id,
+              username: userData.username,
+              role: userData.role as UserRole,
+              evaluatorPosition: userData.evaluator_position || undefined,
+              isActive: userData.is_active,
+              password: userData.password
+            };
+            setUser(appUser);
+            localStorage.setItem("sensorUser", JSON.stringify(appUser));
+          }
+        } catch (error) {
+          console.error('Error fetching user data:', error);
+        }
+      } else if (event === 'SIGNED_OUT') {
+        setUser(null);
         localStorage.removeItem("sensorUser");
       }
-    }
-    setLoading(false);
+      setLoading(false);
+    });
+
+    // Check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) {
+        // Check for stored user as fallback during transition
+        const storedUser = localStorage.getItem("sensorUser");
+        if (storedUser) {
+          try {
+            setUser(JSON.parse(storedUser));
+          } catch (e) {
+            localStorage.removeItem("sensorUser");
+          }
+        }
+        setLoading(false);
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const login = async (identifier: string, password: string): Promise<boolean> => {
@@ -50,13 +93,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         username = "admin";
       }
 
-      console.log('Attempting Supabase login with username:', username);
-      const authenticatedUser = await loginWithSupabase(username, password);
+      console.log('Attempting Supabase login with identifier:', identifier);
+      const authenticatedUser = await loginWithSupabase(identifier, password);
       
       if (authenticatedUser) {
-        setUser(authenticatedUser);
-        localStorage.setItem("sensorUser", JSON.stringify(authenticatedUser));
-        
+        // The auth state change listener will handle setting the user
         const welcomeMessage = authenticatedUser.role === UserRole.ADMIN 
           ? "Dobrodošli, Administrator!" 
           : `Dobrodošli, Ocjenjivač ${authenticatedUser.evaluatorPosition}!`;
@@ -85,13 +126,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem("sensorUser");
-    toast({
-      title: "Odjava",
-      description: "Uspješno ste se odjavili.",
-    });
+  const logout = async () => {
+    try {
+      await logoutSupabase();
+      toast({
+        title: "Odjava",
+        description: "Uspješno ste se odjavili.",
+      });
+    } catch (error) {
+      console.error('Logout error:', error);
+      toast({
+        title: "Greška",
+        description: "Došlo je do pogreške prilikom odjave.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
