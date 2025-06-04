@@ -16,7 +16,7 @@ export const samples: Sample[] = [
     id: "sample_test2", 
     productTypeId: "product_test",
     brand: "Petit",
-    retailerCode: RetailerCode.PE,
+    retailerCode: RetailerCode.LI,
     blindCode: "102",
     images: {
       details: []
@@ -26,7 +26,7 @@ export const samples: Sample[] = [
     id: "sample_test3",
     productTypeId: "product_test", 
     brand: "Oreo",
-    retailerCode: RetailerCode.OR,
+    retailerCode: RetailerCode.KO,
     blindCode: "103",
     images: {
       details: []
