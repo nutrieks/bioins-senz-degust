@@ -2,7 +2,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { User, UserRole } from "../types";
 import { useToast } from "@/hooks/use-toast";
-import { login as apiLogin } from "@/services/dataService";
+import { loginWithSupabase } from "@/services/supabase/auth";
 
 interface AuthContextType {
   user: User | null;
@@ -51,7 +51,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         username = "admin";
       }
 
-      const authenticatedUser = await apiLogin(username, password);
+      console.log('Attempting Supabase login with username:', username);
+      const authenticatedUser = await loginWithSupabase(username, password);
       
       if (authenticatedUser) {
         setUser(authenticatedUser);
@@ -75,6 +76,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return false;
       }
     } catch (error) {
+      console.error('Login error:', error);
       toast({
         title: "Greška pri prijavi",
         description: "Došlo je do pogreške prilikom prijave.",
