@@ -1,13 +1,13 @@
 export enum UserRole {
-  ADMIN = "admin",
-  EVALUATOR = "evaluator"
+  ADMIN = "ADMIN",
+  EVALUATOR = "EVALUATOR"
 }
 
 export enum EventStatus {
-  PREPARATION = "preparation",
-  ACTIVE = "active",
-  COMPLETED = "completed",
-  ARCHIVED = "archived"
+  PREPARATION = "PREPARATION",
+  ACTIVE = "ACTIVE",
+  COMPLETED = "COMPLETED",
+  ARCHIVED = "ARCHIVED"
 }
 
 export enum RetailerCode {

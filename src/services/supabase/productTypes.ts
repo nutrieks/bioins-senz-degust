@@ -6,7 +6,7 @@ import { BaseProductType, ProductType, JARAttribute } from '@/types'
 export async function getAllProductTypes(): Promise<BaseProductType[]> {
   try {
     const { data, error } = await supabase
-      .from('base_product_types')
+      .from('base_product_types' as any)
       .select(`
         *,
         jar_attributes (*)
@@ -15,7 +15,7 @@ export async function getAllProductTypes(): Promise<BaseProductType[]> {
 
     if (error) throw error
 
-    return data.map(item => ({
+    return data.map((item: any) => ({
       id: item.id,
       productName: item.product_name,
       jarAttributes: item.jar_attributes.map((attr: any) => ({
@@ -37,7 +37,7 @@ export async function getAllProductTypes(): Promise<BaseProductType[]> {
 export async function getBaseProductType(productTypeId: string): Promise<BaseProductType | null> {
   try {
     const { data, error } = await supabase
-      .from('base_product_types')
+      .from('base_product_types' as any)
       .select(`
         *,
         jar_attributes (*)
@@ -72,7 +72,7 @@ export async function createBaseProductType(
 ): Promise<BaseProductType> {
   // First create the base product type
   const { data: baseType, error: baseError } = await supabase
-    .from('base_product_types')
+    .from('base_product_types' as any)
     .insert({
       product_name: productName
     })
@@ -92,7 +92,7 @@ export async function createBaseProductType(
     }))
 
     const { error: attributesError } = await supabase
-      .from('jar_attributes')
+      .from('jar_attributes' as any)
       .insert(attributesToInsert)
 
     if (attributesError) throw attributesError
@@ -114,7 +114,7 @@ export async function updateBaseProductType(
   try {
     // Update base product type
     const { error: updateError } = await supabase
-      .from('base_product_types')
+      .from('base_product_types' as any)
       .update({ product_name: productName })
       .eq('id', productTypeId)
 
@@ -122,7 +122,7 @@ export async function updateBaseProductType(
 
     // Delete existing attributes
     const { error: deleteError } = await supabase
-      .from('jar_attributes')
+      .from('jar_attributes' as any)
       .delete()
       .eq('product_type_id', productTypeId)
 
@@ -139,7 +139,7 @@ export async function updateBaseProductType(
       }))
 
       const { error: insertError } = await supabase
-        .from('jar_attributes')
+        .from('jar_attributes' as any)
         .insert(attributesToInsert)
 
       if (insertError) throw insertError
@@ -156,13 +156,13 @@ export async function deleteProductType(productTypeId: string): Promise<boolean>
   try {
     // First delete associated JAR attributes
     await supabase
-      .from('jar_attributes')
+      .from('jar_attributes' as any)
       .delete()
       .eq('product_type_id', productTypeId)
 
     // Then delete the base product type
     const { error } = await supabase
-      .from('base_product_types')
+      .from('base_product_types' as any)
       .delete()
       .eq('id', productTypeId)
 
@@ -177,7 +177,7 @@ export async function deleteProductType(productTypeId: string): Promise<boolean>
 export async function getProductTypes(eventId: string): Promise<ProductType[]> {
   try {
     const { data, error } = await supabase
-      .from('product_types')
+      .from('product_types' as any)
       .select(`
         *,
         samples (*),
@@ -188,7 +188,7 @@ export async function getProductTypes(eventId: string): Promise<ProductType[]> {
 
     if (error) throw error
 
-    return data.map(item => ({
+    return data.map((item: any) => ({
       id: item.id,
       eventId: item.event_id,
       customerCode: item.customer_code,
@@ -237,7 +237,7 @@ export async function createProductType(
 
   // Create the product type
   const { data: productType, error: productError } = await supabase
-    .from('product_types')
+    .from('product_types' as any)
     .insert({
       event_id: eventId,
       customer_code: customerCode,
@@ -263,7 +263,7 @@ export async function createProductType(
     }))
 
     const { error: attributesError } = await supabase
-      .from('jar_attributes')
+      .from('jar_attributes' as any)
       .insert(attributesToInsert)
 
     if (attributesError) throw attributesError

@@ -7,13 +7,13 @@ export const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, 
 export async function getEvents(): Promise<Event[]> {
   try {
     const { data, error } = await supabase
-      .from('events')
+      .from('events' as any)
       .select('*')
       .order('date', { ascending: false })
 
     if (error) throw error
 
-    return data.map(eventData => ({
+    return data.map((eventData: any) => ({
       id: eventData.id,
       date: eventData.date,
       status: eventData.status as EventStatus,
@@ -30,7 +30,7 @@ export async function getEvents(): Promise<Event[]> {
 export async function getEvent(eventId: string): Promise<Event | null> {
   try {
     const { data, error } = await supabase
-      .from('events')
+      .from('events' as any)
       .select('*')
       .eq('id', eventId)
       .single()
@@ -53,7 +53,7 @@ export async function getEvent(eventId: string): Promise<Event | null> {
 
 export async function createEvent(date: string): Promise<Event> {
   const { data, error } = await supabase
-    .from('events')
+    .from('events' as any)
     .insert({
       date,
       status: EventStatus.PREPARATION,
@@ -77,7 +77,7 @@ export async function createEvent(date: string): Promise<Event> {
 export async function updateEventStatus(eventId: string, status: EventStatus): Promise<boolean> {
   try {
     const { error } = await supabase
-      .from('events')
+      .from('events' as any)
       .update({ status })
       .eq('id', eventId)
 

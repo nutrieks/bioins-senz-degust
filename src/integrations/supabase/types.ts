@@ -9,7 +9,314 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      base_product_types: {
+        Row: {
+          created_at: string
+          id: string
+          product_name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          product_name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          product_name?: string
+        }
+        Relationships: []
+      }
+      evaluations: {
+        Row: {
+          event_id: string
+          hedonic_appearance: number
+          hedonic_flavor: number
+          hedonic_odor: number
+          hedonic_overall_liking: number
+          hedonic_texture: number
+          id: string
+          jar_ratings: Json
+          product_type_id: string
+          sample_id: string
+          timestamp: string
+          user_id: string
+        }
+        Insert: {
+          event_id: string
+          hedonic_appearance: number
+          hedonic_flavor: number
+          hedonic_odor: number
+          hedonic_overall_liking: number
+          hedonic_texture: number
+          id?: string
+          jar_ratings: Json
+          product_type_id: string
+          sample_id: string
+          timestamp?: string
+          user_id: string
+        }
+        Update: {
+          event_id?: string
+          hedonic_appearance?: number
+          hedonic_flavor?: number
+          hedonic_odor?: number
+          hedonic_overall_liking?: number
+          hedonic_texture?: number
+          id?: string
+          jar_ratings?: Json
+          product_type_id?: string
+          sample_id?: string
+          timestamp?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evaluations_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evaluations_product_type_id_fkey"
+            columns: ["product_type_id"]
+            isOneToOne: false
+            referencedRelation: "product_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evaluations_sample_id_fkey"
+            columns: ["sample_id"]
+            isOneToOne: false
+            referencedRelation: "samples"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evaluations_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      events: {
+        Row: {
+          created_at: string
+          date: string
+          id: string
+          randomization_complete: boolean
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          id?: string
+          randomization_complete?: boolean
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          id?: string
+          randomization_complete?: boolean
+          status?: string
+        }
+        Relationships: []
+      }
+      jar_attributes: {
+        Row: {
+          created_at: string
+          id: string
+          name_en: string
+          name_hr: string
+          product_type_id: string
+          scale_en: string[]
+          scale_hr: string[]
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name_en: string
+          name_hr: string
+          product_type_id: string
+          scale_en: string[]
+          scale_hr: string[]
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name_en?: string
+          name_hr?: string
+          product_type_id?: string
+          scale_en?: string[]
+          scale_hr?: string[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jar_attributes_product_type_id_fkey"
+            columns: ["product_type_id"]
+            isOneToOne: false
+            referencedRelation: "base_product_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_types: {
+        Row: {
+          base_code: string
+          base_product_type_id: string | null
+          created_at: string
+          customer_code: string
+          display_order: number
+          event_id: string
+          has_randomization: boolean
+          id: string
+          product_name: string
+        }
+        Insert: {
+          base_code: string
+          base_product_type_id?: string | null
+          created_at?: string
+          customer_code: string
+          display_order: number
+          event_id: string
+          has_randomization?: boolean
+          id?: string
+          product_name: string
+        }
+        Update: {
+          base_code?: string
+          base_product_type_id?: string | null
+          created_at?: string
+          customer_code?: string
+          display_order?: number
+          event_id?: string
+          has_randomization?: boolean
+          id?: string
+          product_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_types_base_product_type_id_fkey"
+            columns: ["base_product_type_id"]
+            isOneToOne: false
+            referencedRelation: "base_product_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_types_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      randomizations: {
+        Row: {
+          created_at: string
+          id: string
+          product_type_id: string
+          randomization_table: Json
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          product_type_id: string
+          randomization_table: Json
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          product_type_id?: string
+          randomization_table?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "randomizations_product_type_id_fkey"
+            columns: ["product_type_id"]
+            isOneToOne: false
+            referencedRelation: "product_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      samples: {
+        Row: {
+          blind_code: string | null
+          brand: string
+          created_at: string
+          id: string
+          images_details: string[] | null
+          images_packaging: string | null
+          images_prepared: string | null
+          product_type_id: string
+          retailer_code: string
+        }
+        Insert: {
+          blind_code?: string | null
+          brand: string
+          created_at?: string
+          id?: string
+          images_details?: string[] | null
+          images_packaging?: string | null
+          images_prepared?: string | null
+          product_type_id: string
+          retailer_code: string
+        }
+        Update: {
+          blind_code?: string | null
+          brand?: string
+          created_at?: string
+          id?: string
+          images_details?: string[] | null
+          images_packaging?: string | null
+          images_prepared?: string | null
+          product_type_id?: string
+          retailer_code?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "samples_product_type_id_fkey"
+            columns: ["product_type_id"]
+            isOneToOne: false
+            referencedRelation: "product_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      users: {
+        Row: {
+          created_at: string
+          evaluator_position: number | null
+          id: string
+          is_active: boolean
+          password: string
+          role: string
+          username: string
+        }
+        Insert: {
+          created_at?: string
+          evaluator_position?: number | null
+          id?: string
+          is_active?: boolean
+          password: string
+          role: string
+          username: string
+        }
+        Update: {
+          created_at?: string
+          evaluator_position?: number | null
+          id?: string
+          is_active?: boolean
+          password?: string
+          role?: string
+          username?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
