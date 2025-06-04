@@ -22,10 +22,6 @@ export function JARChart({ data, attrData, productName }: JARChartProps) {
         pixelRatio: 3,
         cacheBust: true,
         style: { fontFamily: "inherit" },
-        filter: (node) => {
-          // Exclude the download button from export
-          return !node.classList?.contains('download-button');
-        }
       });
       const link = document.createElement('a');
       link.download = `JAR_${attrData.nameEN.replace(/\s/g, "_")}_${productName}_chart.png`;
@@ -56,7 +52,7 @@ export function JARChart({ data, attrData, productName }: JARChartProps) {
           variant="outline"
           size="sm"
           onClick={handleDownloadChartImage}
-          className="flex items-center download-button"
+          className="flex items-center"
         >
           <Download className="mr-2 h-4 w-4" /> Preuzmi graf
         </Button>
