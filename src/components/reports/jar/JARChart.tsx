@@ -60,11 +60,10 @@ export function JARChart({ data, attrData, productName }: JARChartProps) {
       
       <div 
         ref={chartRef}
-        className="bg-white p-5 rounded-lg shadow w-full flex flex-col items-center" 
+        className="bg-white p-5 rounded-lg shadow flex flex-col items-center mx-auto" 
         style={{
           width: '100%',
           maxWidth: 950,
-          margin: '0 auto'
         }}
       >
         {/* Title and description */}
@@ -76,61 +75,63 @@ export function JARChart({ data, attrData, productName }: JARChartProps) {
         </div>
         
         {/* Chart */}
-        <ResponsiveContainer width="100%" height={500}>
-          <BarChart
-            data={data}
-            margin={{
-              top: 30,
-              right: 40,
-              left: 60,
-              bottom: 60
-            }}
-            barCategoryGap="25%"
-            barGap={3}
-          >
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis 
-              dataKey="name"
-              angle={-45}
-              textAnchor="end"
-              height={60}
-              tick={{ fontSize: 11 }}
-              interval={0}
-            />
-            <YAxis 
-              domain={[0, 12]}
-              ticks={[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]}
-              tick={{ fontSize: 11 }}
-              label={{ value: 'No. of votes', angle: -90, position: 'insideLeft', fontSize: 13 }}
-            />
-            <Tooltip 
-              contentStyle={{ 
-                color: 'black', 
-                backgroundColor: 'white',
-                border: '1px solid #ccc',
-                borderRadius: '4px',
-                fontSize: '12px'
-              }} 
-              formatter={(value: number, name: string) => [value, name]}
-              labelFormatter={(label) => `Brand: ${label}`}
-            />
-            {JAR_LABELS.map((label, index) => (
-              <Bar
-                key={label}
-                dataKey={label}
-                name={label}
-                fill={JAR_COLORS[index]}
-              >
-                <LabelList 
-                  dataKey={label} 
-                  position="top"
-                  style={{ fill: 'black', fontSize: 10, fontWeight: 'bold' }} 
-                  formatter={(value: number) => value > 0 ? value : ''}
-                />
-              </Bar>
-            ))}
-          </BarChart>
-        </ResponsiveContainer>
+        <div className="w-full flex justify-center">
+          <ResponsiveContainer width="100%" height={500}>
+            <BarChart
+              data={data}
+              margin={{
+                top: 30,
+                right: 40,
+                left: 60,
+                bottom: 60
+              }}
+              barCategoryGap="25%"
+              barGap={3}
+            >
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis 
+                dataKey="name"
+                angle={-45}
+                textAnchor="end"
+                height={60}
+                tick={{ fontSize: 11 }}
+                interval={0}
+              />
+              <YAxis 
+                domain={[0, 12]}
+                ticks={[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]}
+                tick={{ fontSize: 11 }}
+                label={{ value: 'No. of votes', angle: -90, position: 'insideLeft', fontSize: 13 }}
+              />
+              <Tooltip 
+                contentStyle={{ 
+                  color: 'black', 
+                  backgroundColor: 'white',
+                  border: '1px solid #ccc',
+                  borderRadius: '4px',
+                  fontSize: '12px'
+                }} 
+                formatter={(value: number, name: string) => [value, name]}
+                labelFormatter={(label) => `Brand: ${label}`}
+              />
+              {JAR_LABELS.map((label, index) => (
+                <Bar
+                  key={label}
+                  dataKey={label}
+                  name={label}
+                  fill={JAR_COLORS[index]}
+                >
+                  <LabelList 
+                    dataKey={label} 
+                    position="top"
+                    style={{ fill: 'black', fontSize: 10, fontWeight: 'bold' }} 
+                    formatter={(value: number) => value > 0 ? value : ''}
+                  />
+                </Bar>
+              ))}
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
         
         {/* Custom Legend */}
         <div
