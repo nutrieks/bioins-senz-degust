@@ -1,5 +1,5 @@
 
-import { supabase } from '@/lib/supabase'
+import { supabase } from '@/integrations/supabase/client'
 import { Event, EventStatus } from '@/types'
 
 export const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
