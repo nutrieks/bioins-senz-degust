@@ -1,4 +1,3 @@
-
 import React, { useRef } from "react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, LabelList, ResponsiveContainer } from "recharts";
 import { Button } from "@/components/ui/button";
@@ -21,7 +20,9 @@ export function HedonicChart({ report, productName }: HedonicChartProps) {
         backgroundColor: "#fff",
         pixelRatio: 4,
         cacheBust: true,
-        style: { fontFamily: "inherit" }
+        style: { fontFamily: "inherit" },
+        width: 900,
+        height: 700
       });
       const link = document.createElement('a');
       link.download = `Hedonic_${productName}_chart.png`;
