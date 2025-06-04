@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 
 export function LoginForm() {
   const [identifier, setIdentifier] = useState("");
+  const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
 
@@ -15,7 +16,7 @@ export function LoginForm() {
     setIsLoading(true);
     
     try {
-      await login(identifier);
+      await login(identifier, password);
     } finally {
       setIsLoading(false);
     }
@@ -31,7 +32,7 @@ export function LoginForm() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <label htmlFor="identifier" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-              Ocjenjivačko mjesto
+              Korisničko ime
             </label>
             <Input
               id="identifier"
@@ -41,7 +42,22 @@ export function LoginForm() {
               required
               autoFocus
               className="w-full"
-              placeholder="Unesite broj mjesta (1-12) ili ADMIN"
+              placeholder="Unesite ADMIN ili broj mjesta (1-12)"
+              disabled={isLoading}
+            />
+          </div>
+          <div className="space-y-2">
+            <label htmlFor="password" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+              Lozinka
+            </label>
+            <Input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              className="w-full"
+              placeholder="Unesite lozinku"
               disabled={isLoading}
             />
           </div>

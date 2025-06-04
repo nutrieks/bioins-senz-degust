@@ -2,11 +2,12 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { User, UserRole } from "../types";
 import { useToast } from "@/hooks/use-toast";
+import { login as apiLogin } from "@/services/dataService";
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (identifier: string) => Promise<boolean>;
+  login: (identifier: string, password: string) => Promise<boolean>;
   logout: () => void;
 }
 
@@ -30,48 +31,45 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setLoading(false);
   }, []);
 
-  const login = async (identifier: string): Promise<boolean> => {
+  const login = async (identifier: string, password: string): Promise<boolean> => {
     try {
-      // Check if the identifier is a valid evaluator position (1-12) or ADMIN
-      if (identifier === "ADMIN") {
-        // Admin login
-        const adminUser: User = {
-          id: "admin1",
-          username: "admin",
-          role: UserRole.ADMIN,
-          isActive: true
-        };
+      // Determine username based on identifier
+      let username = identifier;
+      if (identifier !== "ADMIN") {
+        // Check if it's a valid evaluator position (1-12)
+        if (/^([1-9]|1[0-2])$/.test(identifier)) {
+          username = `evaluator${identifier}`;
+        } else {
+          toast({
+            title: "Greška pri prijavi",
+            description: "Nevažeće korisničko ime. Unesite ADMIN ili broj od 1 do 12.",
+            variant: "destructive",
+          });
+          return false;
+        }
+      } else {
+        username = "admin";
+      }
+
+      const authenticatedUser = await apiLogin(username, password);
+      
+      if (authenticatedUser) {
+        setUser(authenticatedUser);
+        localStorage.setItem("sensorUser", JSON.stringify(authenticatedUser));
         
-        setUser(adminUser);
-        localStorage.setItem("sensorUser", JSON.stringify(adminUser));
+        const welcomeMessage = authenticatedUser.role === UserRole.ADMIN 
+          ? "Dobrodošli, Administrator!" 
+          : `Dobrodošli, Ocjenjivač ${authenticatedUser.evaluatorPosition}!`;
+          
         toast({
           title: "Uspješna prijava",
-          description: "Dobrodošli, Administrator!",
-        });
-        return true;
-      } else if (/^([1-9]|1[0-2])$/.test(identifier)) {
-        // Evaluator login - position between 1 and 12
-        const position = parseInt(identifier, 10);
-        const evaluatorUser: User = {
-          id: `evaluator${position}`,
-          username: `evaluator${position}`,
-          role: UserRole.EVALUATOR,
-          evaluatorPosition: position,
-          isActive: true
-        };
-        
-        setUser(evaluatorUser);
-        localStorage.setItem("sensorUser", JSON.stringify(evaluatorUser));
-        toast({
-          title: "Uspješna prijava",
-          description: `Dobrodošli, Ocjenjivač ${position}!`,
+          description: welcomeMessage,
         });
         return true;
       } else {
-        // Invalid identifier
         toast({
           title: "Greška pri prijavi",
-          description: "Nevažeće ocjenjivačko mjesto. Unesite broj od 1 do 12 ili ADMIN.",
+          description: "Pogrešno korisničko ime ili lozinka.",
           variant: "destructive",
         });
         return false;

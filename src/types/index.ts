@@ -1,4 +1,3 @@
-
 export enum UserRole {
   ADMIN = "admin",
   EVALUATOR = "evaluator"
@@ -32,6 +31,7 @@ export type User = {
   role: UserRole;
   evaluatorPosition?: number; // 1-12, only for evaluators
   isActive: boolean;
+  password: string;
 };
 
 export type Event = {

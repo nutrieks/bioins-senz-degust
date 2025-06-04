@@ -7,7 +7,8 @@ export {
   login,
   getUsers,
   createUser,
-  updateUserStatus
+  updateUserStatus,
+  updateUserPassword
 } from './api/auth';
 
 // Event services
