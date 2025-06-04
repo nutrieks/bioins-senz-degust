@@ -1,3 +1,4 @@
+
 import { HedonicReport, RetailerCode } from "@/types";
 
 // Define retailer colors
@@ -9,11 +10,11 @@ export const RETAILER_COLORS: Record<RetailerCode, string> = {
   [RetailerCode.PL]: "rgb(128, 128, 128)", // Plodine: Gray
   [RetailerCode.ES]: "rgb(0, 176, 240)",  // Eurospin: Light Blue
   [RetailerCode.M]: "rgb(0, 255, 0)",     // Marke: Green
-  [RetailerCode.MI]: "rgb(255, 165, 0)",  // Milka: Orange
-  [RetailerCode.TO]: "rgb(139, 69, 19)",  // Toblerone: Brown
-  [RetailerCode.DU]: "rgb(255, 20, 147)", // Dukat: Deep Pink
-  [RetailerCode.VI]: "rgb(75, 0, 130)",   // Vindija: Indigo
-  [RetailerCode.ME]: "rgb(255, 215, 0)"   // Meggle: Gold
+  [RetailerCode.DU]: "rgb(50, 205, 50)",  // Dukat: Lime Green
+  [RetailerCode.ME]: "rgb(34, 139, 34)",  // Meggle: Forest Green
+  [RetailerCode.MI]: "rgb(144, 238, 144)", // Milka: Light Green
+  [RetailerCode.TO]: "rgb(0, 128, 0)",    // Toblerone: Green
+  [RetailerCode.VI]: "rgb(124, 252, 0)"   // Vindija: Lawn Green
 };
 
 // Function to determine if a color is dark and needs white text
@@ -43,17 +44,39 @@ export const formatSampleLabel = (sample: {retailerCode: RetailerCode, brand: st
 };
 
 export const sortSamples = (report: HedonicReport) => {
-  const retailerOrder: RetailerCode[] = [RetailerCode.LI, RetailerCode.KL, RetailerCode.KO, RetailerCode.IS, RetailerCode.PL, RetailerCode.ES, RetailerCode.M, RetailerCode.MI, RetailerCode.TO, RetailerCode.DU, RetailerCode.VI, RetailerCode.ME];
+  // Retailer codes order (trgovački lanci)
+  const retailerOrder: RetailerCode[] = [RetailerCode.LI, RetailerCode.KL, RetailerCode.KO, RetailerCode.IS, RetailerCode.PL, RetailerCode.ES];
+  // Brand codes order (marke) - alphabetically
+  const brandOrder: RetailerCode[] = [RetailerCode.DU, RetailerCode.ME, RetailerCode.MI, RetailerCode.TO, RetailerCode.VI, RetailerCode.M];
+  
   return Object.entries(report)
     .sort((a, b) => {
       const retailerA = a[1].retailerCode;
       const retailerB = b[1].retailerCode;
-      const orderA = retailerOrder.indexOf(retailerA);
-      const orderB = retailerOrder.indexOf(retailerB);
-      if (orderA !== orderB) {
-        return orderA - orderB;
+      
+      const isRetailerA = retailerOrder.includes(retailerA);
+      const isRetailerB = retailerOrder.includes(retailerB);
+      
+      // If both are retailers or both are brands
+      if (isRetailerA && isRetailerB) {
+        const orderA = retailerOrder.indexOf(retailerA);
+        const orderB = retailerOrder.indexOf(retailerB);
+        if (orderA !== orderB) {
+          return orderA - orderB;
+        }
+        return a[1].brand.localeCompare(b[1].brand);
+      } else if (!isRetailerA && !isRetailerB) {
+        // Both are brands - sort alphabetically by retailer code
+        const orderA = brandOrder.indexOf(retailerA);
+        const orderB = brandOrder.indexOf(retailerB);
+        if (orderA !== orderB) {
+          return orderA - orderB;
+        }
+        return a[1].brand.localeCompare(b[1].brand);
+      } else {
+        // Retailers come before brands
+        return isRetailerA ? -1 : 1;
       }
-      return a[1].brand.localeCompare(b[1].brand);
     });
 };
 
