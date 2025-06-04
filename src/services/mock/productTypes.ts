@@ -21,5 +21,15 @@ export const productTypes: ProductType[] = [
     samples: [],
     jarAttributes: [],
     displayOrder: 1
+  },
+  {
+    id: "product3",
+    eventId: "event4",
+    customerCode: "4583",
+    productName: "Jogurt",
+    baseCode: "J",
+    samples: [],
+    jarAttributes: [],
+    displayOrder: 1
   }
 ];
