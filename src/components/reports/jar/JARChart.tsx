@@ -60,14 +60,14 @@ export function JARChart({ data, attrData, productName }: JARChartProps) {
       
       <div 
         ref={chartRef}
-        className="bg-white p-5 rounded-lg shadow flex flex-col items-center mx-auto" 
+        className="bg-white p-6 rounded-lg shadow mx-auto" 
         style={{
           width: '100%',
-          maxWidth: 950,
+          maxWidth: 900,
         }}
       >
         {/* Title and description */}
-        <div className="mb-3 text-center">
+        <div className="mb-4 text-center">
           <h4 className="font-bold text-lg mb-1">Consumer's reaction to specific attribute</h4>
           <p className="text-sm">Method: JAR scale</p>
           <p className="text-sm">Sample: {productName}</p>
@@ -75,13 +75,13 @@ export function JARChart({ data, attrData, productName }: JARChartProps) {
         </div>
         
         {/* Chart */}
-        <div className="w-full flex justify-center">
+        <div className="w-full">
           <ResponsiveContainer width="100%" height={500}>
             <BarChart
               data={data}
               margin={{
                 top: 30,
-                right: 40,
+                right: 30,
                 left: 60,
                 bottom: 60
               }}
@@ -134,10 +134,7 @@ export function JARChart({ data, attrData, productName }: JARChartProps) {
         </div>
         
         {/* Custom Legend */}
-        <div
-          className="flex flex-wrap justify-center items-center gap-3 mt-4"
-          style={{ fontSize: 15, marginBottom: 7 }}
-        >
+        <div className="flex flex-wrap justify-center items-center gap-3 mt-4" style={{ fontSize: 15 }}>
           {JAR_LABELS.map((label, index) => (
             <span className="flex items-center gap-2" key={label}>
               <span
