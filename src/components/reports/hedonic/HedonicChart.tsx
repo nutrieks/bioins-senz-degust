@@ -1,3 +1,4 @@
+
 import React, { useRef } from "react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, LabelList, ResponsiveContainer } from "recharts";
 import { Button } from "@/components/ui/button";
@@ -12,11 +13,11 @@ interface HedonicChartProps {
 }
 
 export function HedonicChart({ report, productName }: HedonicChartProps) {
-  const chartRef = useRef<HTMLDivElement>(null);
+  const chartContainerRef = useRef<HTMLDivElement>(null);
 
   const handleDownloadChartImage = async () => {
-    if (chartRef.current) {
-      const dataUrl = await toPng(chartRef.current, {
+    if (chartContainerRef.current) {
+      const dataUrl = await toPng(chartContainerRef.current, {
         backgroundColor: "#fff",
         pixelRatio: 4,
         cacheBust: true,
@@ -47,7 +48,7 @@ export function HedonicChart({ report, productName }: HedonicChartProps) {
       </div>
       
       <div 
-        ref={chartRef}
+        ref={chartContainerRef}
         className="bg-white p-6 rounded-lg shadow mx-auto" 
         style={{
           width: '100%',
