@@ -121,7 +121,14 @@ export const processChartData = (report: HedonicReport) => {
     sortedSamples.forEach(([id, sample]) => {
       // Use retailer code + brand name format for keys
       const sampleKey = `${sample.retailerCode} ${sample.brand}_${id}`;
-      data[sampleKey] = Number(sample[attr.key as keyof typeof sample].mean.toFixed(1));
+      
+      // Access the hedonic attribute data safely
+      const attributeData = sample[attr.key as keyof typeof sample];
+      if (attributeData && typeof attributeData === 'object' && 'mean' in attributeData) {
+        data[sampleKey] = Number(attributeData.mean.toFixed(1));
+      } else {
+        data[sampleKey] = 0;
+      }
     });
     return data;
   });
