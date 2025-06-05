@@ -1,6 +1,6 @@
 
 // This is the main entry point for data services
-// It re-exports all services using Supabase instead of mock data
+// All services now use Supabase exclusively
 
 // Auth services
 export {
@@ -33,36 +33,36 @@ export {
   updateEventProductType
 } from './supabase/productTypes';
 
-// Sample services - now using Supabase
+// Sample services
 export {
   getSamples,
   createSample,
   updateSampleImages
 } from './supabase/samples';
 
-// JAR Attribute services - keeping mock for now, will implement next
+// JAR Attribute services - now using Supabase
 export {
   getJARAttributes,
   createJARAttribute
-} from './api/jarAttributes';
+} from './supabase/jarAttributes';
 
-// Randomization services - keeping mock for now, will implement next
+// Randomization services - now using Supabase
 export {
   getRandomization,
   createRandomization,
   getNextSample
-} from './api/randomization';
+} from './supabase/randomization';
 
-// Evaluation services - keeping mock for now, will implement next
+// Evaluation services - now using Supabase
 export {
   getCompletedEvaluations,
   submitEvaluation,
   getEvaluationsStatus
-} from './api/evaluations';
+} from './supabase/evaluations';
 
-// Reporting services - keeping mock for now, will implement next
+// Reporting services - now using Supabase
 export {
   generateHedonicReport,
   generateJARReport,
   getRawData
-} from './api/reports';
+} from './supabase/reports';

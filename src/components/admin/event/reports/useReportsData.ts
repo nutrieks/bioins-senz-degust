@@ -17,9 +17,13 @@ export function useReportsData(eventId: string) {
   useEffect(() => {
     const fetchEventData = async () => {
       try {
+        console.log('=== useReportsData fetchEventData ===');
+        console.log('Event ID:', eventId);
+        
         const eventData = await getEvent(eventId);
         if (eventData) {
           setEventDate(eventData.date);
+          console.log('Event date set:', eventData.date);
         }
       } catch (error) {
         console.error("Error fetching event data:", error);
@@ -33,10 +37,16 @@ export function useReportsData(eventId: string) {
   useEffect(() => {
     const fetchProductTypes = async () => {
       try {
+        console.log('=== useReportsData fetchProductTypes ===');
+        console.log('Event ID:', eventId);
+        
         const types = await getProductTypes(eventId);
+        console.log('Product types fetched:', types.length);
+        
         setProductTypes(types);
         if (types.length > 0) {
           setSelectedProductType(types[0].id);
+          console.log('Selected first product type:', types[0].id);
         }
       } catch (error) {
         console.error("Error fetching product types:", error);
@@ -54,7 +64,13 @@ export function useReportsData(eventId: string) {
   // Generate reports when product type is selected
   useEffect(() => {
     const generateReports = async () => {
-      if (!selectedProductType) return;
+      if (!selectedProductType) {
+        console.log('No product type selected, skipping report generation');
+        return;
+      }
+      
+      console.log('=== useReportsData generateReports ===');
+      console.log('Selected Product Type:', selectedProductType);
       
       setIsLoading(true);
       try {
@@ -62,6 +78,9 @@ export function useReportsData(eventId: string) {
           generateHedonicReport(selectedProductType),
           generateJARReport(selectedProductType)
         ]);
+        
+        console.log('Hedonic report generated:', Object.keys(hedonicData).length, 'samples');
+        console.log('JAR report generated:', Object.keys(jarData).length, 'attributes');
         
         setHedonicReport(hedonicData);
         setJARReport(jarData);
@@ -81,6 +100,8 @@ export function useReportsData(eventId: string) {
   }, [selectedProductType, eventId, toast]);
 
   const handleProductTypeChange = (value: string) => {
+    console.log('=== useReportsData handleProductTypeChange ===');
+    console.log('New product type selected:', value);
     setSelectedProductType(value);
   };
 

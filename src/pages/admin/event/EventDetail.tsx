@@ -358,6 +358,9 @@ export default function EventDetail() {
     if (!productTypeId) return;
     
     try {
+      console.log('=== EventDetail handleGenerateRandomization ===');
+      console.log('Product Type ID:', productTypeId);
+      
       const randomization = await createRandomization(productTypeId);
       if (randomization) {
         setRandomizationTable(randomization.table);
@@ -365,7 +368,8 @@ export default function EventDetail() {
         setSelectedProductType(productType);
         setRandomizationView(true);
         
-        fetchEvent();
+        // Osvježi event podatke da se ažurira hasRandomization flag
+        await fetchEvent();
         
         toast({
           title: "Uspješno",
@@ -392,6 +396,9 @@ export default function EventDetail() {
     setSelectedProductType(productType);
     
     try {
+      console.log('=== EventDetail handleViewRandomization ===');
+      console.log('Product Type ID:', productType.id);
+      
       const randomization = await getRandomization(productType.id);
       if (randomization) {
         setRandomizationTable(randomization.table);
