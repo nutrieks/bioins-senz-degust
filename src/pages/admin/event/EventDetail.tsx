@@ -7,7 +7,8 @@ import {
   createProductType, 
   createRandomization,
   createSample,
-  getRandomization
+  getRandomization,
+  getProductTypes
 } from "@/services/dataService";
 import { Event, EventStatus, BaseProductType, ProductType, RetailerCode } from "@/types";
 import { ArrowLeft } from "lucide-react";
@@ -48,20 +49,39 @@ export default function EventDetail() {
   const fetchEvent = async () => {
     if (!eventId) return;
     try {
+      console.log('=== EventDetail fetchEvent POČETAK ===');
+      console.log('Event ID:', eventId);
       setIsLoading(true);
-      const eventData = await getEvent(eventId);
       
-      const updatedProductTypes = eventData.productTypes.map((pt: ProductType) => ({
+      const eventData = await getEvent(eventId);
+      console.log('EventDetail - eventData dobiven:', eventData);
+      
+      if (!eventData) {
+        console.error('EventDetail - event nije pronađen');
+        navigate("/admin");
+        return;
+      }
+      
+      // Eksplicitno dohvati najnovije tipove proizvoda
+      console.log('EventDetail - dohvaćam tipove proizvoda eksplicitno...');
+      const latestProductTypes = await getProductTypes(eventId);
+      console.log('EventDetail - najnoviji tipovi proizvoda:', latestProductTypes.length, latestProductTypes);
+      
+      const updatedProductTypes = latestProductTypes.map((pt: ProductType) => ({
         ...pt,
         hasRandomization: !!pt.hasRandomization
       }));
       
-      setEvent({
+      const updatedEvent = {
         ...eventData,
         productTypes: updatedProductTypes
-      });
+      };
+      
+      console.log('EventDetail - postavljam event s tipovima:', updatedEvent.productTypes.length);
+      setEvent(updatedEvent);
+      
     } catch (error) {
-      console.error("Error fetching event:", error);
+      console.error("EventDetail - Error fetching event:", error);
       toast({
         title: "Greška",
         description: "Došlo je do pogreške prilikom dohvaćanja podataka o događaju.",
@@ -69,6 +89,7 @@ export default function EventDetail() {
       });
     } finally {
       setIsLoading(false);
+      console.log('=== EventDetail fetchEvent ZAVRŠETAK ===');
     }
   };
 
@@ -207,6 +228,7 @@ export default function EventDetail() {
     if (!eventId || !validateProductTypeForm()) return;
 
     try {
+      console.log('=== EventDetail handleAddProductType POČETAK ===');
       setIsUpdating(true);
       const displayOrder = event?.productTypes.length || 0;
       
@@ -218,6 +240,7 @@ export default function EventDetail() {
         displayOrder + 1
       );
 
+      console.log('EventDetail - product type kreiran, dodajem uzorke...');
       for (const sample of samples) {
         await createSample(
           newProductType.id,
@@ -231,15 +254,20 @@ export default function EventDetail() {
         description: "Tip proizvoda je uspješno dodan događaju.",
       });
 
+      // Reset form
       setShowAddProductForm(false);
       setBaseCode("");
       setCustomerCode("");
       setSampleCount(3);
       setSamples([{ brand: "", retailerCode: RetailerCode.LI }]);
       
-      fetchEvent();
+      console.log('EventDetail - pozivam fetchEvent za osvježavanje UI...');
+      // Eksplicitno osvježi podatke
+      await fetchEvent();
+      console.log('=== EventDetail handleAddProductType ZAVRŠETAK ===');
+      
     } catch (error) {
-      console.error("Error adding product type:", error);
+      console.error("EventDetail - Error adding product type:", error);
       toast({
         title: "Greška",
         description: "Došlo je do pogreške prilikom dodavanja tipa proizvoda.",
