@@ -1,6 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client'
-import { Evaluation, EvaluationSubmission } from '@/types'
+import { Evaluation, EvaluationSubmission, EvaluationStatus } from '@/types'
 
 export async function getCompletedEvaluations(
   eventId: string,
@@ -35,14 +35,14 @@ export async function getCompletedEvaluations(
       sampleId: item.sample_id,
       productTypeId: item.product_type_id,
       eventId: item.event_id,
-      hedonicRatings: {
+      hedonic: {
         appearance: item.hedonic_appearance,
         odor: item.hedonic_odor,
         texture: item.hedonic_texture,
         flavor: item.hedonic_flavor,
         overallLiking: item.hedonic_overall_liking
       },
-      jarRatings: item.jar_ratings || {},
+      jar: item.jar_ratings || {},
       timestamp: item.timestamp
     }));
   } catch (error) {
@@ -86,19 +86,44 @@ export async function submitEvaluation(evaluation: EvaluationSubmission): Promis
   }
 }
 
-export async function getEvaluationsStatus(eventId: string): Promise<{
-  totalEvaluations: number;
-  completedEvaluations: number;
-  evaluationsByProductType: Record<string, { completed: number; total: number }>;
-}> {
+export async function getEvaluationsStatus(eventId: string): Promise<EvaluationStatus[]> {
   try {
     console.log('=== SUPABASE getEvaluationsStatus ===');
     console.log('Event ID:', eventId);
     
+    // Get all users who are evaluators
+    const { data: users, error: usersError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('role', 'EVALUATOR')
+      .eq('is_active', true)
+      .order('evaluator_position');
+
+    if (usersError) {
+      console.error('Error fetching users:', usersError);
+      throw usersError;
+    }
+
+    // Get all product types for this event with their samples
+    const { data: productTypes, error: ptError } = await supabase
+      .from('product_types')
+      .select(`
+        id,
+        product_name,
+        samples (*)
+      `)
+      .eq('event_id', eventId)
+      .order('display_order');
+
+    if (ptError) {
+      console.error('Error fetching product types:', ptError);
+      throw ptError;
+    }
+
     // Get all evaluations for this event
     const { data: evaluations, error: evalError } = await supabase
       .from('evaluations')
-      .select('product_type_id')
+      .select('user_id, sample_id, product_type_id')
       .eq('event_id', eventId);
 
     if (evalError) {
@@ -106,67 +131,39 @@ export async function getEvaluationsStatus(eventId: string): Promise<{
       throw evalError;
     }
 
-    // Get all product types for this event
-    const { data: productTypes, error: ptError } = await supabase
-      .from('product_types')
-      .select('id, samples(*)')
-      .eq('event_id', eventId);
+    // Build evaluation status for each user
+    const evaluationStatus: EvaluationStatus[] = (users || []).map(user => {
+      const userEvaluations = (evaluations || []).filter(e => e.user_id === user.id);
+      const completedSampleIds = new Set(userEvaluations.map(e => e.sample_id));
 
-    if (ptError) {
-      console.error('Error fetching product types:', ptError);
-      throw ptError;
-    }
+      const completedSamples = (productTypes || []).map(pt => ({
+        productTypeName: pt.product_name,
+        productTypeId: pt.id,
+        samples: (pt.samples || []).map((sample: any) => ({
+          sampleId: sample.id,
+          blindCode: sample.blind_code || `${pt.product_name}-${sample.brand}`,
+          isCompleted: completedSampleIds.has(sample.id)
+        }))
+      }));
 
-    // Get total number of users
-    const { data: users, error: usersError } = await supabase
-      .from('users')
-      .select('id')
-      .eq('role', 'EVALUATOR')
-      .eq('is_active', true);
+      const totalSamples = completedSamples.reduce((sum, pt) => sum + pt.samples.length, 0);
+      const totalCompleted = userEvaluations.length;
 
-    if (usersError) {
-      console.error('Error fetching users:', usersError);
-      throw usersError;
-    }
-
-    const totalUsers = users?.length || 0;
-    const evaluationsByProductType: Record<string, { completed: number; total: number }> = {};
-    let totalPossibleEvaluations = 0;
-
-    // Calculate stats per product type
-    (productTypes || []).forEach(pt => {
-      const samplesCount = pt.samples?.length || 0;
-      const totalForProductType = samplesCount * totalUsers;
-      const completedForProductType = (evaluations || []).filter(e => e.product_type_id === pt.id).length;
-      
-      evaluationsByProductType[pt.id] = {
-        completed: completedForProductType,
-        total: totalForProductType
+      return {
+        userId: user.id,
+        username: user.username,
+        position: user.evaluator_position || 0,
+        completedSamples,
+        totalCompleted,
+        totalSamples
       };
-      
-      totalPossibleEvaluations += totalForProductType;
     });
 
-    const completedEvaluations = evaluations?.length || 0;
-
-    console.log('Evaluations status calculated:', {
-      totalEvaluations: totalPossibleEvaluations,
-      completedEvaluations,
-      evaluationsByProductType
-    });
-
-    return {
-      totalEvaluations: totalPossibleEvaluations,
-      completedEvaluations,
-      evaluationsByProductType
-    };
+    console.log('Evaluation status calculated for', evaluationStatus.length, 'users');
+    return evaluationStatus;
   } catch (error) {
     console.error('=== ERROR getEvaluationsStatus ===');
     console.error('Error details:', error);
-    return {
-      totalEvaluations: 0,
-      completedEvaluations: 0,
-      evaluationsByProductType: {}
-    };
+    return [];
   }
 }

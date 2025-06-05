@@ -45,15 +45,15 @@ export async function handleEvaluationSubmit(
       jar: jarRatings
     });
     
-    // Slanje ocjene na backend
-    await submitEvaluationAPI(
+    // Slanje ocjene na backend with the correct signature
+    await submitEvaluationAPI({
       userId,
-      currentSample.id,
-      currentSample.productTypeId,
+      sampleId: currentSample.id,
+      productTypeId: currentSample.productTypeId,
       eventId,
       hedonicRatings,
       jarRatings
-    );
+    });
     
     toast.toast({
       title: "Ocjena spremljena",

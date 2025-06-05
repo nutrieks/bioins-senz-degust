@@ -1,3 +1,4 @@
+
 export enum UserRole {
   ADMIN = "ADMIN",
   EVALUATOR = "EVALUATOR"
@@ -93,6 +94,7 @@ export type Randomization = {
       [round: number]: string; // Sample blind code for each round
     };
   };
+  createdAt?: string;
 };
 
 export type HedonicScale = {
@@ -118,34 +120,61 @@ export type Evaluation = {
   timestamp: string;
 };
 
+export type EvaluationSubmission = {
+  userId: string;
+  sampleId: string;
+  productTypeId: string;
+  eventId: string;
+  hedonicRatings: HedonicScale;
+  jarRatings: JARRating;
+};
+
 export type HedonicReport = {
   [sampleId: string]: {
+    sampleId: string;
     brand: string;
-    retailerCode: RetailerCode;
     blindCode: string;
-    hedonic: {
-      appearance: number;
-      odor: number;
-      texture: number;
-      flavor: number;
-      overallLiking: number;
-    };
+    appearance: { ratings: number[]; mean: number };
+    odor: { ratings: number[]; mean: number };
+    texture: { ratings: number[]; mean: number };
+    flavor: { ratings: number[]; mean: number };
+    overallLiking: { ratings: number[]; mean: number };
   };
 };
 
 export type JARReport = {
   [attributeId: string]: {
+    attributeId: string;
     nameEN: string;
     nameHR: string;
     scaleEN: [string, string, string, string, string];
     scaleHR: [string, string, string, string, string];
-    results: {
+    samples: {
       [sampleId: string]: {
+        sampleId: string;
         brand: string;
-        retailerCode: RetailerCode;
         blindCode: string;
-        frequencies: [number, number, number, number, number]; // Count of ratings 1-5
+        ratings: number[];
+        distribution: [number, number, number, number, number]; // Count of ratings 1-5
+        mean: number;
       };
     };
   };
+};
+
+export type EvaluationStatus = {
+  userId: string;
+  username: string;
+  position: number;
+  completedSamples: {
+    productTypeName: string;
+    productTypeId: string;
+    samples: {
+      sampleId: string;
+      blindCode: string;
+      isCompleted: boolean;
+    }[];
+  }[];
+  totalCompleted: number;
+  totalSamples: number;
 };

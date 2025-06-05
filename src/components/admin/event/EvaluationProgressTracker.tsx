@@ -5,28 +5,12 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Check } from "lucide-react";
 import { getEvaluationsStatus } from "@/services/dataService";
+import { EvaluationStatus } from "@/types";
 
 interface EvaluationProgressTrackerProps {
   eventId: string;
   refreshInterval?: number; // in milliseconds
 }
-
-type EvaluationStatus = {
-  userId: string;
-  username: string;
-  position: number;
-  completedSamples: {
-    productTypeName: string;
-    productTypeId: string;
-    samples: {
-      sampleId: string;
-      blindCode: string;
-      isCompleted: boolean;
-    }[];
-  }[];
-  totalCompleted: number;
-  totalSamples: number;
-};
 
 export function EvaluationProgressTracker({ eventId, refreshInterval = 30000 }: EvaluationProgressTrackerProps) {
   const [evaluationsStatus, setEvaluationsStatus] = useState<EvaluationStatus[]>([]);

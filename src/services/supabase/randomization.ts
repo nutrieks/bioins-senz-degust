@@ -58,7 +58,7 @@ export async function getRandomization(productTypeId: string): Promise<Randomiza
     return {
       id: data.id,
       productTypeId: data.product_type_id,
-      table: data.randomization_table,
+      table: data.randomization_table as Record<number, Record<number, string>>,
       createdAt: data.created_at
     };
   } catch (error) {
@@ -130,7 +130,7 @@ export async function createRandomization(productTypeId: string): Promise<Random
     return {
       id: randomization.id,
       productTypeId: randomization.product_type_id,
-      table: randomization.randomization_table,
+      table: randomization.randomization_table as Record<number, Record<number, string>>,
       createdAt: randomization.created_at
     };
   } catch (error) {
@@ -141,19 +141,40 @@ export async function createRandomization(productTypeId: string): Promise<Random
 }
 
 export async function getNextSample(
-  productTypeId: string,
-  evaluatorPosition: number
-): Promise<{ sampleId: string; blindCode: string } | null> {
+  userId: string,
+  eventId: string,
+  productTypeId?: string,
+  completedSampleIds?: string[]
+): Promise<{ sample: any; round: number; isComplete: boolean }> {
   try {
     console.log('=== SUPABASE getNextSample ===');
+    console.log('User ID:', userId);
+    console.log('Event ID:', eventId);
     console.log('Product Type ID:', productTypeId);
-    console.log('Evaluator Position:', evaluatorPosition);
     
+    // Get user position
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('evaluator_position')
+      .eq('id', userId)
+      .single();
+
+    if (userError || !user) {
+      console.error('Error fetching user:', userError);
+      throw new Error('User not found');
+    }
+
+    const evaluatorPosition = user.evaluator_position;
+    if (!evaluatorPosition) {
+      console.error('User has no evaluator position');
+      throw new Error('User has no evaluator position');
+    }
+
     // Get randomization for this product type
-    const randomization = await getRandomization(productTypeId);
+    const randomization = await getRandomization(productTypeId!);
     if (!randomization) {
       console.error('No randomization found');
-      return null;
+      return { sample: null, round: 0, isComplete: true };
     }
 
     // Get samples for this product type
@@ -164,22 +185,10 @@ export async function getNextSample(
 
     if (samplesError || !samples) {
       console.error('Error fetching samples:', samplesError);
-      return null;
+      return { sample: null, round: 0, isComplete: true };
     }
 
-    // Get completed evaluations for this user and product type
-    const { data: evaluations, error: evalError } = await supabase
-      .from('evaluations')
-      .select('sample_id')
-      .eq('product_type_id', productTypeId)
-      .eq('user_id', 'current_user_id'); // This would need actual user ID
-
-    if (evalError) {
-      console.error('Error fetching evaluations:', evalError);
-      return null;
-    }
-
-    const completedSampleIds = new Set((evaluations || []).map(e => e.sample_id));
+    const completedSet = new Set(completedSampleIds || []);
 
     // Find next sample from randomization table
     const positionSchedule = randomization.table[evaluatorPosition] || {};
@@ -191,20 +200,32 @@ export async function getNextSample(
       const sample = samples.find(s => s.blind_code === blindCode);
       if (!sample) continue;
       
-      if (!completedSampleIds.has(sample.id)) {
+      if (!completedSet.has(sample.id)) {
         console.log('Next sample found:', sample.id, blindCode);
         return {
-          sampleId: sample.id,
-          blindCode: blindCode
+          sample: {
+            id: sample.id,
+            productTypeId: sample.product_type_id,
+            brand: sample.brand,
+            retailerCode: sample.retailer_code,
+            blindCode: sample.blind_code,
+            images: {
+              prepared: sample.images_prepared,
+              packaging: sample.images_packaging,
+              details: sample.images_details || []
+            }
+          },
+          round,
+          isComplete: false
         };
       }
     }
 
     console.log('No more samples to evaluate');
-    return null;
+    return { sample: null, round: 0, isComplete: true };
   } catch (error) {
     console.error('=== ERROR getNextSample ===');
     console.error('Error details:', error);
-    return null;
+    return { sample: null, round: 0, isComplete: true };
   }
 }

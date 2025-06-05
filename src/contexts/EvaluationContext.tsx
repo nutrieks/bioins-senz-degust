@@ -78,14 +78,15 @@ export const EvaluationProvider: React.FC<{
     if (!user || !user.id) return;
 
     try {
-      const completed = await getCompletedEvaluations(user.id, eventId, productTypeId);
-      setCompletedSamples(completed);
+      const completed = await getCompletedEvaluations(eventId, user.id);
+      const completedSampleIds = completed.map(e => e.sampleId);
+      setCompletedSamples(completedSampleIds);
 
       const { sample, round, isComplete: complete } = await getNextSample(
         user.id,
         eventId,
         productTypeId,
-        completed
+        completedSampleIds
       );
 
       setCurrentSample(sample);
