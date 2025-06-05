@@ -90,31 +90,31 @@ export function HedonicTable({ report, productName }: HedonicTableProps) {
                         className="text-center"
                         style={{ backgroundColor: bgColor, color: textColor }}
                       >
-                        {sample.hedonic.appearance.toFixed(1)}
+                        {sample.appearance.mean.toFixed(1)}
                       </TableCell>
                       <TableCell 
                         className="text-center"
                         style={{ backgroundColor: bgColor, color: textColor }}
                       >
-                        {sample.hedonic.odor.toFixed(1)}
+                        {sample.odor.mean.toFixed(1)}
                       </TableCell>
                       <TableCell 
                         className="text-center"
                         style={{ backgroundColor: bgColor, color: textColor }}
                       >
-                        {sample.hedonic.texture.toFixed(1)}
+                        {sample.texture.mean.toFixed(1)}
                       </TableCell>
                       <TableCell 
                         className="text-center"
                         style={{ backgroundColor: bgColor, color: textColor }}
                       >
-                        {sample.hedonic.flavor.toFixed(1)}
+                        {sample.flavor.mean.toFixed(1)}
                       </TableCell>
                       <TableCell 
                         className="text-center"
                         style={{ backgroundColor: bgColor, color: textColor }}
                       >
-                        {sample.hedonic.overallLiking.toFixed(1)}
+                        {sample.overallLiking.mean.toFixed(1)}
                       </TableCell>
                     </TableRow>
                   );

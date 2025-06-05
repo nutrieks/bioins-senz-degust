@@ -121,7 +121,7 @@ export const processChartData = (report: HedonicReport) => {
     sortedSamples.forEach(([id, sample]) => {
       // Use retailer code + brand name format for keys
       const sampleKey = `${sample.retailerCode} ${sample.brand}_${id}`;
-      data[sampleKey] = Number(sample.hedonic[attr.key as keyof typeof sample.hedonic].toFixed(1));
+      data[sampleKey] = Number(sample[attr.key as keyof typeof sample].mean.toFixed(1));
     });
     return data;
   });

@@ -129,11 +129,13 @@ export type EvaluationSubmission = {
   jarRatings: JARRating;
 };
 
+// Updated HedonicReport to match Supabase structure
 export type HedonicReport = {
   [sampleId: string]: {
     sampleId: string;
     brand: string;
     blindCode: string;
+    retailerCode: RetailerCode; // Added missing retailerCode
     appearance: { ratings: number[]; mean: number };
     odor: { ratings: number[]; mean: number };
     texture: { ratings: number[]; mean: number };
@@ -154,6 +156,7 @@ export type JARReport = {
         sampleId: string;
         brand: string;
         blindCode: string;
+        retailerCode: RetailerCode; // Added missing retailerCode
         ratings: number[];
         distribution: [number, number, number, number, number]; // Count of ratings 1-5
         mean: number;

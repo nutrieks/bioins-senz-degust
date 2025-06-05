@@ -1,18 +1,18 @@
 
 import { supabase } from '@/integrations/supabase/client'
-import { HedonicReport, JARReport } from '@/types'
+import { HedonicReport, JARReport, RetailerCode } from '@/types'
 
 export async function generateHedonicReport(productTypeId: string): Promise<HedonicReport> {
   try {
     console.log('=== SUPABASE generateHedonicReport ===');
     console.log('Product Type ID:', productTypeId);
     
-    // Get all evaluations for this product type
+    // Get all evaluations for this product type with sample data including retailer_code
     const { data: evaluations, error: evalError } = await supabase
       .from('evaluations')
       .select(`
         *,
-        samples!inner(id, brand, blind_code)
+        samples!inner(id, brand, blind_code, retailer_code)
       `)
       .eq('product_type_id', productTypeId);
 
@@ -34,7 +34,8 @@ export async function generateHedonicReport(productTypeId: string): Promise<Hedo
         report[sampleId] = {
           sampleId,
           brand: sample.brand,
-          blindCode: sample.blind_code,
+          blindCode: sample.blind_code || '',
+          retailerCode: sample.retailer_code as RetailerCode,
           appearance: { ratings: [], mean: 0 },
           odor: { ratings: [], mean: 0 },
           texture: { ratings: [], mean: 0 },
@@ -85,12 +86,12 @@ export async function generateJARReport(productTypeId: string): Promise<JARRepor
       throw jarError;
     }
 
-    // Get all evaluations for this product type
+    // Get all evaluations for this product type with sample data including retailer_code
     const { data: evaluations, error: evalError } = await supabase
       .from('evaluations')
       .select(`
         *,
-        samples!inner(id, brand, blind_code)
+        samples!inner(id, brand, blind_code, retailer_code)
       `)
       .eq('product_type_id', productTypeId);
 
@@ -106,12 +107,20 @@ export async function generateJARReport(productTypeId: string): Promise<JARRepor
 
     // Initialize report structure
     (jarAttributes || []).forEach(attr => {
+      // Ensure arrays have exactly 5 elements
+      const scaleHR = Array.isArray(attr.scale_hr) && attr.scale_hr.length === 5 
+        ? attr.scale_hr as [string, string, string, string, string]
+        : ['', '', '', '', ''] as [string, string, string, string, string];
+      const scaleEN = Array.isArray(attr.scale_en) && attr.scale_en.length === 5 
+        ? attr.scale_en as [string, string, string, string, string]
+        : ['', '', '', '', ''] as [string, string, string, string, string];
+
       report[attr.id] = {
         attributeId: attr.id,
         nameHR: attr.name_hr,
         nameEN: attr.name_en,
-        scaleHR: attr.scale_hr,
-        scaleEN: attr.scale_en,
+        scaleHR,
+        scaleEN,
         samples: {}
       };
     });
@@ -129,7 +138,8 @@ export async function generateJARReport(productTypeId: string): Promise<JARRepor
             report[attrId].samples[sampleId] = {
               sampleId,
               brand: sample.brand,
-              blindCode: sample.blind_code,
+              blindCode: sample.blind_code || '',
+              retailerCode: sample.retailer_code as RetailerCode,
               ratings: [],
               distribution: [0, 0, 0, 0, 0],
               mean: 0
