@@ -28,6 +28,8 @@ interface ProductTypesTabProps {
   onAddSample: () => void;
   onRemoveSample: (index: number) => void;
   onAddProductType: () => void;
+  onEditProductType?: (productTypeId: string, customerCode: string, baseCode: string) => void;
+  onDeleteProductType?: (productTypeId: string) => void;
 }
 
 export function ProductTypesTab({
@@ -53,6 +55,8 @@ export function ProductTypesTab({
   onAddSample,
   onRemoveSample,
   onAddProductType,
+  onEditProductType,
+  onDeleteProductType,
 }: ProductTypesTabProps) {
   return (
     <Card>
@@ -119,7 +123,9 @@ export function ProductTypesTab({
             <ProductTypesList 
               productTypes={productTypes} 
               onViewRandomization={onViewRandomization} 
-              onGenerateRandomization={onGenerateRandomization} 
+              onGenerateRandomization={onGenerateRandomization}
+              onEditProductType={onEditProductType}
+              onDeleteProductType={onDeleteProductType}
             />
           </div>
         )}

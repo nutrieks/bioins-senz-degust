@@ -1,3 +1,4 @@
+
 // This is the main entry point for data services
 // It re-exports all services using Supabase instead of mock data
 
@@ -27,7 +28,9 @@ export {
   updateBaseProductType,
   deleteProductType,
   getProductTypes,
-  createProductType
+  createProductType,
+  deleteEventProductType,
+  updateEventProductType
 } from './supabase/productTypes';
 
 // Sample services - now using Supabase

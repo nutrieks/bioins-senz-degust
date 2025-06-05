@@ -8,7 +8,9 @@ import {
   createRandomization,
   createSample,
   getRandomization,
-  getProductTypes
+  getProductTypes,
+  deleteEventProductType,
+  updateEventProductType
 } from "@/services/dataService";
 import { Event, EventStatus, BaseProductType, ProductType, RetailerCode } from "@/types";
 import { ArrowLeft } from "lucide-react";
@@ -278,6 +280,80 @@ export default function EventDetail() {
     }
   };
 
+  const handleEditProductType = async (productTypeId: string, customerCode: string, baseCode: string) => {
+    try {
+      console.log('=== EventDetail handleEditProductType ===');
+      console.log('Product Type ID:', productTypeId);
+      console.log('Customer Code:', customerCode);
+      console.log('Base Code:', baseCode);
+      
+      setIsUpdating(true);
+      
+      const success = await updateEventProductType(productTypeId, customerCode, baseCode);
+      
+      if (success) {
+        toast({
+          title: "Uspješno",
+          description: "Tip proizvoda je uspješno ažuriran.",
+        });
+        
+        // Osvježi podatke
+        await fetchEvent();
+      } else {
+        toast({
+          title: "Greška",
+          description: "Došlo je do pogreške prilikom ažuriranja tipa proizvoda.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("EventDetail - Error editing product type:", error);
+      toast({
+        title: "Greška",
+        description: "Došlo je do pogreške prilikom ažuriranja tipa proizvoda.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleDeleteProductType = async (productTypeId: string) => {
+    try {
+      console.log('=== EventDetail handleDeleteProductType ===');
+      console.log('Product Type ID:', productTypeId);
+      
+      setIsUpdating(true);
+      
+      const success = await deleteEventProductType(productTypeId);
+      
+      if (success) {
+        toast({
+          title: "Uspješno",
+          description: "Tip proizvoda je uspješno obrisan.",
+        });
+        
+        // Osvježi podatke
+        await fetchEvent();
+      } else {
+        toast({
+          title: "Greška",
+          description: "Došlo je do pogreške prilikom brisanja tipa proizvoda.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("EventDetail - Error deleting product type:", error);
+      toast({
+        title: "Greška",
+        description: "Došlo je do pogreške prilikom brisanja tipa proizvoda.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   const handleGenerateRandomization = async (productTypeId: string) => {
     if (!productTypeId) return;
     
@@ -465,6 +541,8 @@ export default function EventDetail() {
               onAddSample={handleAddSample}
               onRemoveSample={handleRemoveSample}
               onAddProductType={handleAddProductType}
+              onEditProductType={handleEditProductType}
+              onDeleteProductType={handleDeleteProductType}
             />
           </TabsContent>
           

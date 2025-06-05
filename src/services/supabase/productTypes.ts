@@ -332,3 +332,102 @@ export async function createProductType(
     throw error;
   }
 }
+
+export async function deleteEventProductType(productTypeId: string): Promise<boolean> {
+  try {
+    console.log('=== BRISANJE TIPA PROIZVODA IZ DOGAĐAJA ===');
+    console.log('Product Type ID:', productTypeId);
+    
+    // Prvo obriši povezane uzorke
+    const { error: samplesError } = await supabase
+      .from('samples')
+      .delete()
+      .eq('product_type_id', productTypeId);
+    
+    if (samplesError) {
+      console.error('Greška pri brisanju uzoraka:', samplesError);
+      throw samplesError;
+    }
+    
+    console.log('Uzorci uspješno obrisani');
+    
+    // Obriši JAR atribute
+    const { error: jarError } = await supabase
+      .from('jar_attributes')
+      .delete()
+      .eq('product_type_id', productTypeId);
+    
+    if (jarError) {
+      console.error('Greška pri brisanju JAR atributa:', jarError);
+      throw jarError;
+    }
+    
+    console.log('JAR atributi uspješno obrisani');
+    
+    // Obriši randomizaciju ako postoji
+    const { error: randomizationError } = await supabase
+      .from('randomizations')
+      .delete()
+      .eq('product_type_id', productTypeId);
+    
+    if (randomizationError) {
+      console.error('Greška pri brisanju randomizacije:', randomizationError);
+      throw randomizationError;
+    }
+    
+    console.log('Randomizacija uspješno obrisana');
+    
+    // Na kraju obriši tip proizvoda
+    const { error: productTypeError } = await supabase
+      .from('product_types')
+      .delete()
+      .eq('id', productTypeId);
+    
+    if (productTypeError) {
+      console.error('Greška pri brisanju tipa proizvoda:', productTypeError);
+      throw productTypeError;
+    }
+    
+    console.log('Tip proizvoda uspješno obrisan');
+    console.log('=== BRISANJE ZAVRŠENO USPJEŠNO ===');
+    
+    return true;
+  } catch (error) {
+    console.error('=== GREŠKA PRI BRISANJU TIPA PROIZVODA ===');
+    console.error('Error details:', error);
+    return false;
+  }
+}
+
+export async function updateEventProductType(
+  productTypeId: string,
+  customerCode: string,
+  baseCode: string
+): Promise<boolean> {
+  try {
+    console.log('=== AŽURIRANJE TIPA PROIZVODA ===');
+    console.log('Product Type ID:', productTypeId);
+    console.log('Customer Code:', customerCode);
+    console.log('Base Code:', baseCode);
+    
+    const { error } = await supabase
+      .from('product_types')
+      .update({
+        customer_code: customerCode,
+        base_code: baseCode
+      })
+      .eq('id', productTypeId);
+    
+    if (error) {
+      console.error('Greška pri ažuriranju tipa proizvoda:', error);
+      throw error;
+    }
+    
+    console.log('Tip proizvoda uspješno ažuriran');
+    return true;
+  } catch (error) {
+    console.error('=== GREŠKA PRI AŽURIRANJU TIPA PROIZVODA ===');
+    console.error('Error details:', error);
+    return false;
+  }
+}
