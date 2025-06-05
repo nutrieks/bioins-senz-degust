@@ -5,8 +5,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { getEvent, getProductTypes } from "@/services/dataService";
 import { EvaluationProvider } from "@/contexts/EvaluationContext";
 import { JARAttribute, ProductType } from "@/types";
-import { EvaluationContent } from "./EvaluationContent";
-import { LoadingState } from "./LoadingState";
+import { EvaluationContent } from "@/components/evaluation/EvaluationContent";
+import { LoadingState } from "@/components/evaluation/LoadingState";
 
 interface EventDataFetcherProps {
   jarAttributes: JARAttribute[];
@@ -25,40 +25,45 @@ export function EventDataFetcher({ jarAttributes, onProductTypesChange }: EventD
   const fetchProductTypes = async () => {
     if (!eventId) return;
     
-    console.log('EventDataFetcher - osvježavam tipove proizvoda za event:', eventId);
+    console.log('=== ADMIN EventDataFetcher - dohvaćam tipove proizvoda ===');
+    console.log('Event ID:', eventId);
     try {
       const types = await getProductTypes(eventId);
-      console.log('EventDataFetcher - dohvaćeni tipovi:', types.length, types);
+      console.log('ADMIN EventDataFetcher - dohvaćeni tipovi:', types.length, types);
       setProductTypes(types);
       onProductTypesChange?.(types);
     } catch (error) {
-      console.error("EventDataFetcher - error fetching product types:", error);
+      console.error("ADMIN EventDataFetcher - error fetching product types:", error);
     }
+    console.log('=== ADMIN EventDataFetcher - završeno dohvaćanje ===');
   };
 
   useEffect(() => {
     if (!eventId) {
-      navigate("/evaluator");
+      navigate("/admin");
       return;
     }
 
     const fetchEventData = async () => {
+      console.log('=== ADMIN EventDataFetcher - početak dohvaćanja event podataka ===');
       try {
         const event = await getEvent(eventId);
         if (!event) {
-          navigate("/evaluator");
+          navigate("/admin");
           return;
         }
 
         const date = new Date(event.date);
         setEventDate(date.toLocaleDateString('hr-HR'));
         setEventName(event.date);
+        console.log('ADMIN EventDataFetcher - event učitan:', event.id, event.date);
 
         await fetchProductTypes();
       } catch (error) {
-        console.error("Error fetching event data:", error);
+        console.error("ADMIN EventDataFetcher - error fetching event data:", error);
       } finally {
         setIsLoading(false);
+        console.log('=== ADMIN EventDataFetcher - završeno učitavanje ===');
       }
     };
 
