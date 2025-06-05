@@ -1,4 +1,5 @@
 
+
 import { supabase } from "@/integrations/supabase/client";
 import { Sample, RetailerCode } from "@/types";
 
@@ -18,7 +19,7 @@ export async function getSamples(productTypeId: string): Promise<Sample[]> {
     throw error;
   }
 
-  return data.map(sample => ({
+  return (data || []).map(sample => ({
     id: sample.id,
     productTypeId: sample.product_type_id,
     brand: sample.brand,
@@ -37,8 +38,11 @@ export async function createSample(
   brand: string,
   retailerCode: RetailerCode
 ): Promise<Sample> {
+  console.log('Creating sample for product type:', productTypeId, 'brand:', brand);
+  
   // Get existing samples for this product type to determine the blind code
   const existingSamples = await getSamples(productTypeId);
+  console.log('Existing samples count:', existingSamples.length);
   
   // Get the product type to get the base code
   const { data: productType, error: productTypeError } = await supabase
@@ -49,10 +53,17 @@ export async function createSample(
 
   if (productTypeError) {
     console.error('Error fetching product type:', productTypeError);
-    throw productTypeError;
+    console.error('Product type ID:', productTypeId);
+    throw new Error(`Ne mogu pronaći tip proizvoda s ID: ${productTypeId}`);
+  }
+
+  if (!productType || !productType.base_code) {
+    console.error('Product type not found or missing base_code:', productType);
+    throw new Error('Tip proizvoda nema definiran base_code');
   }
 
   const blindCode = generateBlindCode(productType.base_code, existingSamples.length);
+  console.log('Generated blind code:', blindCode);
 
   const { data, error } = await supabase
     .from('samples')
@@ -68,8 +79,10 @@ export async function createSample(
 
   if (error) {
     console.error('Error creating sample:', error);
-    throw error;
+    throw new Error(`Greška prilikom kreiranja uzorka: ${error.message}`);
   }
+
+  console.log('Sample created successfully:', data);
 
   return {
     id: data.id,
@@ -117,3 +130,4 @@ export async function updateSampleImages(
 
   return true;
 }
+
