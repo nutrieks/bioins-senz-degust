@@ -231,11 +231,18 @@ export async function createProductType(
   baseCode: string,
   displayOrder: number
 ): Promise<ProductType> {
-  // First get the base product type
+  console.log('Creating product type for event:', eventId, 'with base type:', baseProductTypeId);
+  
+  // First get the base product type and its JAR attributes
   const baseType = await getBaseProductType(baseProductTypeId)
-  if (!baseType) throw new Error("Base product type not found")
+  if (!baseType) {
+    console.error('Base product type not found:', baseProductTypeId);
+    throw new Error("Base product type not found")
+  }
 
-  // Create the product type
+  console.log('Found base product type:', baseType.productName, 'with', baseType.jarAttributes.length, 'JAR attributes');
+
+  // Create the product type first
   const { data: productType, error: productError } = await supabase
     .from('product_types')
     .insert({
@@ -250,23 +257,39 @@ export async function createProductType(
     .select()
     .single()
 
-  if (productError) throw productError
+  if (productError) {
+    console.error('Error creating product type:', productError);
+    throw productError
+  }
 
-  // Copy JAR attributes from base type
+  console.log('Product type created successfully:', productType.id);
+
+  // Now copy JAR attributes from base type - ONLY if the product type was created successfully
   if (baseType.jarAttributes.length > 0) {
+    console.log('Copying JAR attributes to new product type...');
+    
     const attributesToInsert = baseType.jarAttributes.map(attr => ({
-      product_type_id: productType.id,
+      product_type_id: productType.id, // Use the newly created product type ID
       name_hr: attr.nameHR,
       name_en: attr.nameEN,
       scale_hr: attr.scaleHR,
       scale_en: attr.scaleEN
     }))
 
+    console.log('Inserting JAR attributes:', attributesToInsert.length);
+
     const { error: attributesError } = await supabase
       .from('jar_attributes')
       .insert(attributesToInsert)
 
-    if (attributesError) throw attributesError
+    if (attributesError) {
+      console.error('Error creating JAR attributes:', attributesError);
+      // If JAR attributes fail, we should clean up the product type
+      await supabase.from('product_types').delete().eq('id', productType.id);
+      throw new Error(`Failed to create JAR attributes: ${attributesError.message}`)
+    }
+
+    console.log('JAR attributes created successfully');
   }
 
   return {
