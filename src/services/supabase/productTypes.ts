@@ -231,80 +231,121 @@ export async function createProductType(
   baseCode: string,
   displayOrder: number
 ): Promise<ProductType> {
-  console.log('Creating product type for event:', eventId, 'with base type:', baseProductTypeId);
+  console.log('=== ZAPOČINJE KREIRANJE TIPA PROIZVODA ===');
+  console.log('Event ID:', eventId);
+  console.log('Base Product Type ID:', baseProductTypeId);
+  console.log('Customer Code:', customerCode);
+  console.log('Base Code:', baseCode);
+  console.log('Display Order:', displayOrder);
   
-  // First get the base product type and its JAR attributes
-  const baseType = await getBaseProductType(baseProductTypeId)
-  if (!baseType) {
-    console.error('Base product type not found:', baseProductTypeId);
-    throw new Error("Base product type not found")
-  }
+  try {
+    // Provjeri postoji li event
+    const { data: eventExists, error: eventError } = await supabase
+      .from('events')
+      .select('id')
+      .eq('id', eventId)
+      .single()
 
-  console.log('Found base product type:', baseType.productName, 'with', baseType.jarAttributes.length, 'JAR attributes');
-
-  // Create the product type first
-  const { data: productType, error: productError } = await supabase
-    .from('product_types')
-    .insert({
-      event_id: eventId,
-      customer_code: customerCode,
-      product_name: baseType.productName,
-      base_code: baseCode,
-      display_order: displayOrder,
-      base_product_type_id: baseProductTypeId,
-      has_randomization: false
-    })
-    .select()
-    .single()
-
-  if (productError) {
-    console.error('Error creating product type:', productError);
-    throw productError
-  }
-
-  console.log('Product type created successfully:', productType.id);
-
-  // Now copy JAR attributes from base type - ONLY if the product type was created successfully
-  if (baseType.jarAttributes.length > 0) {
-    console.log('Copying JAR attributes to new product type...');
-    
-    const attributesToInsert = baseType.jarAttributes.map(attr => ({
-      product_type_id: productType.id, // Use the newly created product type ID
-      name_hr: attr.nameHR,
-      name_en: attr.nameEN,
-      scale_hr: attr.scaleHR,
-      scale_en: attr.scaleEN
-    }))
-
-    console.log('Inserting JAR attributes:', attributesToInsert.length);
-
-    const { error: attributesError } = await supabase
-      .from('jar_attributes')
-      .insert(attributesToInsert)
-
-    if (attributesError) {
-      console.error('Error creating JAR attributes:', attributesError);
-      // If JAR attributes fail, we should clean up the product type
-      await supabase.from('product_types').delete().eq('id', productType.id);
-      throw new Error(`Failed to create JAR attributes: ${attributesError.message}`)
+    if (eventError || !eventExists) {
+      console.error('Event ne postoji:', eventId, eventError);
+      throw new Error(`Event s ID ${eventId} ne postoji`)
     }
 
-    console.log('JAR attributes created successfully');
-  }
+    console.log('Event postoji, dohvaćam base product type...');
 
-  return {
-    id: productType.id,
-    eventId: productType.event_id,
-    customerCode: productType.customer_code,
-    productName: productType.product_name,
-    baseCode: productType.base_code,
-    samples: [],
-    jarAttributes: baseType.jarAttributes.map(attr => ({
-      ...attr,
-      productTypeId: productType.id
-    })),
-    displayOrder: productType.display_order,
-    baseProductTypeId: productType.base_product_type_id,
-    hasRandomization: productType.has_randomization
+    // Dohvati base product type i njegove JAR atribute
+    const baseType = await getBaseProductType(baseProductTypeId)
+    if (!baseType) {
+      console.error('Base product type ne postoji:', baseProductTypeId);
+      throw new Error(`Base product type s ID ${baseProductTypeId} ne postoji`)
+    }
+
+    console.log('Base product type pronađen:', baseType.productName);
+    console.log('JAR atributi:', baseType.jarAttributes.length);
+
+    // Stvori product type
+    console.log('Kreiram product type...');
+    const { data: productType, error: productError } = await supabase
+      .from('product_types')
+      .insert({
+        event_id: eventId,
+        customer_code: customerCode,
+        product_name: baseType.productName,
+        base_code: baseCode,
+        display_order: displayOrder,
+        base_product_type_id: baseProductTypeId,
+        has_randomization: false
+      })
+      .select()
+      .single()
+
+    if (productError) {
+      console.error('Greška pri kreiranju product type:', productError);
+      throw new Error(`Greška pri kreiranju tipa proizvoda: ${productError.message}`)
+    }
+
+    console.log('Product type uspješno kreiran s ID:', productType.id);
+
+    // Kopiraj JAR atribute s novim product_type_id
+    if (baseType.jarAttributes.length > 0) {
+      console.log('Kopiram JAR atribute...');
+      
+      const attributesToInsert = baseType.jarAttributes.map(attr => {
+        const newAttr = {
+          product_type_id: productType.id, // Koristi novi product type ID
+          name_hr: attr.nameHR,
+          name_en: attr.nameEN,
+          scale_hr: attr.scaleHR,
+          scale_en: attr.scaleEN
+        };
+        console.log('Priprema JAR atribut:', newAttr.name_hr, 'za product_type_id:', newAttr.product_type_id);
+        return newAttr;
+      });
+
+      console.log('Ukupno JAR atributa za kreiranje:', attributesToInsert.length);
+
+      const { data: insertedAttributes, error: attributesError } = await supabase
+        .from('jar_attributes')
+        .insert(attributesToInsert)
+        .select()
+
+      if (attributesError) {
+        console.error('Greška pri kreiranju JAR atributa:', attributesError);
+        console.error('Detaljno:', JSON.stringify(attributesError, null, 2));
+        
+        // Ukloni product type ako JAR atributi nisu uspješno kreirani
+        console.log('Uklanjam product type zbog neuspjeha JAR atributa...');
+        await supabase.from('product_types').delete().eq('id', productType.id);
+        
+        throw new Error(`Greška pri kreiranju JAR atributa: ${attributesError.message}`)
+      }
+
+      console.log('JAR atributi uspješno kreirani:', insertedAttributes?.length || 0);
+    } else {
+      console.log('Nema JAR atributa za kopiranje');
+    }
+
+    console.log('=== KREIRANJE TIPA PROIZVODA ZAVRŠENO USPJEŠNO ===');
+
+    return {
+      id: productType.id,
+      eventId: productType.event_id,
+      customerCode: productType.customer_code,
+      productName: productType.product_name,
+      baseCode: productType.base_code,
+      samples: [],
+      jarAttributes: baseType.jarAttributes.map(attr => ({
+        ...attr,
+        productTypeId: productType.id
+      })),
+      displayOrder: productType.display_order,
+      baseProductTypeId: productType.base_product_type_id,
+      hasRandomization: productType.has_randomization
+    }
+  } catch (error) {
+    console.error('=== GREŠKA PRI KREIRANJU TIPA PROIZVODA ===');
+    console.error('Error details:', error);
+    console.error('Error message:', error instanceof Error ? error.message : 'Nepoznata greška');
+    throw error;
   }
 }

@@ -158,7 +158,7 @@ export type Database = {
             foreignKeyName: "jar_attributes_product_type_id_fkey"
             columns: ["product_type_id"]
             isOneToOne: false
-            referencedRelation: "base_product_types"
+            referencedRelation: "product_types"
             referencedColumns: ["id"]
           },
         ]
