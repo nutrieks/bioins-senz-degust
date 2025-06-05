@@ -14,7 +14,7 @@ export async function getAllProductTypes(): Promise<BaseProductType[]> {
     return (data || []).map((item: any) => ({
       id: item.id,
       productName: item.product_name,
-      jarAttributes: [], // Will be populated when creating product types
+      jarAttributes: [],
       createdAt: item.created_at
     }))
   } catch (error) {
@@ -33,7 +33,6 @@ export async function getBaseProductType(productTypeId: string): Promise<BasePro
 
     if (error || !data) return null
 
-    // Get jar_attributes from a sample product_type that uses this base type
     const { data: sampleProductType } = await supabase
       .from('product_types')
       .select(`
@@ -122,7 +121,22 @@ export async function deleteProductType(productTypeId: string): Promise<boolean>
 // Event Product Type Management
 export async function getProductTypes(eventId: string): Promise<ProductType[]> {
   try {
-    console.log('Dohvaćam tipove proizvoda za događaj:', eventId);
+    console.log('=== POČETAK DOHVAĆANJA TIPOVA PROIZVODA ===');
+    console.log('Event ID:', eventId);
+    
+    // Prvo provjeri postoji li event
+    const { data: eventCheck, error: eventError } = await supabase
+      .from('events')
+      .select('id, date')
+      .eq('id', eventId)
+      .single()
+    
+    if (eventError) {
+      console.error('Event ne postoji ili greška:', eventError);
+      return [];
+    }
+    
+    console.log('Event pronađen:', eventCheck);
     
     const { data, error } = await supabase
       .from('product_types')
@@ -134,45 +148,62 @@ export async function getProductTypes(eventId: string): Promise<ProductType[]> {
       .eq('event_id', eventId)
       .order('display_order')
 
+    console.log('Supabase query izvršen za event_id:', eventId);
+    console.log('Query rezultat - error:', error);
+    console.log('Query rezultat - data:', data);
+    console.log('Broj pronađenih tipova:', data?.length || 0);
+
     if (error) {
       console.error('Greška pri dohvaćanju tipova proizvoda:', error);
       throw error;
     }
 
-    console.log('Dohvaćeni tipovi proizvoda:', data?.length || 0, data);
+    if (!data || data.length === 0) {
+      console.log('Nema tipova proizvoda za ovaj event');
+      return [];
+    }
 
-    return (data || []).map((item: any) => ({
-      id: item.id,
-      eventId: item.event_id,
-      customerCode: item.customer_code,
-      productName: item.product_name,
-      baseCode: item.base_code,
-      samples: (item.samples || []).map((sample: any) => ({
-        id: sample.id,
-        productTypeId: sample.product_type_id,
-        brand: sample.brand,
-        retailerCode: sample.retailer_code,
-        blindCode: sample.blind_code,
-        images: {
-          prepared: sample.images_prepared,
-          packaging: sample.images_packaging,
-          details: sample.images_details || []
-        }
-      })),
-      jarAttributes: (item.jar_attributes || []).map((attr: any) => ({
-        id: attr.id,
-        productTypeId: attr.product_type_id,
-        nameHR: attr.name_hr,
-        nameEN: attr.name_en,
-        scaleHR: attr.scale_hr as [string, string, string, string, string],
-        scaleEN: attr.scale_en as [string, string, string, string, string]
-      })),
-      displayOrder: item.display_order,
-      baseProductTypeId: item.base_product_type_id,
-      hasRandomization: item.has_randomization
-    }))
+    const mappedData = (data || []).map((item: any) => {
+      console.log('Mapiranje item:', item.id, item.product_name);
+      return {
+        id: item.id,
+        eventId: item.event_id,
+        customerCode: item.customer_code,
+        productName: item.product_name,
+        baseCode: item.base_code,
+        samples: (item.samples || []).map((sample: any) => ({
+          id: sample.id,
+          productTypeId: sample.product_type_id,
+          brand: sample.brand,
+          retailerCode: sample.retailer_code,
+          blindCode: sample.blind_code,
+          images: {
+            prepared: sample.images_prepared,
+            packaging: sample.images_packaging,
+            details: sample.images_details || []
+          }
+        })),
+        jarAttributes: (item.jar_attributes || []).map((attr: any) => ({
+          id: attr.id,
+          productTypeId: attr.product_type_id,
+          nameHR: attr.name_hr,
+          nameEN: attr.name_en,
+          scaleHR: attr.scale_hr as [string, string, string, string, string],
+          scaleEN: attr.scale_en as [string, string, string, string, string]
+        })),
+        displayOrder: item.display_order,
+        baseProductTypeId: item.base_product_type_id,
+        hasRandomization: item.has_randomization
+      };
+    });
+
+    console.log('Mapirani tipovi proizvoda:', mappedData);
+    console.log('=== KRAJ DOHVAĆANJA TIPOVA PROIZVODA ===');
+    
+    return mappedData;
   } catch (error) {
-    console.error('Error fetching product types:', error)
+    console.error('=== GREŠKA DOHVAĆANJA TIPOVA PROIZVODA ===');
+    console.error('Error details:', error);
     return []
   }
 }
@@ -192,7 +223,6 @@ export async function createProductType(
   console.log('Display Order:', displayOrder);
   
   try {
-    // Provjeri postoji li event
     const { data: eventExists, error: eventError } = await supabase
       .from('events')
       .select('id')
@@ -206,7 +236,6 @@ export async function createProductType(
 
     console.log('Event postoji, dohvaćam base product type...');
 
-    // Dohvati base product type i njegove JAR atribute
     const baseType = await getBaseProductType(baseProductTypeId)
     if (!baseType) {
       console.error('Base product type ne postoji:', baseProductTypeId);
@@ -216,7 +245,6 @@ export async function createProductType(
     console.log('Base product type pronađen:', baseType.productName);
     console.log('JAR atributi:', baseType.jarAttributes.length);
 
-    // Stvori product type
     console.log('Kreiram product type...');
     const { data: productType, error: productError } = await supabase
       .from('product_types')
@@ -239,7 +267,6 @@ export async function createProductType(
 
     console.log('Product type uspješno kreiran s ID:', productType.id);
 
-    // Kopiraj JAR atribute s novim product_type_id
     if (baseType.jarAttributes.length > 0) {
       console.log('Kopiram JAR atribute...');
       
@@ -261,7 +288,6 @@ export async function createProductType(
       if (attributesError) {
         console.error('Greška pri kreiranju JAR atributa:', attributesError);
         
-        // Ukloni product type ako JAR atributi nisu uspješno kreirani
         console.log('Uklanjam product type zbog neuspjeha JAR atributa...');
         await supabase.from('product_types').delete().eq('id', productType.id);
         
@@ -275,7 +301,6 @@ export async function createProductType(
 
     console.log('=== KREIRANJE TIPA PROIZVODA ZAVRŠENO USPJEŠNO ===');
 
-    // Vrati kreirani tip proizvoda s punim podacima
     const createdProductType: ProductType = {
       id: productType.id,
       eventId: productType.event_id,
@@ -293,6 +318,12 @@ export async function createProductType(
     }
 
     console.log('Vraćam kreirani tip proizvoda:', createdProductType);
+    
+    // Dodatno: provjeri je li stvarno spremljen u bazu
+    console.log('=== PROVJERA SPREMLJENIH PODATAKA ===');
+    const verification = await getProductTypes(eventId);
+    console.log('Verifikacija - broj tipova nakon kreiranja:', verification.length);
+    
     return createdProductType;
   } catch (error) {
     console.error('=== GREŠKA PRI KREIRANJU TIPA PROIZVODA ===');
