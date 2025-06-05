@@ -1,12 +1,13 @@
-
 import { supabase } from '@/integrations/supabase/client'
 import { Randomization } from '@/types'
 
-// Generate randomization table logic (moved from mock utils)
+// Generate randomization table logic with proper Latin square design
 function generateRandomizationTable(samples: any[]): Record<number, Record<number, string>> {
   const numSamples = samples.length;
   const numPositions = 12;
   const table: Record<number, Record<number, string>> = {};
+
+  console.log('Generating randomization table for samples:', samples.map(s => s.blind_code));
 
   // Initialize table
   for (let position = 1; position <= numPositions; position++) {
@@ -19,8 +20,11 @@ function generateRandomizationTable(samples: any[]): Record<number, Record<numbe
     
     // Generate order for this round using Latin square principles
     for (let i = 0; i < numSamples; i++) {
-      sampleOrder.push(samples[(i + round - 1) % numSamples].blindCode);
+      const sampleIndex = (i + round - 1) % numSamples;
+      sampleOrder.push(samples[sampleIndex].blind_code);
     }
+    
+    console.log(`Round ${round} order:`, sampleOrder);
     
     // Assign to positions
     for (let position = 1; position <= numPositions; position++) {
@@ -29,6 +33,7 @@ function generateRandomizationTable(samples: any[]): Record<number, Record<numbe
     }
   }
 
+  console.log('Generated randomization table:', table);
   return table;
 }
 
@@ -93,13 +98,43 @@ export async function createRandomization(productTypeId: string): Promise<Random
       throw new Error('No samples found for this product type');
     }
 
-    console.log('Product type samples:', productType.samples.length);
+    console.log('Product type:', productType);
+    console.log('Samples before blind code assignment:', productType.samples);
 
-    // Generate randomization table
-    const randomizationTable = generateRandomizationTable(productType.samples);
-    console.log('Generated randomization table:', randomizationTable);
+    // Step 1: Assign blind codes to samples if they don't have them
+    const samplesWithBlindCodes = [];
+    for (let i = 0; i < productType.samples.length; i++) {
+      const sample = productType.samples[i];
+      const expectedBlindCode = `${productType.base_code}${i + 1}`;
+      
+      if (!sample.blind_code || sample.blind_code !== expectedBlindCode) {
+        console.log(`Updating sample ${sample.id} with blind code: ${expectedBlindCode}`);
+        
+        // Update the sample with the correct blind code
+        const { data: updatedSample, error: updateError } = await supabase
+          .from('samples')
+          .update({ blind_code: expectedBlindCode })
+          .eq('id', sample.id)
+          .select()
+          .single();
 
-    // Save to database
+        if (updateError) {
+          console.error('Error updating sample blind code:', updateError);
+          throw updateError;
+        }
+        
+        samplesWithBlindCodes.push(updatedSample);
+      } else {
+        samplesWithBlindCodes.push(sample);
+      }
+    }
+
+    console.log('Samples with blind codes:', samplesWithBlindCodes);
+
+    // Step 2: Generate randomization table using samples with blind codes
+    const randomizationTable = generateRandomizationTable(samplesWithBlindCodes);
+
+    // Step 3: Save randomization to database
     const { data: randomization, error: insertError } = await supabase
       .from('randomizations')
       .insert({
@@ -114,7 +149,7 @@ export async function createRandomization(productTypeId: string): Promise<Random
       throw insertError;
     }
 
-    // Update product type to mark it has randomization
+    // Step 4: Update product type to mark it has randomization
     const { error: updateError } = await supabase
       .from('product_types')
       .update({ has_randomization: true })

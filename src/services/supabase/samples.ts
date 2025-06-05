@@ -1,5 +1,3 @@
-
-
 import { supabase } from "@/integrations/supabase/client";
 import { Sample, RetailerCode } from "@/types";
 
@@ -12,7 +10,8 @@ export async function getSamples(productTypeId: string): Promise<Sample[]> {
   const { data, error } = await supabase
     .from('samples')
     .select('*')
-    .eq('product_type_id', productTypeId);
+    .eq('product_type_id', productTypeId)
+    .order('created_at', { ascending: true });
 
   if (error) {
     console.error('Error fetching samples:', error);
@@ -84,6 +83,16 @@ export async function createSample(
 
   console.log('Sample created successfully:', data);
 
+  // After creating a sample, mark product type as needing new randomization
+  const { error: updateError } = await supabase
+    .from('product_types')
+    .update({ has_randomization: false })
+    .eq('id', productTypeId);
+
+  if (updateError) {
+    console.warn('Could not update product type randomization flag:', updateError);
+  }
+
   return {
     id: data.id,
     productTypeId: data.product_type_id,
@@ -130,4 +139,3 @@ export async function updateSampleImages(
 
   return true;
 }
-
