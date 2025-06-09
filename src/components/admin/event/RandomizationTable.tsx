@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { 
   Table, 
@@ -8,7 +9,7 @@ import {
   TableRow 
 } from "@/components/ui/table";
 import { ProductType } from "@/types";
-import { Printer, Image, ChevronLeft, ChevronRight } from "lucide-react";
+import { Printer, Image, ChevronLeft, ChevronRight, FileDown } from "lucide-react";
 import { useRef, useEffect } from "react";
 import { toPng } from "html-to-image";
 
@@ -52,8 +53,8 @@ export function RandomizationTable({
     style.innerHTML = `
       @media print {
         @page {
-          size: landscape;
-          margin: 0.5cm;
+          size: A4 landscape;
+          margin: 1cm;
         }
         body {
           min-width: 100%;
@@ -61,17 +62,31 @@ export function RandomizationTable({
           -webkit-print-color-adjust: exact;
           print-color-adjust: exact;
         }
+        .print-container {
+          width: 100%;
+          max-width: none;
+        }
         table {
           page-break-inside: avoid;
           width: 100%;
           table-layout: fixed;
-        }
-        .print-container {
-          width: 100%;
+          font-size: 0.65rem !important;
         }
         th, td {
+          padding: 2px !important;
+          font-size: 0.65rem !important;
+          border: 1px solid #000 !important;
+        }
+        .print-hide {
+          display: none !important;
+        }
+        .legend-container {
+          margin-top: 0.5cm;
+          font-size: 0.6rem !important;
+        }
+        .legend-item {
           padding: 1px !important;
-          font-size: 0.7rem !important;
+          margin: 1px !important;
         }
       }
     `;
@@ -93,8 +108,12 @@ export function RandomizationTable({
         backgroundColor: "#fff",
         pixelRatio: 2,
         cacheBust: true,
-        width: 1200,  // Adjusted width for better fit
-        height: 600
+        width: 1400,  // Increased width for better fit
+        height: 800,  // Increased height
+        style: {
+          transform: 'scale(1)',
+          transformOrigin: 'top left',
+        }
       });
       
       const link = document.createElement('a');
@@ -103,6 +122,50 @@ export function RandomizationTable({
       link.click();
     } catch (error) {
       console.error("Error generating image:", error);
+    }
+  };
+
+  const handleExportCSV = () => {
+    // Create CSV content
+    let csvContent = "Pozicija,";
+    roundNumbers.forEach(round => {
+      csvContent += `Dijeljenje ${round},`;
+    });
+    csvContent = csvContent.slice(0, -1) + "\n"; // Remove last comma and add newline
+
+    // Add data rows
+    positions.forEach(position => {
+      csvContent += `Mjesto ${position},`;
+      roundNumbers.forEach(round => {
+        const value = randomizationTable?.[position]?.[round] || "-";
+        csvContent += `${value},`;
+      });
+      csvContent = csvContent.slice(0, -1) + "\n"; // Remove last comma and add newline
+    });
+
+    // Add legend
+    csvContent += "\nLegenda uzoraka:\n";
+    selectedProductType.samples.forEach(sample => {
+      csvContent += `${sample.blindCode},${sample.brand},${sample.retailerCode}\n`;
+    });
+
+    // Add metadata
+    csvContent += `\nUkupno uzoraka:,${selectedProductType.samples.length}\n`;
+    csvContent += `Generirano:,${new Date().toLocaleDateString('hr-HR')}\n`;
+    csvContent += `Tip proizvoda:,${selectedProductType.productName}\n`;
+    csvContent += `Šifra:,${selectedProductType.baseCode}\n`;
+
+    // Create and download file
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    if (link.download !== undefined) {
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `randomizacija_${selectedProductType.baseCode}_${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
   };
 
@@ -115,7 +178,7 @@ export function RandomizationTable({
 
   return (
     <div className="space-y-4 print:space-y-2">
-      <div className="flex justify-between items-center print:hidden">
+      <div className="flex justify-between items-center print-hide">
         <div className="flex items-center">
           <h3 className="text-lg font-medium">
             Raspored dijeljenja proizvoda: {selectedProductType.productName}
@@ -137,11 +200,20 @@ export function RandomizationTable({
           <Button
             variant="outline"
             size="sm"
+            onClick={handleExportCSV}
+            className="flex items-center"
+          >
+            <FileDown className="mr-2 h-4 w-4" />
+            CSV/Excel
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
             onClick={handleExportImage}
             className="flex items-center"
           >
             <Image className="mr-2 h-4 w-4" />
-            Preuzmi sliku
+            Slika
           </Button>
           <Button
             variant="outline"
@@ -154,7 +226,7 @@ export function RandomizationTable({
       </div>
       
       {totalProductTypes > 1 && (
-        <div className="flex justify-between items-center p-2 border rounded mb-4 print:hidden">
+        <div className="flex justify-between items-center p-2 border rounded mb-4 print-hide">
           <Button
             variant="ghost"
             size="sm"
@@ -185,16 +257,20 @@ export function RandomizationTable({
       
       <div 
         ref={tableRef} 
-        className="print:text-black bg-white p-2 rounded-lg overflow-x-auto"
+        className="print-container bg-white p-4 rounded-lg overflow-x-auto"
       >
-        <Table className="w-full border-collapse" style={{tableLayout: "fixed", minWidth: "1100px"}}>
+        <div className="text-center mb-4 font-bold text-lg">
+          Randomizacija: {selectedProductType.productName} ({selectedProductType.baseCode})
+        </div>
+        
+        <Table className="w-full border-collapse border-2 border-black">
           <TableHeader>
             <TableRow>
-              <TableHead className="text-center py-1 px-1 text-xs" style={{width: "100px"}}>
+              <TableHead className="text-center py-2 px-2 text-sm font-bold border border-black" style={{width: "120px"}}>
                 Dijeljenje / Mjesto
               </TableHead>
               {positions.map((position) => (
-                <TableHead key={position} className="text-center py-1 px-1 text-xs" style={{width: "80px"}}>
+                <TableHead key={position} className="text-center py-2 px-2 text-sm font-bold border border-black" style={{width: "70px"}}>
                   Mjesto {position}
                 </TableHead>
               ))}
@@ -203,11 +279,11 @@ export function RandomizationTable({
           <TableBody>
             {roundNumbers.map((round) => (
               <TableRow key={round}>
-                <TableCell className="font-medium text-center py-1 px-1 text-xs">
+                <TableCell className="font-medium text-center py-2 px-2 text-sm border border-black">
                   Dijeljenje {round}
                 </TableCell>
                 {positions.map((position) => (
-                  <TableCell key={position} className="text-center py-1 px-1 text-xs">
+                  <TableCell key={position} className="text-center py-2 px-2 text-sm border border-black font-mono font-bold">
                     {randomizationTable?.[position]?.[round] || "-"}
                   </TableCell>
                 ))}
@@ -216,11 +292,11 @@ export function RandomizationTable({
           </TableBody>
         </Table>
         
-        <div className="mt-6 border-t pt-4">
+        <div className="legend-container mt-6 border-t pt-4">
           <h4 className="font-semibold text-sm mb-3">Legenda uzoraka:</h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-1">
             {selectedProductType.samples.map((sample) => (
-              <div key={sample.id} className="flex items-center p-2 bg-muted/30 rounded text-xs">
+              <div key={sample.id} className="legend-item flex items-center p-2 bg-muted/30 rounded text-xs">
                 <div className="font-mono font-bold text-primary mr-2 min-w-[2.5rem]">
                   {sample.blindCode}:
                 </div>
