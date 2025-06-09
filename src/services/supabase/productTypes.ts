@@ -66,21 +66,92 @@ export async function createBaseProductType(
   productName: string,
   jarAttributes: JARAttribute[]
 ): Promise<BaseProductType> {
-  const { data: baseType, error: baseError } = await supabase
-    .from('base_product_types')
-    .insert({
-      product_name: productName
-    })
-    .select()
-    .single()
+  console.log('=== KREIRANJE BASE PRODUCT TYPE ===');
+  console.log('Product Name:', productName);
+  console.log('JAR atributi:', jarAttributes.length);
+  
+  try {
+    // Kreiraj base product type
+    const { data: baseType, error: baseError } = await supabase
+      .from('base_product_types')
+      .insert({
+        product_name: productName
+      })
+      .select()
+      .single()
 
-  if (baseError) throw baseError
+    if (baseError) {
+      console.error('Greška pri kreiranju base product type:', baseError);
+      throw baseError;
+    }
 
-  return {
-    id: baseType.id,
-    productName: baseType.product_name,
-    jarAttributes: jarAttributes,
-    createdAt: baseType.created_at
+    console.log('Base product type kreiran:', baseType.id);
+
+    // Kreiraj privremeni product type za JAR atribute
+    // (potrebno jer JAR atributi se vezuju na product_type_id, ne base_product_type_id)
+    const { data: tempProductType, error: tempError } = await supabase
+      .from('product_types')
+      .insert({
+        event_id: '00000000-0000-0000-0000-000000000000', // Privremeni event ID
+        customer_code: 'TEMP',
+        product_name: productName,
+        base_code: 'TEMP',
+        display_order: 0,
+        base_product_type_id: baseType.id,
+        has_randomization: false
+      })
+      .select()
+      .single()
+
+    if (tempError) {
+      console.error('Greška pri kreiranju privremenog product type:', tempError);
+      // Obriši base product type ako je privremeni failed
+      await supabase.from('base_product_types').delete().eq('id', baseType.id);
+      throw tempError;
+    }
+
+    console.log('Privremeni product type kreiran:', tempProductType.id);
+
+    // Kreiraj JAR atribute ako postoje
+    if (jarAttributes.length > 0) {
+      const attributesToInsert = jarAttributes.map(attr => ({
+        product_type_id: tempProductType.id,
+        name_hr: attr.nameHR,
+        name_en: attr.nameEN,
+        scale_hr: attr.scaleHR,
+        scale_en: attr.scaleEN
+      }));
+
+      console.log('Kreiram JAR atribute:', attributesToInsert.length);
+
+      const { data: insertedAttributes, error: attributesError } = await supabase
+        .from('jar_attributes')
+        .insert(attributesToInsert)
+        .select()
+
+      if (attributesError) {
+        console.error('Greška pri kreiranju JAR atributa:', attributesError);
+        // Obriši sve ako JAR atributi failed
+        await supabase.from('product_types').delete().eq('id', tempProductType.id);
+        await supabase.from('base_product_types').delete().eq('id', baseType.id);
+        throw attributesError;
+      }
+
+      console.log('JAR atributi uspješno kreirani:', insertedAttributes?.length || 0);
+    }
+
+    console.log('=== BASE PRODUCT TYPE USPJEŠNO KREIRAN ===');
+
+    return {
+      id: baseType.id,
+      productName: baseType.product_name,
+      jarAttributes: jarAttributes,
+      createdAt: baseType.created_at
+    }
+  } catch (error) {
+    console.error('=== GREŠKA PRI KREIRANJU BASE PRODUCT TYPE ===');
+    console.error('Error details:', error);
+    throw error;
   }
 }
 
@@ -118,7 +189,6 @@ export async function deleteProductType(productTypeId: string): Promise<boolean>
   }
 }
 
-// Event Product Type Management
 export async function getProductTypes(eventId: string): Promise<ProductType[]> {
   try {
     console.log('=== POČETAK DOHVAĆANJA TIPOVA PROIZVODA ===');
