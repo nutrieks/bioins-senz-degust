@@ -127,6 +127,7 @@ export type Database = {
       }
       jar_attributes: {
         Row: {
+          base_product_type_id: string | null
           created_at: string
           id: string
           name_en: string
@@ -136,6 +137,7 @@ export type Database = {
           scale_hr: string[]
         }
         Insert: {
+          base_product_type_id?: string | null
           created_at?: string
           id?: string
           name_en: string
@@ -145,6 +147,7 @@ export type Database = {
           scale_hr: string[]
         }
         Update: {
+          base_product_type_id?: string | null
           created_at?: string
           id?: string
           name_en?: string
@@ -154,6 +157,13 @@ export type Database = {
           scale_hr?: string[]
         }
         Relationships: [
+          {
+            foreignKeyName: "jar_attributes_base_product_type_id_fkey"
+            columns: ["base_product_type_id"]
+            isOneToOne: false
+            referencedRelation: "base_product_types"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "jar_attributes_product_type_id_fkey"
             columns: ["product_type_id"]

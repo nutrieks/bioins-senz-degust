@@ -33,27 +33,23 @@ export async function getBaseProductType(productTypeId: string): Promise<BasePro
 
     if (error || !data) return null
 
-    const { data: sampleProductType } = await supabase
-      .from('product_types')
-      .select(`
-        jar_attributes (*)
-      `)
+    // Dohvati JAR atribute direktno povezane s base_product_type_id
+    const { data: jarAttributesData } = await supabase
+      .from('jar_attributes')
+      .select('*')
       .eq('base_product_type_id', productTypeId)
-      .limit(1)
-      .maybeSingle()
 
     return {
       id: data.id,
       productName: data.product_name,
-      jarAttributes: sampleProductType?.jar_attributes ? 
-        sampleProductType.jar_attributes.map((attr: any) => ({
-          id: attr.id,
-          productTypeId: attr.product_type_id,
-          nameHR: attr.name_hr,
-          nameEN: attr.name_en,
-          scaleHR: attr.scale_hr as [string, string, string, string, string],
-          scaleEN: attr.scale_en as [string, string, string, string, string]
-        })) : [],
+      jarAttributes: (jarAttributesData || []).map((attr: any) => ({
+        id: attr.id,
+        productTypeId: attr.product_type_id || attr.base_product_type_id,
+        nameHR: attr.name_hr,
+        nameEN: attr.name_en,
+        scaleHR: attr.scale_hr as [string, string, string, string, string],
+        scaleEN: attr.scale_en as [string, string, string, string, string]
+      })),
       createdAt: data.created_at
     }
   } catch (error) {
@@ -87,35 +83,10 @@ export async function createBaseProductType(
 
     console.log('Base product type kreiran:', baseType.id);
 
-    // Kreiraj privremeni product type za JAR atribute
-    // (potrebno jer JAR atributi se vezuju na product_type_id, ne base_product_type_id)
-    const { data: tempProductType, error: tempError } = await supabase
-      .from('product_types')
-      .insert({
-        event_id: '00000000-0000-0000-0000-000000000000', // Privremeni event ID
-        customer_code: 'TEMP',
-        product_name: productName,
-        base_code: 'TEMP',
-        display_order: 0,
-        base_product_type_id: baseType.id,
-        has_randomization: false
-      })
-      .select()
-      .single()
-
-    if (tempError) {
-      console.error('Greška pri kreiranju privremenog product type:', tempError);
-      // Obriši base product type ako je privremeni failed
-      await supabase.from('base_product_types').delete().eq('id', baseType.id);
-      throw tempError;
-    }
-
-    console.log('Privremeni product type kreiran:', tempProductType.id);
-
-    // Kreiraj JAR atribute ako postoje
+    // Kreiraj JAR atribute direktno povezane s base_product_type_id
     if (jarAttributes.length > 0) {
       const attributesToInsert = jarAttributes.map(attr => ({
-        product_type_id: tempProductType.id,
+        base_product_type_id: baseType.id,
         name_hr: attr.nameHR,
         name_en: attr.nameEN,
         scale_hr: attr.scaleHR,
@@ -131,8 +102,7 @@ export async function createBaseProductType(
 
       if (attributesError) {
         console.error('Greška pri kreiranju JAR atributa:', attributesError);
-        // Obriši sve ako JAR atributi failed
-        await supabase.from('product_types').delete().eq('id', tempProductType.id);
+        // Obriši base product type ako su JAR atributi failed
         await supabase.from('base_product_types').delete().eq('id', baseType.id);
         throw attributesError;
       }
@@ -213,7 +183,7 @@ export async function getProductTypes(eventId: string): Promise<ProductType[]> {
       .select(`
         *,
         samples (*),
-        jar_attributes (*)
+        jar_attributes!jar_attributes_product_type_id_fkey (*)
       `)
       .eq('event_id', eventId)
       .order('display_order')
@@ -337,8 +307,9 @@ export async function createProductType(
 
     console.log('Product type uspješno kreiran s ID:', productType.id);
 
+    // Kopiraj JAR atribute iz base product type-a
     if (baseType.jarAttributes.length > 0) {
-      console.log('Kopiram JAR atribute...');
+      console.log('Kopiram JAR atribute iz base product type...');
       
       const attributesToInsert = baseType.jarAttributes.map(attr => ({
         product_type_id: productType.id,

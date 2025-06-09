@@ -81,3 +81,37 @@ export async function createJARAttribute(
     return null;
   }
 }
+
+// Nova funkcija za dohvaćanje JAR atributa za base product type
+export async function getBaseJARAttributes(baseProductTypeId: string): Promise<JARAttribute[]> {
+  try {
+    console.log('=== SUPABASE getBaseJARAttributes ===');
+    console.log('Base Product Type ID:', baseProductTypeId);
+    
+    const { data, error } = await supabase
+      .from('jar_attributes')
+      .select('*')
+      .eq('base_product_type_id', baseProductTypeId)
+      .order('name_en');
+
+    if (error) {
+      console.error('Error fetching base JAR attributes:', error);
+      throw error;
+    }
+
+    console.log('Base JAR attributes fetched:', data?.length || 0);
+
+    return (data || []).map((item: any) => ({
+      id: item.id,
+      productTypeId: item.base_product_type_id, // Koristimo base_product_type_id kao productTypeId
+      nameHR: item.name_hr,
+      nameEN: item.name_en,
+      scaleHR: item.scale_hr as [string, string, string, string, string],
+      scaleEN: item.scale_en as [string, string, string, string, string]
+    }));
+  } catch (error) {
+    console.error('=== ERROR getBaseJARAttributes ===');
+    console.error('Error details:', error);
+    return [];
+  }
+}
