@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { 
   Table, 
@@ -216,6 +215,27 @@ export function RandomizationTable({
             ))}
           </TableBody>
         </Table>
+        
+        <div className="mt-6 border-t pt-4">
+          <h4 className="font-semibold text-sm mb-3">Legenda uzoraka:</h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+            {selectedProductType.samples.map((sample) => (
+              <div key={sample.id} className="flex items-center p-2 bg-muted/30 rounded text-xs">
+                <div className="font-mono font-bold text-primary mr-2 min-w-[2.5rem]">
+                  {sample.blindCode}:
+                </div>
+                <div className="flex-1">
+                  <span className="font-medium">{sample.brand}</span>
+                  <span className="text-muted-foreground ml-1">({sample.retailerCode})</span>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="mt-3 text-xs text-muted-foreground">
+            <p>Ukupno uzoraka: {selectedProductType.samples.length}</p>
+            <p>Generirano: {currentDate}</p>
+          </div>
+        </div>
       </div>
     </div>
   );
