@@ -20,60 +20,103 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { toast } = useToast();
 
   useEffect(() => {
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' && session?.user) {
-        // Get user data from our users table
-        try {
-          const { data: userData, error } = await supabase
-            .from('users')
-            .select('*')
-            .eq('id', session.user.id)
-            .eq('is_active', true)
-            .single();
+    console.log('=== POKRETANJE AUTH PROVIDER ===');
+    
+    // Postavi timeout za loading (maksimalno 10 sekundi)
+    const loadingTimeout = setTimeout(() => {
+      console.log('Loading timeout - prisilno postavljam loading na false');
+      setLoading(false);
+    }, 10000);
 
-          if (!error && userData) {
-            const appUser: User = {
-              id: userData.id,
-              username: userData.username,
-              role: userData.role as UserRole,
-              evaluatorPosition: userData.evaluator_position || undefined,
-              isActive: userData.is_active,
-              password: userData.password
-            };
-            setUser(appUser);
-            localStorage.setItem("sensorUser", JSON.stringify(appUser));
-          }
-        } catch (error) {
-          console.error('Error fetching user data:', error);
-        }
+    // Set up auth state listener FIRST (bez async!)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('Auth state change:', event, session?.user?.id);
+      
+      // Samo sinkronizovane operacije ovdje
+      if (event === 'SIGNED_IN' && session?.user) {
+        console.log('User signed in, deferring user data fetch');
+        
+        // Deferiraj Supabase pozive sa setTimeout(0)
+        setTimeout(() => {
+          fetchUserData(session.user.id);
+        }, 0);
       } else if (event === 'SIGNED_OUT') {
+        console.log('User signed out');
         setUser(null);
         localStorage.removeItem("sensorUser");
-      }
-      setLoading(false);
-    });
-
-    // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) {
-        // Check for stored user as fallback during transition
-        const storedUser = localStorage.getItem("sensorUser");
-        if (storedUser) {
-          try {
-            setUser(JSON.parse(storedUser));
-          } catch (e) {
-            localStorage.removeItem("sensorUser");
-          }
-        }
         setLoading(false);
       }
+      
+      // Očisti timeout kad dobijemo auth event
+      clearTimeout(loadingTimeout);
     });
 
-    return () => subscription.unsubscribe();
+    // THEN check for existing session
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      console.log('Initial session check:', session?.user?.id, error);
+      
+      if (error) {
+        console.error('Session error:', error);
+        setLoading(false);
+        return;
+      }
+
+      if (!session) {
+        console.log('No session found');
+        setLoading(false);
+      }
+      // Ako postoji session, auth state change listener će ga handled
+    });
+
+    // Funkcija za dohvaćanje korisničkih podataka
+    const fetchUserData = async (userId: string) => {
+      try {
+        console.log('Fetching user data for:', userId);
+        
+        const { data: userData, error } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', userId)
+          .eq('is_active', true)
+          .single();
+
+        if (!error && userData) {
+          const appUser: User = {
+            id: userData.id,
+            username: userData.username,
+            role: userData.role as UserRole,
+            evaluatorPosition: userData.evaluator_position || undefined,
+            isActive: userData.is_active,
+            password: userData.password
+          };
+          
+          console.log('User data fetched successfully:', appUser.username);
+          setUser(appUser);
+          localStorage.setItem("sensorUser", JSON.stringify(appUser));
+        } else {
+          console.error('User not found or inactive:', error);
+          // Ako korisnik nije pronađen, odjavi ga
+          await supabase.auth.signOut();
+        }
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+        await supabase.auth.signOut();
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    return () => {
+      console.log('Cleaning up auth subscription');
+      clearTimeout(loadingTimeout);
+      subscription.unsubscribe();
+    };
   }, []);
 
   const login = async (identifier: string, password: string): Promise<boolean> => {
+    console.log('Login attempt with identifier:', identifier);
+    setLoading(true);
+    
     try {
       // Determine username based on identifier
       let username = identifier;
@@ -87,6 +130,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             description: "Nevažeće korisničko ime. Unesite ADMIN ili broj od 1 do 12.",
             variant: "destructive",
           });
+          setLoading(false);
           return false;
         }
       } else {
@@ -106,6 +150,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           title: "Uspješna prijava",
           description: welcomeMessage,
         });
+        
+        // Loading će biti postavljen na false u auth state listener
         return true;
       } else {
         toast({
@@ -113,6 +159,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           description: "Pogrešno korisničko ime ili lozinka.",
           variant: "destructive",
         });
+        setLoading(false);
         return false;
       }
     } catch (error) {
@@ -122,11 +169,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         description: "Došlo je do pogreške prilikom prijave.",
         variant: "destructive",
       });
+      setLoading(false);
       return false;
     }
   };
 
   const logout = async () => {
+    console.log('Logout initiated');
+    setLoading(true);
+    
     try {
       await logoutSupabase();
       toast({
@@ -140,6 +191,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         description: "Došlo je do pogreške prilikom odjave.",
         variant: "destructive",
       });
+    } finally {
+      setLoading(false);
     }
   };
 
