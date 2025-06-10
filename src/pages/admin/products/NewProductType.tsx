@@ -106,9 +106,22 @@ export default function NewProductType() {
       return;
     }
 
-    // Validate JAR attributes
+    // Validate JAR attributes - improved validation
+    const validAttributes = [];
     for (let i = 0; i < jarAttributes.length; i++) {
       const attr = jarAttributes[i];
+      
+      // Skip completely empty attributes
+      const hasAnyContent = attr.nameHR.trim() || attr.nameEN.trim() || 
+        attr.scaleHR.some((scale, idx) => idx !== 2 && scale.trim()) ||
+        attr.scaleEN.some((scale, idx) => idx !== 2 && scale.trim());
+      
+      if (!hasAnyContent) {
+        console.log(`Preskačem prazan atribut ${i + 1}`);
+        continue;
+      }
+
+      // Validate non-empty attributes
       if (!attr.nameHR.trim() || !attr.nameEN.trim()) {
         toast({
           title: "Greška",
@@ -119,6 +132,7 @@ export default function NewProductType() {
       }
 
       // Check scale values - we skip index 2 which is predefined "Just About Right"
+      let hasEmptyScale = false;
       for (let j = 0; j < 5; j++) {
         if (j !== 2) { // Skip checking the middle "Just About Right" value
           if (!attr.scaleHR[j].trim() || !attr.scaleEN[j].trim()) {
@@ -127,20 +141,37 @@ export default function NewProductType() {
               description: `Opis skale za atribut ${i + 1}, pozicija ${j + 1} mora biti popunjen na oba jezika.`,
               variant: "destructive",
             });
-            return;
+            hasEmptyScale = true;
+            break;
           }
         }
       }
+
+      if (hasEmptyScale) return;
+
+      validAttributes.push(attr);
     }
+
+    if (validAttributes.length === 0) {
+      toast({
+        title: "Greška",
+        description: "Morate definirati barem jedan JAR atribut.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    console.log('Submitting with valid attributes:', validAttributes.length);
     
     setIsSubmitting(true);
     try {
       // Create the product type in the database
-      await createBaseProductType(productName, jarAttributes);
+      const result = await createBaseProductType(productName, validAttributes);
+      console.log('Created base product type:', result);
       
       toast({
         title: "Uspješno",
-        description: `Tip proizvoda "${productName}" je uspješno dodan u bazu.`,
+        description: `Tip proizvoda "${productName}" je uspješno dodan u bazu s ${validAttributes.length} JAR atributa.`,
       });
       
       navigate("/admin/products");
@@ -148,7 +179,7 @@ export default function NewProductType() {
       console.error("Error creating product type:", error);
       toast({
         title: "Greška",
-        description: "Došlo je do pogreške prilikom spremanja tipa proizvoda.",
+        description: `Došlo je do pogreške prilikom spremanja tipa proizvoda: ${error instanceof Error ? error.message : 'Nepoznata greška'}`,
         variant: "destructive",
       });
     } finally {

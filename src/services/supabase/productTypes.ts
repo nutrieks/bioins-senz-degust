@@ -86,30 +86,60 @@ export async function createBaseProductType(
 
     // Kreiraj JAR atribute direktno povezane s base_product_type_id
     if (jarAttributes.length > 0) {
-      const attributesToInsert = jarAttributes.map(attr => ({
-        base_product_type_id: baseType.id,
-        product_type_id: '00000000-0000-0000-0000-000000000000', // Dummy UUID koji će biti null zbog constrainta
-        name_hr: attr.nameHR,
-        name_en: attr.nameEN,
-        scale_hr: attr.scaleHR,
-        scale_en: attr.scaleEN
-      }));
+      // Filter out empty attributes before inserting
+      const validAttributes = jarAttributes.filter(attr => 
+        attr.nameHR && attr.nameHR.trim() && 
+        attr.nameEN && attr.nameEN.trim() &&
+        attr.scaleHR.every(scale => scale && scale.trim()) &&
+        attr.scaleEN.every(scale => scale && scale.trim())
+      );
 
-      console.log('Kreiram JAR atribute:', attributesToInsert.length);
+      console.log('Filtering attributes - Total:', jarAttributes.length, 'Valid:', validAttributes.length);
 
-      const { data: insertedAttributes, error: attributesError } = await supabase
-        .from('jar_attributes')
-        .insert(attributesToInsert)
-        .select()
+      if (validAttributes.length > 0) {
+        const attributesToInsert = validAttributes.map(attr => ({
+          base_product_type_id: baseType.id,
+          product_type_id: null, // Set to null instead of dummy UUID
+          name_hr: attr.nameHR.trim(),
+          name_en: attr.nameEN.trim(),
+          scale_hr: attr.scaleHR.map(s => s.trim()),
+          scale_en: attr.scaleEN.map(s => s.trim())
+        }));
 
-      if (attributesError) {
-        console.error('Greška pri kreiranju JAR atributa:', attributesError);
-        // Obriši base product type ako su JAR atributi failed
-        await supabase.from('base_product_types').delete().eq('id', baseType.id);
-        throw attributesError;
+        console.log('Kreiram JAR atribute:', attributesToInsert);
+
+        const { data: insertedAttributes, error: attributesError } = await supabase
+          .from('jar_attributes')
+          .insert(attributesToInsert)
+          .select()
+
+        if (attributesError) {
+          console.error('Greška pri kreiranju JAR atributa:', attributesError);
+          console.error('Attempted to insert:', attributesToInsert);
+          
+          // Obriši base product type ako su JAR atributi failed
+          console.log('Uklanjam base product type zbog neuspjeha JAR atributa...');
+          await supabase.from('base_product_types').delete().eq('id', baseType.id);
+          throw attributesError;
+        }
+
+        console.log('JAR atributi uspješno kreirani:', insertedAttributes?.length || 0);
+        console.log('Inserted attributes:', insertedAttributes);
+      } else {
+        console.warn('Nema validnih JAR atributa za kreiranje');
       }
+    }
 
-      console.log('JAR atributi uspješno kreirani:', insertedAttributes?.length || 0);
+    // Verify the created attributes
+    const { data: verificationAttributes, error: verificationError } = await supabase
+      .from('jar_attributes')
+      .select('*')
+      .eq('base_product_type_id', baseType.id);
+
+    if (verificationError) {
+      console.error('Greška pri verifikaciji JAR atributa:', verificationError);
+    } else {
+      console.log('Verifikacija - kreirani JAR atributi:', verificationAttributes?.length || 0);
     }
 
     console.log('=== BASE PRODUCT TYPE USPJEŠNO KREIRAN ===');

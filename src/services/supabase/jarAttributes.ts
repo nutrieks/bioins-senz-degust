@@ -19,6 +19,9 @@ export async function getJARAttributes(productTypeId: string): Promise<JARAttrib
     }
 
     console.log('Direct JAR attributes found:', directAttributes?.length || 0);
+    if (directAttributes && directAttributes.length > 0) {
+      console.log('Direct attributes data:', directAttributes);
+    }
 
     // If we found direct attributes, return them
     if (directAttributes && directAttributes.length > 0) {
@@ -38,11 +41,18 @@ export async function getJARAttributes(productTypeId: string): Promise<JARAttrib
     // Get the product type to find its base_product_type_id
     const { data: productType, error: productTypeError } = await supabase
       .from('product_types')
-      .select('base_product_type_id')
+      .select('base_product_type_id, product_name')
       .eq('id', productTypeId)
       .single();
 
-    if (productTypeError || !productType?.base_product_type_id) {
+    if (productTypeError) {
+      console.error('Error fetching product type:', productTypeError);
+      return [];
+    }
+
+    console.log('Product type data:', productType);
+
+    if (!productType?.base_product_type_id) {
       console.log('No base product type found for this product type');
       return [];
     }
@@ -62,6 +72,9 @@ export async function getJARAttributes(productTypeId: string): Promise<JARAttrib
     }
 
     console.log('Base JAR attributes found:', baseAttributes?.length || 0);
+    if (baseAttributes && baseAttributes.length > 0) {
+      console.log('Base attributes data:', baseAttributes);
+    }
 
     return (baseAttributes || []).map((item: any) => ({
       id: item.id,
