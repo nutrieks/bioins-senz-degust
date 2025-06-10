@@ -121,14 +121,24 @@ export async function createBaseProductType(
 
 export async function updateBaseProductType(
   productTypeId: string,
-  customerCode: string,
-  baseCode: string
+  productName: string,
+  jarAttributes: JARAttribute[]
 ): Promise<boolean> {
   const index = baseProductTypes.findIndex(pt => pt.id === productTypeId);
   if (index === -1) return false;
   
-  // For now, just update basic info - this is a stub implementation
-  console.log("updateBaseProductType stub - updating:", productTypeId, customerCode, baseCode);
+  const updatedAttributes = jarAttributes.map(attr => ({
+    ...attr,
+    productTypeId,
+    scaleHR: attr.scaleHR as [string, string, string, string, string],
+    scaleEN: attr.scaleEN as [string, string, string, string, string]
+  }));
+  
+  baseProductTypes[index] = {
+    ...baseProductTypes[index],
+    productName,
+    jarAttributes: updatedAttributes
+  };
   
   return true;
 }
@@ -289,4 +299,12 @@ export async function getUsers(): Promise<any[]> {
 
 // Legacy aliases for backwards compatibility
 export const deleteEventProductType = deleteProductType;
-export const updateEventProductType = updateBaseProductType;
+export const updateEventProductType = (
+  productTypeId: string,
+  customerCode: string,
+  baseCode: string
+): Promise<boolean> => {
+  // This is for updating product types within events, not base product types
+  console.log("updateEventProductType stub - updating:", productTypeId, customerCode, baseCode);
+  return Promise.resolve(true);
+};
