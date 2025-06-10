@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client'
 import { JARAttribute } from '@/types'
 
@@ -97,7 +96,7 @@ export async function createJARAttribute(
   nameEN: string,
   scaleHR: [string, string, string, string, string],
   scaleEN: [string, string, string, string, string]
-): Promise<JARAttribute | null> {
+): Promise<JARAttribute> {
   try {
     console.log('=== SUPABASE createJARAttribute ===');
     console.log('Product Type ID:', productTypeId);
@@ -134,18 +133,17 @@ export async function createJARAttribute(
   } catch (error) {
     console.error('=== ERROR createJARAttribute ===');
     console.error('Error details:', error);
-    return null;
+    throw error;
   }
 }
 
-// Updated function for creating JAR attributes for base product types
 export async function createBaseJARAttribute(
   baseProductTypeId: string,
   nameHR: string,
   nameEN: string,
   scaleHR: [string, string, string, string, string],
   scaleEN: [string, string, string, string, string]
-): Promise<JARAttribute | null> {
+): Promise<JARAttribute> {
   try {
     console.log('=== SUPABASE createBaseJARAttribute ===');
     console.log('Base Product Type ID:', baseProductTypeId);
@@ -183,11 +181,10 @@ export async function createBaseJARAttribute(
   } catch (error) {
     console.error('=== ERROR createBaseJARAttribute ===');
     console.error('Error details:', error);
-    return null;
+    throw error;
   }
 }
 
-// Function for fetching JAR attributes for base product type
 export async function getBaseJARAttributes(baseProductTypeId: string): Promise<JARAttribute[]> {
   try {
     console.log('=== SUPABASE getBaseJARAttributes ===');

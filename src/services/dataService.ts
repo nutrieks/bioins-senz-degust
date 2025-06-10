@@ -53,7 +53,11 @@ export async function createJARAttribute(
   scaleHR: [string, string, string, string, string],
   scaleEN: [string, string, string, string, string]
 ): Promise<JARAttribute> {
-  return await createBaseJARAttribute(baseProductTypeId, nameHR, nameEN, scaleHR, scaleEN);
+  const result = await createBaseJARAttribute(baseProductTypeId, nameHR, nameEN, scaleHR, scaleEN);
+  if (!result) {
+    throw new Error('Failed to create JAR attribute');
+  }
+  return result;
 }
 
 // Base Product Type Management
