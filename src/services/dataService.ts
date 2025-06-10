@@ -137,7 +137,14 @@ export async function updateSampleImages(sampleId: string, images: any): Promise
 // Evaluation Management
 export async function submitEvaluation(evaluationData: any): Promise<any> {
   const { userId, sampleId, productTypeId, eventId, hedonic, jar } = evaluationData;
-  return await submitEvaluationSupabase(userId, sampleId, productTypeId, eventId, hedonic, jar);
+  return await submitEvaluationSupabase({
+    userId,
+    sampleId,
+    productTypeId,
+    eventId,
+    hedonicRatings: hedonic,
+    jarRatings: jar
+  });
 }
 
 export async function getCompletedEvaluations(eventId: string, userId: string): Promise<any[]> {
