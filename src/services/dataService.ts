@@ -1,13 +1,15 @@
+
 import { 
   BaseProductType, 
   ProductType, 
   JARAttribute 
-} from "../../types";
+} from "@/types";
 import { 
   baseProductTypes, 
   productTypes, 
-  events 
-} from "../mock";
+  events,
+  jarAttributes
+} from "./mock";
 import { createBaseJARAttribute } from './supabase/jarAttributes';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -201,3 +203,101 @@ export async function createProductType(
   
   return newProductType;
 }
+
+// Stub functions for missing exports - these should be implemented properly later
+export async function getEvent(eventId: string): Promise<any> {
+  return events.find(e => e.id === eventId) || null;
+}
+
+export async function getEvents(): Promise<any[]> {
+  return events;
+}
+
+export async function createEvent(eventData: any): Promise<any> {
+  console.log("createEvent not fully implemented", eventData);
+  return null;
+}
+
+export async function updateEventStatus(eventId: string, status: string): Promise<boolean> {
+  console.log("updateEventStatus not fully implemented", eventId, status);
+  return false;
+}
+
+export async function getEvaluationsStatus(eventId: string): Promise<any> {
+  console.log("getEvaluationsStatus not fully implemented", eventId);
+  return {};
+}
+
+export async function getRawData(eventId: string): Promise<any> {
+  console.log("getRawData not fully implemented", eventId);
+  return [];
+}
+
+export async function createSample(sampleData: any): Promise<any> {
+  console.log("createSample not fully implemented", sampleData);
+  return null;
+}
+
+export async function updateSampleImages(sampleId: string, images: any): Promise<boolean> {
+  console.log("updateSampleImages not fully implemented", sampleId, images);
+  return false;
+}
+
+export async function getSamples(productTypeId: string): Promise<any[]> {
+  console.log("getSamples not fully implemented", productTypeId);
+  return [];
+}
+
+export async function generateHedonicReport(eventId: string): Promise<any> {
+  console.log("generateHedonicReport not fully implemented", eventId);
+  return {};
+}
+
+export async function generateJARReport(eventId: string): Promise<any> {
+  console.log("generateJARReport not fully implemented", eventId);
+  return {};
+}
+
+export async function updateUserPassword(userId: string, password: string): Promise<boolean> {
+  console.log("updateUserPassword not fully implemented", userId);
+  return false;
+}
+
+export async function updateUserStatus(userId: string, status: string): Promise<boolean> {
+  console.log("updateUserStatus not fully implemented", userId, status);
+  return false;
+}
+
+export async function submitEvaluation(evaluationData: any): Promise<any> {
+  console.log("submitEvaluation not fully implemented", evaluationData);
+  return null;
+}
+
+export async function getNextSample(eventId: string, userId: string): Promise<any> {
+  console.log("getNextSample not fully implemented", eventId, userId);
+  return null;
+}
+
+export async function getCompletedEvaluations(eventId: string, userId: string): Promise<any[]> {
+  console.log("getCompletedEvaluations not fully implemented", eventId, userId);
+  return [];
+}
+
+export async function createRandomization(eventId: string): Promise<any> {
+  console.log("createRandomization not fully implemented", eventId);
+  return null;
+}
+
+export async function getRandomization(eventId: string): Promise<any> {
+  console.log("getRandomization not fully implemented", eventId);
+  return null;
+}
+
+export async function getUsers(): Promise<any[]> {
+  console.log("getUsers not fully implemented");
+  return [];
+}
+
+// Legacy aliases for backwards compatibility
+export const deleteEventProductType = deleteProductType;
+export const updateEventProductType = updateBaseProductType;
