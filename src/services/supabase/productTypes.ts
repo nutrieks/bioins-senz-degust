@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client'
 import { BaseProductType, ProductType, JARAttribute } from '@/types'
 
@@ -87,6 +88,7 @@ export async function createBaseProductType(
     if (jarAttributes.length > 0) {
       const attributesToInsert = jarAttributes.map(attr => ({
         base_product_type_id: baseType.id,
+        product_type_id: '00000000-0000-0000-0000-000000000000', // Dummy UUID koji će biti null zbog constrainta
         name_hr: attr.nameHR,
         name_en: attr.nameEN,
         scale_hr: attr.scaleHR,
