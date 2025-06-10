@@ -132,7 +132,7 @@ export type Database = {
           id: string
           name_en: string
           name_hr: string
-          product_type_id: string
+          product_type_id: string | null
           scale_en: string[]
           scale_hr: string[]
         }
@@ -142,7 +142,7 @@ export type Database = {
           id?: string
           name_en: string
           name_hr: string
-          product_type_id: string
+          product_type_id?: string | null
           scale_en: string[]
           scale_hr: string[]
         }
@@ -152,7 +152,7 @@ export type Database = {
           id?: string
           name_en?: string
           name_hr?: string
-          product_type_id?: string
+          product_type_id?: string | null
           scale_en?: string[]
           scale_hr?: string[]
         }

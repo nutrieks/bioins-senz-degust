@@ -138,7 +138,56 @@ export async function createJARAttribute(
   }
 }
 
-// Nova funkcija za dohvaćanje JAR atributa za base product type
+// Updated function for creating JAR attributes for base product types
+export async function createBaseJARAttribute(
+  baseProductTypeId: string,
+  nameHR: string,
+  nameEN: string,
+  scaleHR: [string, string, string, string, string],
+  scaleEN: [string, string, string, string, string]
+): Promise<JARAttribute | null> {
+  try {
+    console.log('=== SUPABASE createBaseJARAttribute ===');
+    console.log('Base Product Type ID:', baseProductTypeId);
+    console.log('Name HR:', nameHR);
+    console.log('Name EN:', nameEN);
+    
+    const { data, error } = await supabase
+      .from('jar_attributes')
+      .insert({
+        base_product_type_id: baseProductTypeId,
+        product_type_id: null, // Explicitly set to null for base product types
+        name_hr: nameHR,
+        name_en: nameEN,
+        scale_hr: scaleHR,
+        scale_en: scaleEN
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating base JAR attribute:', error);
+      throw error;
+    }
+
+    console.log('Base JAR attribute created:', data);
+
+    return {
+      id: data.id,
+      productTypeId: baseProductTypeId, // Use base product type ID
+      nameHR: data.name_hr,
+      nameEN: data.name_en,
+      scaleHR: data.scale_hr as [string, string, string, string, string],
+      scaleEN: data.scale_en as [string, string, string, string, string]
+    };
+  } catch (error) {
+    console.error('=== ERROR createBaseJARAttribute ===');
+    console.error('Error details:', error);
+    return null;
+  }
+}
+
+// Function for fetching JAR attributes for base product type
 export async function getBaseJARAttributes(baseProductTypeId: string): Promise<JARAttribute[]> {
   try {
     console.log('=== SUPABASE getBaseJARAttributes ===');
@@ -159,7 +208,7 @@ export async function getBaseJARAttributes(baseProductTypeId: string): Promise<J
 
     return (data || []).map((item: any) => ({
       id: item.id,
-      productTypeId: item.base_product_type_id, // Koristimo base_product_type_id kao productTypeId
+      productTypeId: item.base_product_type_id, // Use base_product_type_id as productTypeId
       nameHR: item.name_hr,
       nameEN: item.name_en,
       scaleHR: item.scale_hr as [string, string, string, string, string],
