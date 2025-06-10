@@ -233,8 +233,8 @@ export async function getRawData(eventId: string): Promise<any> {
   return [];
 }
 
-export async function createSample(sampleData: any): Promise<any> {
-  console.log("createSample not fully implemented", sampleData);
+export async function createSample(productTypeId: string, brand: string, retailerCode: string): Promise<any> {
+  console.log("createSample not fully implemented", productTypeId, brand, retailerCode);
   return null;
 }
 
@@ -263,8 +263,8 @@ export async function updateUserPassword(userId: string, password: string): Prom
   return false;
 }
 
-export async function updateUserStatus(userId: string, status: string): Promise<boolean> {
-  console.log("updateUserStatus not fully implemented", userId, status);
+export async function updateUserStatus(userId: string, isActive: boolean): Promise<boolean> {
+  console.log("updateUserStatus not fully implemented", userId, isActive);
   return false;
 }
 
@@ -273,8 +273,8 @@ export async function submitEvaluation(evaluationData: any): Promise<any> {
   return null;
 }
 
-export async function getNextSample(eventId: string, userId: string): Promise<any> {
-  console.log("getNextSample not fully implemented", eventId, userId);
+export async function getNextSample(userId: string, eventId: string, productTypeId?: string, completedSampleIds?: string[]): Promise<any> {
+  console.log("getNextSample not fully implemented", userId, eventId, productTypeId, completedSampleIds);
   return null;
 }
 
