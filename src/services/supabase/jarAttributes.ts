@@ -7,22 +7,65 @@ export async function getJARAttributes(productTypeId: string): Promise<JARAttrib
     console.log('=== SUPABASE getJARAttributes ===');
     console.log('Product Type ID:', productTypeId);
     
-    const { data, error } = await supabase
+    // First try to get JAR attributes directly linked to this product type
+    const { data: directAttributes, error: directError } = await supabase
       .from('jar_attributes')
       .select('*')
       .eq('product_type_id', productTypeId)
       .order('name_en');
 
-    if (error) {
-      console.error('Error fetching JAR attributes:', error);
-      throw error;
+    if (directError) {
+      console.error('Error fetching direct JAR attributes:', directError);
     }
 
-    console.log('JAR attributes fetched:', data?.length || 0);
+    console.log('Direct JAR attributes found:', directAttributes?.length || 0);
 
-    return (data || []).map((item: any) => ({
+    // If we found direct attributes, return them
+    if (directAttributes && directAttributes.length > 0) {
+      return directAttributes.map((item: any) => ({
+        id: item.id,
+        productTypeId: item.product_type_id,
+        nameHR: item.name_hr,
+        nameEN: item.name_en,
+        scaleHR: item.scale_hr as [string, string, string, string, string],
+        scaleEN: item.scale_en as [string, string, string, string, string]
+      }));
+    }
+
+    // If no direct attributes, try to get them via base product type
+    console.log('No direct attributes found, checking base product type...');
+    
+    // Get the product type to find its base_product_type_id
+    const { data: productType, error: productTypeError } = await supabase
+      .from('product_types')
+      .select('base_product_type_id')
+      .eq('id', productTypeId)
+      .single();
+
+    if (productTypeError || !productType?.base_product_type_id) {
+      console.log('No base product type found for this product type');
+      return [];
+    }
+
+    console.log('Base Product Type ID:', productType.base_product_type_id);
+
+    // Get JAR attributes from the base product type
+    const { data: baseAttributes, error: baseError } = await supabase
+      .from('jar_attributes')
+      .select('*')
+      .eq('base_product_type_id', productType.base_product_type_id)
+      .order('name_en');
+
+    if (baseError) {
+      console.error('Error fetching base JAR attributes:', baseError);
+      return [];
+    }
+
+    console.log('Base JAR attributes found:', baseAttributes?.length || 0);
+
+    return (baseAttributes || []).map((item: any) => ({
       id: item.id,
-      productTypeId: item.product_type_id,
+      productTypeId: productTypeId, // Use the current product type ID
       nameHR: item.name_hr,
       nameEN: item.name_en,
       scaleHR: item.scale_hr as [string, string, string, string, string],

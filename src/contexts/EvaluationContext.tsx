@@ -1,7 +1,6 @@
-
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { Sample, JARAttribute, ProductType } from "../types";
-import { getNextSample, getCompletedEvaluations, getProductTypes, getJARAttributes, getBaseProductType } from "../services/dataService";
+import { getNextSample, getCompletedEvaluations, getProductTypes, getJARAttributes } from "../services/dataService";
 import { useAuth } from "./AuthContext";
 
 interface EvaluationContextType {
@@ -37,37 +36,35 @@ export const EvaluationProvider: React.FC<{
   const [allProductTypes, setAllProductTypes] = useState<ProductType[]>([]);
   const [processedProductTypes, setProcessedProductTypes] = useState<string[]>([]);
 
-  // Ensure JAR attributes are loaded correctly when currentSample changes
+  // Ensure JAR attributes are loaded correctly when currentSample or currentProductType changes
   useEffect(() => {
     const updateJARAttributes = async () => {
+      console.log('=== UPDATING JAR ATTRIBUTES ===');
+      console.log('Current sample:', currentSample?.id);
+      console.log('Current product type:', currentProductType?.id);
+      
       if (currentSample && currentSample.productTypeId) {
         try {
-          // First try to get the attributes from the product type directly
+          console.log('Fetching JAR attributes for product type:', currentSample.productTypeId);
+          
+          // Use the improved getJARAttributes function that handles fallback to base product type
           const attributes = await getJARAttributes(currentSample.productTypeId);
-          console.log("Fetched JAR attributes for product type:", currentSample.productTypeId, attributes);
+          console.log("Fetched JAR attributes:", attributes.length, attributes);
           
           if (attributes && attributes.length > 0) {
             setCurrentJARAttributes(attributes);
+            console.log("JAR attributes set successfully:", attributes.length);
           } else {
-            // If no attributes found directly, try to get them from the base product type
-            if (currentProductType && currentProductType.baseProductTypeId) {
-              const baseProductType = await getBaseProductType(currentProductType.baseProductTypeId);
-              if (baseProductType && baseProductType.jarAttributes.length > 0) {
-                console.log("Using JAR attributes from base product type:", baseProductType.jarAttributes);
-                setCurrentJARAttributes(baseProductType.jarAttributes);
-              } else {
-                setCurrentJARAttributes([]);
-                console.error("No JAR attributes found for product type or base product type");
-              }
-            } else {
-              setCurrentJARAttributes([]);
-              console.error("No base product type ID available to fetch JAR attributes");
-            }
+            console.warn("No JAR attributes found for product type:", currentSample.productTypeId);
+            setCurrentJARAttributes([]);
           }
         } catch (error) {
           console.error("Error updating JAR attributes:", error);
           setCurrentJARAttributes([]);
         }
+      } else {
+        console.log("No current sample or product type ID available");
+        setCurrentJARAttributes([]);
       }
     };
     
