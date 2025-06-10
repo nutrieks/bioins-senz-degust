@@ -1,4 +1,3 @@
-
 import { 
   BaseProductType, 
   ProductType, 
@@ -48,13 +47,13 @@ export async function getJARAttributes(productTypeId: string): Promise<JARAttrib
 }
 
 export async function createJARAttribute(
-  productTypeId: string,
+  baseProductTypeId: string,
   nameHR: string,
   nameEN: string,
   scaleHR: [string, string, string, string, string],
   scaleEN: [string, string, string, string, string]
 ): Promise<JARAttribute> {
-  return await createBaseJARAttribute(productTypeId, nameHR, nameEN, scaleHR, scaleEN);
+  return await createBaseJARAttribute(baseProductTypeId, nameHR, nameEN, scaleHR, scaleEN);
 }
 
 // Base Product Type Management
