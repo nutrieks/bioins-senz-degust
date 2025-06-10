@@ -40,6 +40,7 @@ export type Event = {
   date: string;
   status: EventStatus;
   productTypes: ProductType[];
+  productTypesCount?: number; // Add optional count field
   createdAt: string;
   randomizationComplete: boolean;
 };

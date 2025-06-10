@@ -6,21 +6,35 @@ export const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, 
 
 export async function getEvents(): Promise<Event[]> {
   try {
-    const { data, error } = await supabase
+    // First get all events
+    const { data: eventsData, error: eventsError } = await supabase
       .from('events')
       .select('*')
       .order('date', { ascending: false })
 
-    if (error) throw error
+    if (eventsError) throw eventsError
 
-    return (data || []).map((eventData: any) => ({
-      id: eventData.id,
-      date: eventData.date,
-      status: eventData.status as EventStatus,
-      productTypes: [], // Will be loaded separately
-      createdAt: eventData.created_at,
-      randomizationComplete: eventData.randomization_complete
-    }))
+    // For each event, get the count of product types
+    const eventsWithProductCount = await Promise.all(
+      (eventsData || []).map(async (eventData: any) => {
+        const { count: productCount } = await supabase
+          .from('product_types')
+          .select('*', { count: 'exact', head: true })
+          .eq('event_id', eventData.id)
+
+        return {
+          id: eventData.id,
+          date: eventData.date,
+          status: eventData.status as EventStatus,
+          productTypes: [], // Keep empty array for compatibility
+          productTypesCount: productCount || 0, // Add the actual count
+          createdAt: eventData.created_at,
+          randomizationComplete: eventData.randomization_complete
+        }
+      })
+    )
+
+    return eventsWithProductCount
   } catch (error) {
     console.error('Error fetching events:', error)
     return []

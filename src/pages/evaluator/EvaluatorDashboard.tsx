@@ -20,6 +20,7 @@ export default function EvaluatorDashboard() {
     const fetchEvents = async () => {
       try {
         const events = await getEvents();
+        console.log("Fetched events with product counts:", events);
         // Filter only active events
         const active = events.filter((event) => event.status === EventStatus.ACTIVE);
         setActiveEvents(active);
@@ -44,6 +45,12 @@ export default function EvaluatorDashboard() {
       month: "2-digit",
       year: "numeric",
     }).format(date);
+  };
+
+  const getProductCountText = (count: number) => {
+    if (count === 1) return "proizvod";
+    if (count < 5) return "proizvoda";
+    return "proizvoda";
   };
 
   return (
@@ -73,32 +80,30 @@ export default function EvaluatorDashboard() {
               <div className="text-center p-4">Učitavanje...</div>
             ) : activeEvents.length > 0 ? (
               <div className="space-y-4">
-                {activeEvents.map((event) => (
-                  <Card key={event.id}>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-lg">{formatDate(event.date)}</CardTitle>
-                    </CardHeader>
-                    <CardContent className="pb-2">
-                      <p className="text-sm text-muted-foreground">
-                        {event.productTypes.length}{" "}
-                        {event.productTypes.length === 1
-                          ? "proizvod"
-                          : event.productTypes.length < 5
-                          ? "proizvoda"
-                          : "proizvoda"}
-                      </p>
-                    </CardContent>
-                    <CardFooter>
-                      <Button 
-                        className="w-full"
-                        onClick={() => handleStartEvaluation(event.id)}
-                      >
-                        <ClipboardCheck className="mr-2 h-4 w-4" />
-                        Započni ocjenjivanje
-                      </Button>
-                    </CardFooter>
-                  </Card>
-                ))}
+                {activeEvents.map((event) => {
+                  const productCount = event.productTypesCount || 0;
+                  return (
+                    <Card key={event.id}>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-lg">{formatDate(event.date)}</CardTitle>
+                      </CardHeader>
+                      <CardContent className="pb-2">
+                        <p className="text-sm text-muted-foreground">
+                          {productCount} {getProductCountText(productCount)}
+                        </p>
+                      </CardContent>
+                      <CardFooter>
+                        <Button 
+                          className="w-full"
+                          onClick={() => handleStartEvaluation(event.id)}
+                        >
+                          <ClipboardCheck className="mr-2 h-4 w-4" />
+                          Započni ocjenjivanje
+                        </Button>
+                      </CardFooter>
+                    </Card>
+                  );
+                })}
               </div>
             ) : (
               <div className="text-center p-8">
