@@ -1,3 +1,4 @@
+
 import { 
   BaseProductType, 
   ProductType, 
@@ -11,6 +12,7 @@ import {
 } from "./mock";
 import { createBaseJARAttribute } from './supabase/jarAttributes';
 import { supabase } from '@/integrations/supabase/client';
+import { createEvent as createEventSupabase } from './supabase/events';
 
 // JAR Attribute Management
 export async function getJARAttributes(productTypeId: string): Promise<JARAttribute[]> {
@@ -203,6 +205,11 @@ export async function createProductType(
   return newProductType;
 }
 
+// Event Management - Now using Supabase implementation
+export async function createEvent(date: string) {
+  return await createEventSupabase(date);
+}
+
 // Stub functions for missing exports - these should be implemented properly later
 export async function getEvent(eventId: string): Promise<any> {
   return events.find(e => e.id === eventId) || null;
@@ -210,11 +217,6 @@ export async function getEvent(eventId: string): Promise<any> {
 
 export async function getEvents(): Promise<any[]> {
   return events;
-}
-
-export async function createEvent(eventData: any): Promise<any> {
-  console.log("createEvent not fully implemented", eventData);
-  return null;
 }
 
 export async function updateEventStatus(eventId: string, status: string): Promise<boolean> {
