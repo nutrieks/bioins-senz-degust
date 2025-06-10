@@ -25,17 +25,17 @@ export function EventDataFetcher({ jarAttributes, onProductTypesChange }: EventD
   const fetchProductTypes = async () => {
     if (!eventId) return;
     
-    console.log('=== ADMIN EventDataFetcher - dohvaćam tipove proizvoda ===');
+    console.log('=== ADMIN EventDataFetcher - dohvaćam tipove proizvoda iz Supabase ===');
     console.log('Event ID:', eventId);
     try {
       const types = await getProductTypes(eventId);
-      console.log('ADMIN EventDataFetcher - dohvaćeni tipovi:', types.length, types);
+      console.log('ADMIN EventDataFetcher - dohvaćeni tipovi iz Supabase:', types.length, types);
       setProductTypes(types);
       onProductTypesChange?.(types);
     } catch (error) {
-      console.error("ADMIN EventDataFetcher - error fetching product types:", error);
+      console.error("ADMIN EventDataFetcher - error fetching product types from Supabase:", error);
     }
-    console.log('=== ADMIN EventDataFetcher - završeno dohvaćanje ===');
+    console.log('=== ADMIN EventDataFetcher - završeno dohvaćanje iz Supabase ===');
   };
 
   useEffect(() => {
@@ -45,7 +45,7 @@ export function EventDataFetcher({ jarAttributes, onProductTypesChange }: EventD
     }
 
     const fetchEventData = async () => {
-      console.log('=== ADMIN EventDataFetcher - početak dohvaćanja event podataka ===');
+      console.log('=== ADMIN EventDataFetcher - početak dohvaćanja event podataka iz Supabase ===');
       try {
         const event = await getEvent(eventId);
         if (!event) {
@@ -56,14 +56,14 @@ export function EventDataFetcher({ jarAttributes, onProductTypesChange }: EventD
         const date = new Date(event.date);
         setEventDate(date.toLocaleDateString('hr-HR'));
         setEventName(event.date);
-        console.log('ADMIN EventDataFetcher - event učitan:', event.id, event.date);
+        console.log('ADMIN EventDataFetcher - event učitan iz Supabase:', event.id, event.date);
 
         await fetchProductTypes();
       } catch (error) {
-        console.error("ADMIN EventDataFetcher - error fetching event data:", error);
+        console.error("ADMIN EventDataFetcher - error fetching event data from Supabase:", error);
       } finally {
         setIsLoading(false);
-        console.log('=== ADMIN EventDataFetcher - završeno učitavanje ===');
+        console.log('=== ADMIN EventDataFetcher - završeno učitavanje iz Supabase ===');
       }
     };
 

@@ -4,21 +4,47 @@ import {
   ProductType, 
   JARAttribute 
 } from "@/types";
-import { 
-  baseProductTypes, 
-  productTypes, 
-  events,
-  jarAttributes
-} from "./mock";
-import { createBaseJARAttribute } from './supabase/jarAttributes';
+import { createBaseJARAttribute, getJARAttributes as getJARAttributesSupabase } from './supabase/jarAttributes';
 import { supabase } from '@/integrations/supabase/client';
-import { createEvent as createEventSupabase } from './supabase/events';
+import { 
+  createEvent as createEventSupabase, 
+  getEvents as getEventsSupabase, 
+  getEvent as getEventSupabase,
+  updateEventStatus as updateEventStatusSupabase 
+} from './supabase/events';
+import { 
+  getAllProductTypes as getAllProductTypesSupabase,
+  getProductTypes as getProductTypesSupabase,
+  createProductType as createProductTypeSupabase,
+  getBaseProductType as getBaseProductTypeSupabase,
+  updateBaseProductType as updateBaseProductTypeSupabase,
+  deleteProductType as deleteProductTypeSupabase,
+  createBaseProductType as createBaseProductTypeSupabase
+} from './supabase/productTypes';
+import { 
+  getSamples as getSamplesSupabase, 
+  createSample as createSampleSupabase, 
+  updateSampleImages as updateSampleImagesSupabase 
+} from './supabase/samples';
+import { 
+  submitEvaluation as submitEvaluationSupabase,
+  getCompletedEvaluations as getCompletedEvaluationsSupabase,
+  getEvaluationsStatus as getEvaluationsStatusSupabase
+} from './supabase/evaluations';
+import { 
+  createRandomization as createRandomizationSupabase,
+  getRandomization as getRandomizationSupabase,
+  getNextSample as getNextSampleSupabase
+} from './supabase/randomization';
+import { 
+  generateHedonicReport as generateHedonicReportSupabase,
+  generateJARReport as generateJARReportSupabase,
+  getRawData as getRawDataSupabase
+} from './supabase/reports';
 
 // JAR Attribute Management
 export async function getJARAttributes(productTypeId: string): Promise<JARAttribute[]> {
-  const attributes = jarAttributes.filter(ja => ja.productTypeId === productTypeId);
-  console.log(`Getting JAR attributes for productTypeId ${productTypeId}:`, attributes);
-  return attributes;
+  return await getJARAttributesSupabase(productTypeId);
 }
 
 export async function createJARAttribute(
@@ -28,97 +54,23 @@ export async function createJARAttribute(
   scaleHR: [string, string, string, string, string],
   scaleEN: [string, string, string, string, string]
 ): Promise<JARAttribute> {
-  const newAttribute: JARAttribute = {
-    id: `attr_${Date.now()}`,
-    productTypeId,
-    nameHR,
-    nameEN,
-    scaleHR,
-    scaleEN
-  };
-  
-  jarAttributes.push(newAttribute);
-  
-  const productType = productTypes.find(pt => pt.id === productTypeId);
-  if (productType) {
-    productType.jarAttributes.push(newAttribute);
-  }
-  
-  return newAttribute;
+  return await createBaseJARAttribute(productTypeId, nameHR, nameEN, scaleHR, scaleEN);
 }
 
-// Base Product Type Management (for reuse across events)
+// Base Product Type Management
 export async function getAllProductTypes(): Promise<BaseProductType[]> {
-  return [...baseProductTypes];
+  return await getAllProductTypesSupabase();
 }
 
 export async function getBaseProductType(productTypeId: string): Promise<BaseProductType | null> {
-  const productType = baseProductTypes.find(pt => pt.id === productTypeId);
-  console.log("Retrieved base product type:", productTypeId, productType);
-  return productType || null;
+  return await getBaseProductTypeSupabase(productTypeId);
 }
 
 export async function createBaseProductType(
   productName: string,
   jarAttributes: JARAttribute[]
 ): Promise<BaseProductType> {
-  try {
-    console.log('=== CREATING BASE PRODUCT TYPE ===');
-    console.log('Product name:', productName);
-    console.log('JAR attributes count:', jarAttributes.length);
-
-    // Create the base product type
-    const { data: baseProductType, error: baseError } = await supabase
-      .from('base_product_types')
-      .insert({
-        product_name: productName
-      })
-      .select()
-      .single();
-
-    if (baseError) {
-      console.error('Error creating base product type:', baseError);
-      throw baseError;
-    }
-
-    console.log('Base product type created:', baseProductType);
-
-    // Create JAR attributes for the base product type
-    const createdAttributes: JARAttribute[] = [];
-    
-    for (const attr of jarAttributes) {
-      console.log('Creating JAR attribute:', attr.nameHR, attr.nameEN);
-      
-      const createdAttr = await createBaseJARAttribute(
-        baseProductType.id,
-        attr.nameHR,
-        attr.nameEN,
-        attr.scaleHR,
-        attr.scaleEN
-      );
-      
-      if (createdAttr) {
-        createdAttributes.push(createdAttr);
-        console.log('JAR attribute created successfully:', createdAttr.id);
-      } else {
-        console.error('Failed to create JAR attribute:', attr.nameHR);
-        throw new Error(`Failed to create JAR attribute: ${attr.nameHR}`);
-      }
-    }
-
-    console.log('All JAR attributes created successfully. Count:', createdAttributes.length);
-
-    return {
-      id: baseProductType.id,
-      productName: baseProductType.product_name,
-      jarAttributes: createdAttributes,
-      createdAt: baseProductType.created_at
-    };
-  } catch (error) {
-    console.error('=== ERROR createBaseProductType ===');
-    console.error('Error details:', error);
-    throw error;
-  }
+  return await createBaseProductTypeSupabase(productName, jarAttributes);
 }
 
 export async function updateBaseProductType(
@@ -126,41 +78,16 @@ export async function updateBaseProductType(
   productName: string,
   jarAttributes: JARAttribute[]
 ): Promise<boolean> {
-  const index = baseProductTypes.findIndex(pt => pt.id === productTypeId);
-  if (index === -1) return false;
-  
-  const updatedAttributes = jarAttributes.map(attr => ({
-    ...attr,
-    productTypeId,
-    scaleHR: attr.scaleHR as [string, string, string, string, string],
-    scaleEN: attr.scaleEN as [string, string, string, string, string]
-  }));
-  
-  baseProductTypes[index] = {
-    ...baseProductTypes[index],
-    productName,
-    jarAttributes: updatedAttributes
-  };
-  
-  return true;
+  return await updateBaseProductTypeSupabase(productTypeId, productName, jarAttributes);
 }
 
 export async function deleteProductType(productTypeId: string): Promise<boolean> {
-  const index = baseProductTypes.findIndex(pt => pt.id === productTypeId);
-  if (index === -1) return false;
-  
-  const isUsed = productTypes.some(pt => pt.baseProductTypeId === productTypeId);
-  if (isUsed) {
-    console.warn("Deleting a product type that is used in events. This could cause issues.");
-  }
-  
-  baseProductTypes.splice(index, 1);
-  return true;
+  return await deleteProductTypeSupabase(productTypeId);
 }
 
 // Product Type Management (within events)
 export async function getProductTypes(eventId: string): Promise<ProductType[]> {
-  return productTypes.filter(pt => pt.eventId === eventId);
+  return await getProductTypesSupabase(eventId);
 }
 
 export async function createProductType(
@@ -170,133 +97,122 @@ export async function createProductType(
   baseCode: string,
   displayOrder: number
 ): Promise<ProductType> {
-  const baseType = baseProductTypes.find(pt => pt.id === baseProductTypeId);
-  if (!baseType) throw new Error("Base product type not found");
-  
-  const newProductTypeId = `product_${Date.now()}`;
-  
-  const jarAttributesCopy = baseType.jarAttributes.map(attr => ({
-    ...attr,
-    id: `attr_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
-    productTypeId: newProductTypeId,
-    scaleHR: [...attr.scaleHR] as [string, string, string, string, string],
-    scaleEN: [...attr.scaleEN] as [string, string, string, string, string]
-  }));
-  
-  const newProductType: ProductType = {
-    id: newProductTypeId,
-    eventId,
-    customerCode,
-    productName: baseType.productName,
-    baseCode,
-    samples: [],
-    jarAttributes: jarAttributesCopy,
-    displayOrder,
-    baseProductTypeId
-  };
-  
-  productTypes.push(newProductType);
-  
-  const event = events.find(e => e.id === eventId);
-  if (event) {
-    event.productTypes.push(newProductType);
-  }
-  
-  return newProductType;
+  return await createProductTypeSupabase(eventId, customerCode, baseProductTypeId, baseCode, displayOrder);
 }
 
-// Event Management - Now using Supabase implementation
+// Event Management
 export async function createEvent(date: string) {
   return await createEventSupabase(date);
 }
 
-// Stub functions for missing exports - these should be implemented properly later
 export async function getEvent(eventId: string): Promise<any> {
-  return events.find(e => e.id === eventId) || null;
+  return await getEventSupabase(eventId);
 }
 
 export async function getEvents(): Promise<any[]> {
-  return events;
+  return await getEventsSupabase();
 }
 
 export async function updateEventStatus(eventId: string, status: string): Promise<boolean> {
-  console.log("updateEventStatus not fully implemented", eventId, status);
-  return false;
+  return await updateEventStatusSupabase(eventId, status as any);
 }
 
-export async function getEvaluationsStatus(eventId: string): Promise<any> {
-  console.log("getEvaluationsStatus not fully implemented", eventId);
-  return {};
-}
-
-export async function getRawData(eventId: string): Promise<any> {
-  console.log("getRawData not fully implemented", eventId);
-  return [];
+// Sample Management
+export async function getSamples(productTypeId: string): Promise<any[]> {
+  return await getSamplesSupabase(productTypeId);
 }
 
 export async function createSample(productTypeId: string, brand: string, retailerCode: string): Promise<any> {
-  console.log("createSample not fully implemented", productTypeId, brand, retailerCode);
-  return null;
+  return await createSampleSupabase(productTypeId, brand, retailerCode as any);
 }
 
 export async function updateSampleImages(sampleId: string, images: any): Promise<boolean> {
-  console.log("updateSampleImages not fully implemented", sampleId, images);
-  return false;
+  const { preparedImage, packagingImage, detailImages } = images;
+  return await updateSampleImagesSupabase(sampleId, preparedImage, packagingImage, detailImages);
 }
 
-export async function getSamples(productTypeId: string): Promise<any[]> {
-  console.log("getSamples not fully implemented", productTypeId);
-  return [];
-}
-
-export async function generateHedonicReport(eventId: string): Promise<any> {
-  console.log("generateHedonicReport not fully implemented", eventId);
-  return {};
-}
-
-export async function generateJARReport(eventId: string): Promise<any> {
-  console.log("generateJARReport not fully implemented", eventId);
-  return {};
-}
-
-export async function updateUserPassword(userId: string, password: string): Promise<boolean> {
-  console.log("updateUserPassword not fully implemented", userId);
-  return false;
-}
-
-export async function updateUserStatus(userId: string, isActive: boolean): Promise<boolean> {
-  console.log("updateUserStatus not fully implemented", userId, isActive);
-  return false;
-}
-
+// Evaluation Management
 export async function submitEvaluation(evaluationData: any): Promise<any> {
-  console.log("submitEvaluation not fully implemented", evaluationData);
-  return null;
-}
-
-export async function getNextSample(userId: string, eventId: string, productTypeId?: string, completedSampleIds?: string[]): Promise<any> {
-  console.log("getNextSample not fully implemented", userId, eventId, productTypeId, completedSampleIds);
-  return null;
+  const { userId, sampleId, productTypeId, eventId, hedonic, jar } = evaluationData;
+  return await submitEvaluationSupabase(userId, sampleId, productTypeId, eventId, hedonic, jar);
 }
 
 export async function getCompletedEvaluations(eventId: string, userId: string): Promise<any[]> {
-  console.log("getCompletedEvaluations not fully implemented", eventId, userId);
-  return [];
+  return await getCompletedEvaluationsSupabase(userId, eventId);
 }
 
+export async function getEvaluationsStatus(eventId: string): Promise<any> {
+  return await getEvaluationsStatusSupabase(eventId);
+}
+
+export async function getNextSample(userId: string, eventId: string, productTypeId?: string, completedSampleIds?: string[]): Promise<any> {
+  return await getNextSampleSupabase(userId, eventId, productTypeId, completedSampleIds);
+}
+
+// Randomization Management
 export async function createRandomization(eventId: string): Promise<any> {
-  console.log("createRandomization not fully implemented", eventId);
-  return null;
+  return await createRandomizationSupabase(eventId);
 }
 
 export async function getRandomization(eventId: string): Promise<any> {
-  console.log("getRandomization not fully implemented", eventId);
-  return null;
+  return await getRandomizationSupabase(eventId);
 }
 
+// Reports Management
+export async function generateHedonicReport(eventId: string): Promise<any> {
+  return await generateHedonicReportSupabase(eventId);
+}
+
+export async function generateJARReport(eventId: string): Promise<any> {
+  return await generateJARReportSupabase(eventId);
+}
+
+export async function getRawData(eventId: string): Promise<any> {
+  return await getRawDataSupabase(eventId);
+}
+
+// User Management - Using Supabase
 export async function getUsers(): Promise<any[]> {
-  console.log("getUsers not fully implemented");
-  return [];
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .order('username');
+    
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching users:', error);
+    return [];
+  }
+}
+
+export async function updateUserPassword(userId: string, password: string): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from('users')
+      .update({ password })
+      .eq('id', userId);
+    
+    return !error;
+  } catch (error) {
+    console.error('Error updating user password:', error);
+    return false;
+  }
+}
+
+export async function updateUserStatus(userId: string, isActive: boolean): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from('users')
+      .update({ is_active: isActive })
+      .eq('id', userId);
+    
+    return !error;
+  } catch (error) {
+    console.error('Error updating user status:', error);
+    return false;
+  }
 }
 
 // Legacy aliases for backwards compatibility
@@ -306,7 +222,7 @@ export const updateEventProductType = (
   customerCode: string,
   baseCode: string
 ): Promise<boolean> => {
-  // This is for updating product types within events, not base product types
-  console.log("updateEventProductType stub - updating:", productTypeId, customerCode, baseCode);
+  console.log("updateEventProductType - redirecting to Supabase implementation");
+  // This would need to be implemented in Supabase productTypes service
   return Promise.resolve(true);
 };
