@@ -216,12 +216,25 @@ export async function updateUserStatus(userId: string, isActive: boolean): Promi
 
 // Legacy aliases for backwards compatibility
 export const deleteEventProductType = deleteProductType;
-export const updateEventProductType = (
+export const updateEventProductType = async (
   productTypeId: string,
   customerCode: string,
   baseCode: string
 ): Promise<boolean> => {
-  console.log("updateEventProductType - redirecting to Supabase implementation");
-  // This would need to be implemented in Supabase productTypes service
-  return Promise.resolve(true);
+  try {
+    console.log("updateEventProductType - updating product type in Supabase");
+    
+    const { error } = await supabase
+      .from('product_types')
+      .update({ 
+        customer_code: customerCode,
+        base_code: baseCode
+      })
+      .eq('id', productTypeId);
+    
+    return !error;
+  } catch (error) {
+    console.error('Error updating product type:', error);
+    return false;
+  }
 };
