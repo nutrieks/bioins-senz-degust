@@ -168,6 +168,36 @@ export async function getRandomization(eventId: string): Promise<any> {
   return await getRandomizationSupabase(eventId);
 }
 
+// Add a new function to check if all product types have randomizations
+export async function checkRandomizationsComplete(eventId: string): Promise<boolean> {
+  try {
+    console.log('Checking if all product types have randomizations for event:', eventId);
+    
+    // Get all product types for this event
+    const productTypes = await getProductTypesSupabase(eventId);
+    
+    if (productTypes.length === 0) {
+      console.log('No product types found for event');
+      return false;
+    }
+    
+    // Check each product type for randomization
+    for (const productType of productTypes) {
+      const randomization = await getRandomizationSupabase(productType.id);
+      if (!randomization) {
+        console.log(`No randomization found for product type: ${productType.id}`);
+        return false;
+      }
+    }
+    
+    console.log('All product types have randomizations');
+    return true;
+  } catch (error) {
+    console.error('Error checking randomizations:', error);
+    return false;
+  }
+}
+
 // Reports Management
 export async function generateHedonicReport(eventId: string): Promise<any> {
   return await generateHedonicReportSupabase(eventId);
