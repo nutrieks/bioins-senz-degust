@@ -4,15 +4,17 @@ import { useNavigate } from "react-router-dom";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { getEvents } from "@/services/dataService";
+import { getEvents, deleteEvent } from "@/services/dataService";
 import { Event, EventStatus } from "@/types";
 import { EventCard } from "@/components/admin/EventCard";
 import { Calendar, PlusCircle } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 export default function AdminDashboard() {
   const [events, setEvents] = useState<Event[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   const fetchEvents = async () => {
     try {
@@ -49,6 +51,30 @@ export default function AdminDashboard() {
     fetchEvents();
   };
 
+  const handleDeleteEvent = async (eventId: string) => {
+    try {
+      console.log('AdminDashboard - Deleting event:', eventId);
+      const success = await deleteEvent(eventId);
+      
+      if (success) {
+        toast({
+          title: "Uspješno",
+          description: "Događaj je uspješno obrisan.",
+        });
+        fetchEvents(); // Refresh the events list
+      } else {
+        throw new Error('Failed to delete event');
+      }
+    } catch (error) {
+      console.error('AdminDashboard - Error deleting event:', error);
+      toast({
+        title: "Greška",
+        description: "Došlo je do greške prilikom brisanja događaja.",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <AdminLayout>
       <div className="space-y-6">
@@ -77,7 +103,8 @@ export default function AdminDashboard() {
                     <EventCard 
                       key={event.id} 
                       event={event} 
-                      onEventUpdated={handleEventUpdated} 
+                      onEventUpdated={handleEventUpdated}
+                      onEventDeleted={() => handleDeleteEvent(event.id)}
                     />
                   ))}
                 </div>
@@ -105,7 +132,8 @@ export default function AdminDashboard() {
                     <EventCard 
                       key={event.id} 
                       event={event} 
-                      onEventUpdated={handleEventUpdated} 
+                      onEventUpdated={handleEventUpdated}
+                      onEventDeleted={() => handleDeleteEvent(event.id)}
                     />
                   ))}
                 </div>
