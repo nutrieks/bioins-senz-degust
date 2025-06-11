@@ -139,13 +139,13 @@ export async function getNextSample(userId: string, eventId: string, productType
   return await getNextSampleSupabase(userId, eventId, productTypeId, completedSampleIds);
 }
 
-// Randomization Management
-export async function createRandomization(eventId: string): Promise<any> {
-  return await createRandomizationSupabase(eventId);
+// Randomization Management - Updated to work with productTypeId
+export async function createRandomization(productTypeId: string): Promise<any> {
+  return await createRandomizationSupabase(productTypeId);
 }
 
-export async function getRandomization(eventId: string): Promise<any> {
-  return await getRandomizationSupabase(eventId);
+export async function getRandomization(productTypeId: string): Promise<any> {
+  return await getRandomizationSupabase(productTypeId);
 }
 
 // Check if all product types have randomizations

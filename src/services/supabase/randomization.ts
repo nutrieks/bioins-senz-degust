@@ -1,76 +1,56 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { getRandomization, createRandomizationRecord } from './randomization/core';
 import { generateLatinSquare, shuffleArray, generateRandomizedOrder } from './randomization/generator';
 
 export { getRandomization };
 
-export async function createRandomization(eventId: string): Promise<any> {
+export async function createRandomization(productTypeId: string): Promise<any> {
   try {
-    console.log('=== CREATING RANDOMIZATION FOR EVENT ===');
-    console.log('Event ID:', eventId);
+    console.log('=== CREATING RANDOMIZATION FOR PRODUCT TYPE ===');
+    console.log('Product Type ID:', productTypeId);
 
-    // Get all product types for this event
-    const { data: productTypes, error: ptError } = await supabase
-      .from('product_types')
+    // Check if randomization already exists
+    const existingRandomization = await getRandomization(productTypeId);
+    if (existingRandomization) {
+      console.log('Randomization already exists for this product type');
+      return existingRandomization;
+    }
+
+    // Get samples for this product type
+    const { data: samples, error: samplesError } = await supabase
+      .from('samples')
       .select('*')
-      .eq('event_id', eventId)
-      .order('display_order');
+      .eq('product_type_id', productTypeId);
 
-    if (ptError) throw ptError;
+    if (samplesError) throw samplesError;
 
-    if (!productTypes || productTypes.length === 0) {
-      throw new Error('No product types found for this event');
+    if (!samples || samples.length === 0) {
+      console.log('No samples found for product type:', productTypeId);
+      throw new Error('No samples found for this product type');
     }
 
-    console.log('Found product types:', productTypes.length);
+    console.log('Found samples:', samples.length);
 
-    // Create randomization for each product type
-    const results = [];
+    // Create randomization table
+    const randomizationTable = await createRandomizationTable(samples);
     
-    for (const productType of productTypes) {
-      console.log(`Creating randomization for product type: ${productType.product_name}`);
-      
-      // Check if randomization already exists
-      const existingRandomization = await getRandomization(productType.id);
-      if (existingRandomization) {
-        console.log('Randomization already exists for this product type');
-        results.push(existingRandomization);
-        continue;
-      }
-
-      // Get samples for this product type
-      const { data: samples, error: samplesError } = await supabase
-        .from('samples')
-        .select('*')
-        .eq('product_type_id', productType.id);
-
-      if (samplesError) throw samplesError;
-
-      if (!samples || samples.length === 0) {
-        console.log('No samples found for product type:', productType.product_name);
-        continue;
-      }
-
-      console.log('Found samples:', samples.length);
-
-      // Create randomization table
-      const randomizationTable = await createRandomizationTable(samples);
-      
-      // Save randomization to database
-      const randomizationRecord = await createRandomizationRecord(
-        productType.id, 
-        randomizationTable
-      );
-      
-      results.push(randomizationRecord);
-      
-      // Update samples with blind codes
-      await updateSamplesWithBlindCodes(samples, randomizationTable);
-    }
+    // Save randomization to database
+    const randomizationRecord = await createRandomizationRecord(
+      productTypeId, 
+      randomizationTable
+    );
+    
+    // Update samples with blind codes
+    await updateSamplesWithBlindCodes(samples, randomizationTable);
+    
+    // Update product type to mark it has randomization
+    await supabase
+      .from('product_types')
+      .update({ has_randomization: true })
+      .eq('id', productTypeId);
 
     console.log('=== RANDOMIZATION CREATION COMPLETE ===');
-    return results;
+    return randomizationRecord;
   } catch (error) {
     console.error('=== ERROR CREATING RANDOMIZATION ===');
     console.error('Error details:', error);
