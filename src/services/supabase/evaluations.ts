@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client'
 import { Evaluation, EvaluationSubmission, EvaluationStatus } from '@/types'
 
@@ -27,7 +26,8 @@ export async function getCompletedEvaluations(
       throw error;
     }
 
-    console.log('Evaluations fetched:', data?.length || 0);
+    console.log('Evaluations fetched from database:', data?.length || 0);
+    console.log('Raw evaluation data:', data);
 
     return (data || []).map((item: any) => ({
       id: item.id,
@@ -55,29 +55,53 @@ export async function getCompletedEvaluations(
 export async function submitEvaluation(evaluation: EvaluationSubmission): Promise<boolean> {
   try {
     console.log('=== SUPABASE submitEvaluation ===');
-    console.log('Evaluation data:', evaluation);
+    console.log('Evaluation data to insert:', evaluation);
     
-    const { error } = await supabase
+    const insertData = {
+      user_id: evaluation.userId,
+      sample_id: evaluation.sampleId,
+      product_type_id: evaluation.productTypeId,
+      event_id: evaluation.eventId,
+      hedonic_appearance: evaluation.hedonicRatings.appearance,
+      hedonic_odor: evaluation.hedonicRatings.odor,
+      hedonic_texture: evaluation.hedonicRatings.texture,
+      hedonic_flavor: evaluation.hedonicRatings.flavor,
+      hedonic_overall_liking: evaluation.hedonicRatings.overallLiking,
+      jar_ratings: evaluation.jarRatings
+    };
+    
+    console.log('Inserting data into evaluations table:', insertData);
+    
+    const { data, error } = await supabase
       .from('evaluations')
-      .insert({
-        user_id: evaluation.userId,
-        sample_id: evaluation.sampleId,
-        product_type_id: evaluation.productTypeId,
-        event_id: evaluation.eventId,
-        hedonic_appearance: evaluation.hedonicRatings.appearance,
-        hedonic_odor: evaluation.hedonicRatings.odor,
-        hedonic_texture: evaluation.hedonicRatings.texture,
-        hedonic_flavor: evaluation.hedonicRatings.flavor,
-        hedonic_overall_liking: evaluation.hedonicRatings.overallLiking,
-        jar_ratings: evaluation.jarRatings
-      });
+      .insert(insertData)
+      .select()
+      .single();
 
     if (error) {
       console.error('Error submitting evaluation:', error);
+      console.error('Error code:', error.code);
+      console.error('Error details:', error.details);
+      console.error('Error hint:', error.hint);
+      console.error('Error message:', error.message);
       throw error;
     }
 
-    console.log('Evaluation submitted successfully');
+    console.log('Evaluation submitted successfully:', data);
+    
+    // Verify the insertion by fetching the record
+    const { data: verifyData, error: verifyError } = await supabase
+      .from('evaluations')
+      .select('*')
+      .eq('id', data.id)
+      .single();
+      
+    if (verifyError) {
+      console.warn('Could not verify evaluation insertion:', verifyError);
+    } else {
+      console.log('Verified evaluation was inserted:', verifyData);
+    }
+    
     return true;
   } catch (error) {
     console.error('=== ERROR submitEvaluation ===');
@@ -120,16 +144,22 @@ export async function getEvaluationsStatus(eventId: string): Promise<EvaluationS
       throw ptError;
     }
 
-    // Get all evaluations for this event
+    // Get all evaluations for this event with real-time refresh
     const { data: evaluations, error: evalError } = await supabase
       .from('evaluations')
-      .select('user_id, sample_id, product_type_id')
-      .eq('event_id', eventId);
+      .select('user_id, sample_id, product_type_id, timestamp')
+      .eq('event_id', eventId)
+      .order('timestamp', { ascending: false });
 
     if (evalError) {
       console.error('Error fetching evaluations:', evalError);
       throw evalError;
     }
+
+    console.log('Fetched data for evaluation status:');
+    console.log('Users:', users?.length);
+    console.log('Product types:', productTypes?.length);
+    console.log('Evaluations:', evaluations?.length);
 
     // Build evaluation status for each user
     const evaluationStatus: EvaluationStatus[] = (users || []).map(user => {

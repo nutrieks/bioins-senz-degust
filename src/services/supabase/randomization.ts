@@ -186,6 +186,7 @@ export async function getNextSample(
     console.log('User ID:', userId);
     console.log('Event ID:', eventId);
     console.log('Product Type ID:', productTypeId);
+    console.log('Completed Sample IDs from parameter:', completedSampleIds);
     
     // Get user position
     const { data: user, error: userError } = await supabase
@@ -205,38 +206,73 @@ export async function getNextSample(
       throw new Error('User has no evaluator position');
     }
 
+    console.log('Evaluator position:', evaluatorPosition);
+
+    // Always refresh completed evaluations from database to get the latest state
+    console.log('Refreshing completed evaluations from database...');
+    const { data: evaluations, error: evalError } = await supabase
+      .from('evaluations')
+      .select('sample_id')
+      .eq('user_id', userId)
+      .eq('event_id', eventId)
+      .eq('product_type_id', productTypeId);
+
+    if (evalError) {
+      console.error('Error fetching completed evaluations:', evalError);
+      throw evalError;
+    }
+
+    const completedFromDB = (evaluations || []).map(e => e.sample_id);
+    console.log('Completed samples from database:', completedFromDB);
+
+    // Use database data as the source of truth
+    const completedSet = new Set(completedFromDB);
+
     // Get randomization for this product type
     const randomization = await getRandomization(productTypeId!);
     if (!randomization) {
-      console.error('No randomization found');
+      console.error('No randomization found for product type:', productTypeId);
       return { sample: null, round: 0, isComplete: true };
     }
+
+    console.log('Randomization table:', randomization.table);
 
     // Get samples for this product type
     const { data: samples, error: samplesError } = await supabase
       .from('samples')
       .select('*')
-      .eq('product_type_id', productTypeId);
+      .eq('product_type_id', productTypeId)
+      .order('created_at');
 
     if (samplesError || !samples) {
       console.error('Error fetching samples:', samplesError);
       return { sample: null, round: 0, isComplete: true };
     }
 
-    const completedSet = new Set(completedSampleIds || []);
+    console.log('Available samples:', samples.map(s => ({ id: s.id, blind_code: s.blind_code })));
 
     // Find next sample from randomization table
     const positionSchedule = randomization.table[evaluatorPosition] || {};
+    console.log('Position schedule for evaluator', evaluatorPosition, ':', positionSchedule);
     
     for (let round = 1; round <= samples.length; round++) {
       const blindCode = positionSchedule[round];
-      if (!blindCode) continue;
+      if (!blindCode) {
+        console.log(`No blind code for round ${round}`);
+        continue;
+      }
       
       const sample = samples.find(s => s.blind_code === blindCode);
-      if (!sample) continue;
+      if (!sample) {
+        console.log(`Sample not found for blind code ${blindCode}`);
+        continue;
+      }
+      
+      console.log(`Checking round ${round}, blind code ${blindCode}, sample ID ${sample.id}`);
+      console.log(`Is completed: ${completedSet.has(sample.id)}`);
       
       if (!completedSet.has(sample.id)) {
-        console.log('Next sample found:', sample.id, blindCode);
+        console.log('Next sample found:', sample.id, blindCode, 'round:', round);
         return {
           sample: {
             id: sample.id,
@@ -256,7 +292,7 @@ export async function getNextSample(
       }
     }
 
-    console.log('No more samples to evaluate');
+    console.log('All samples completed for this product type');
     return { sample: null, round: 0, isComplete: true };
   } catch (error) {
     console.error('=== ERROR getNextSample ===');

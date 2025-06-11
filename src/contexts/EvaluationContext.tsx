@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { Sample, JARAttribute, ProductType } from "../types";
 import { getNextSample, getCompletedEvaluations, getProductTypes, getJARAttributes } from "../services/dataService";
@@ -72,19 +73,38 @@ export const EvaluationProvider: React.FC<{
   }, [currentSample, currentProductType]);
 
   const loadNextSample = async (eventId: string, productTypeId?: string) => {
-    if (!user || !user.id) return;
+    if (!user || !user.id) {
+      console.log("No user available for loading next sample");
+      return;
+    }
 
     try {
+      console.log("=== LOADING NEXT SAMPLE ===");
+      console.log("Event ID:", eventId);
+      console.log("Product Type ID:", productTypeId);
+      console.log("User ID:", user.id);
+
+      // Always refresh completed evaluations from database first
+      console.log("Fetching fresh completed evaluations from database...");
       const completed = await getCompletedEvaluations(eventId, user.id);
       const completedSampleIds = completed.map(e => e.sampleId);
+      console.log("Fresh completed sample IDs:", completedSampleIds);
       setCompletedSamples(completedSampleIds);
 
+      // Get next sample with refreshed completion data
+      console.log("Getting next sample with fresh completion data...");
       const { sample, round, isComplete: complete } = await getNextSample(
         user.id,
         eventId,
         productTypeId,
         completedSampleIds
       );
+
+      console.log("Next sample result:", {
+        sample: sample ? { id: sample.id, blindCode: sample.blindCode } : null,
+        round,
+        isComplete: complete
+      });
 
       setCurrentSample(sample);
       setCurrentRound(round);
@@ -94,6 +114,7 @@ export const EvaluationProvider: React.FC<{
           const productType = allProductTypes.find(pt => pt.id === sample.productTypeId);
           if (productType) {
             setCurrentProductType(productType);
+            console.log("Set current product type:", productType.productName);
           }
         } else if (productTypeId) {
           const types = await getProductTypes(eventId);
@@ -101,6 +122,7 @@ export const EvaluationProvider: React.FC<{
           if (productType) {
             setCurrentProductType(productType);
             setAllProductTypes(types);
+            console.log("Loaded product types and set current:", productType.productName);
           }
         }
       }
@@ -108,6 +130,7 @@ export const EvaluationProvider: React.FC<{
       if (complete && productTypeId) {
         // Current product type is complete, add to processed list
         if (productTypeId && !processedProductTypes.includes(productTypeId)) {
+          console.log("Product type completed, adding to processed list:", productTypeId);
           setProcessedProductTypes(prev => [...prev, productTypeId]);
         }
         setIsComplete(false);
@@ -124,6 +147,8 @@ export const EvaluationProvider: React.FC<{
     if (!user || !user.id) return false;
 
     try {
+      console.log("=== LOADING NEXT PRODUCT TYPE ===");
+      
       // Load all product types if not already loaded
       if (allProductTypes.length === 0) {
         const types = await getProductTypes(eventId);
@@ -167,6 +192,7 @@ export const EvaluationProvider: React.FC<{
   };
 
   const resetEvaluation = () => {
+    console.log("=== RESETTING EVALUATION ===");
     setCurrentSample(null);
     setCurrentRound(0);
     setIsComplete(false);

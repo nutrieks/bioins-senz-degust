@@ -1,167 +1,197 @@
 
 import { useState, useEffect } from "react";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Check } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { RefreshCw, Users, CheckCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { getEvaluationsStatus } from "@/services/dataService";
 import { EvaluationStatus } from "@/types";
+import { supabase } from "@/integrations/supabase/client";
 
 interface EvaluationProgressTrackerProps {
   eventId: string;
-  refreshInterval?: number; // in milliseconds
 }
 
-export function EvaluationProgressTracker({ eventId, refreshInterval = 30000 }: EvaluationProgressTrackerProps) {
-  const [evaluationsStatus, setEvaluationsStatus] = useState<EvaluationStatus[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [overallProgress, setOverallProgress] = useState<number>(0);
+export function EvaluationProgressTracker({ eventId }: EvaluationProgressTrackerProps) {
+  const [evaluationStatus, setEvaluationStatus] = useState<EvaluationStatus[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
 
-  // Fetch evaluations status
-  const fetchEvaluationsStatus = async () => {
+  const fetchEvaluationStatus = async () => {
     try {
+      console.log("Fetching evaluation status for event:", eventId);
       setIsLoading(true);
       const status = await getEvaluationsStatus(eventId);
-      
-      // Calculate overall progress
-      let totalCompleted = 0;
-      let totalSamples = 0;
-      
-      status.forEach(userStatus => {
-        totalCompleted += userStatus.totalCompleted;
-        totalSamples += userStatus.totalSamples;
-      });
-      
-      const progressPercentage = totalSamples > 0 ? Math.round((totalCompleted / totalSamples) * 100) : 0;
-      setOverallProgress(progressPercentage);
-      setEvaluationsStatus(status);
+      console.log("Evaluation status received:", status);
+      setEvaluationStatus(status);
       setLastUpdated(new Date());
     } catch (error) {
-      console.error("Error fetching evaluations status:", error);
+      console.error("Error fetching evaluation status:", error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Initial fetch and set up interval for refreshing
   useEffect(() => {
-    fetchEvaluationsStatus();
-    
-    // Set up interval for auto-refresh
-    const intervalId = setInterval(() => {
-      fetchEvaluationsStatus();
-    }, refreshInterval);
-    
-    // Clean up interval on component unmount
-    return () => clearInterval(intervalId);
-  }, [eventId, refreshInterval]);
+    if (eventId) {
+      fetchEvaluationStatus();
+    }
+  }, [eventId]);
 
-  // Helper function to get unique product types from all evaluators
-  const getUniqueProductTypes = () => {
-    if (evaluationsStatus.length === 0) return [];
+  // Set up real-time subscription for evaluation updates
+  useEffect(() => {
+    if (!eventId) return;
+
+    console.log("Setting up real-time subscription for evaluations");
     
-    const allProductTypes = evaluationsStatus.flatMap(status => status.completedSamples);
-    const uniqueTypes = Array.from(new Set(allProductTypes.map(pt => pt.productTypeId)))
-      .map(id => {
-        const productType = allProductTypes.find(pt => pt.productTypeId === id);
-        return {
-          id: productType?.productTypeId || "",
-          name: productType?.productTypeName || ""
-        };
-      });
-    
-    return uniqueTypes;
+    const channel = supabase
+      .channel('evaluation-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'evaluations',
+          filter: `event_id=eq.${eventId}`
+        },
+        (payload) => {
+          console.log('Real-time evaluation update received:', payload);
+          // Refresh the status when evaluations change
+          fetchEvaluationStatus();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      console.log("Unsubscribing from real-time evaluation updates");
+      supabase.removeChannel(channel);
+    };
+  }, [eventId]);
+
+  const handleRefresh = () => {
+    fetchEvaluationStatus();
   };
 
-  const productTypes = getUniqueProductTypes();
+  const getTotalProgress = () => {
+    const totalSamples = evaluationStatus.reduce((sum, user) => sum + user.totalSamples, 0);
+    const totalCompleted = evaluationStatus.reduce((sum, user) => sum + user.totalCompleted, 0);
+    return totalSamples > 0 ? (totalCompleted / totalSamples) * 100 : 0;
+  };
 
-  if (isLoading && evaluationsStatus.length === 0) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Praćenje ocjenjivanja u tijeku</CardTitle>
-          <CardDescription>Učitavanje podataka...</CardDescription>
-        </CardHeader>
-        <CardContent className="flex justify-center items-center py-8">
-          <div className="animate-pulse h-48 w-full bg-gray-100 rounded"></div>
-        </CardContent>
-      </Card>
-    );
-  }
+  const getUserProgressPercentage = (user: EvaluationStatus) => {
+    return user.totalSamples > 0 ? (user.totalCompleted / user.totalSamples) * 100 : 0;
+  };
+
+  const getProgressColor = (percentage: number) => {
+    if (percentage === 100) return "bg-green-500";
+    if (percentage >= 50) return "bg-yellow-500";
+    return "bg-blue-500";
+  };
 
   return (
-    <Card className="mt-6">
-      <CardHeader>
-        <div className="flex justify-between items-center flex-wrap gap-2">
-          <div>
-            <CardTitle>Praćenje ocjenjivanja u tijeku</CardTitle>
-            <CardDescription>
-              Ukupni napredak: {overallProgress}% završeno
-            </CardDescription>
-          </div>
-          <div className="text-xs text-muted-foreground">
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-xl font-bold flex items-center">
+          <Users className="mr-2 h-5 w-5" />
+          Napredak evaluatora
+        </CardTitle>
+        <div className="flex items-center space-x-2">
+          <Badge variant="outline" className="text-xs">
             Zadnje ažuriranje: {lastUpdated.toLocaleTimeString()}
-            <button 
-              onClick={() => fetchEvaluationsStatus()}
-              className="ml-2 text-primary underline hover:text-primary/80"
-            >
-              Osvježi
-            </button>
-          </div>
+          </Badge>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRefresh}
+            disabled={isLoading}
+          >
+            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+          </Button>
         </div>
       </CardHeader>
       <CardContent>
-        <div className="mb-6">
-          <Progress value={overallProgress} className="h-2" />
-        </div>
-
-        {productTypes.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {productTypes.map((productType) => (
-              <div key={productType.id} className="border rounded-lg p-4">
-                <h3 className="font-medium text-lg mb-3">{productType.name}</h3>
-                
-                <div className="grid grid-cols-12 gap-2 text-center font-medium border-b pb-2">
-                  <div className="col-span-2">Ocjenjivač</div>
-                  <div className="col-span-10">Uzorci</div>
-                </div>
-                
-                {evaluationsStatus.map((evaluator) => {
-                  const productTypeData = evaluator.completedSamples.find(
-                    pt => pt.productTypeId === productType.id
-                  );
-
-                  if (!productTypeData) return null;
-
-                  return (
-                    <div key={`${evaluator.userId}-${productType.id}`} className="grid grid-cols-12 gap-2 py-2 border-b">
-                      <div className="col-span-2 flex items-center">
-                        <div className="px-2 py-1 rounded-lg bg-muted">
-                          {evaluator.position}
-                        </div>
-                      </div>
-                      <div className="col-span-10 flex flex-wrap gap-2">
-                        {productTypeData.samples.map((sample) => (
-                          <Badge 
-                            key={sample.sampleId}
-                            variant={sample.isCompleted ? "default" : "outline"}
-                            className="flex items-center gap-1"
-                          >
-                            {sample.isCompleted && <Check className="h-3 w-3" />}
-                            <span>{sample.blindCode}</span>
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            ))}
+        {isLoading && evaluationStatus.length === 0 ? (
+          <div className="text-center py-4">Učitavanje...</div>
+        ) : evaluationStatus.length === 0 ? (
+          <div className="text-center py-4 text-muted-foreground">
+            Nema podataka o napretku evaluatora
           </div>
         ) : (
-          <div className="text-center py-8 text-muted-foreground">
-            Nema podataka o ocjenjivanju za ovaj događaj.
+          <div className="space-y-6">
+            {/* Overall Progress */}
+            <div className="border-b pb-4">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="font-medium">Ukupan napredak</h3>
+                <span className="text-sm font-mono">
+                  {evaluationStatus.reduce((sum, user) => sum + user.totalCompleted, 0)} / 
+                  {evaluationStatus.reduce((sum, user) => sum + user.totalSamples, 0)}
+                </span>
+              </div>
+              <Progress 
+                value={getTotalProgress()} 
+                className="h-2"
+              />
+              <p className="text-sm text-muted-foreground mt-1">
+                {getTotalProgress().toFixed(1)}% završeno
+              </p>
+            </div>
+
+            {/* Individual User Progress */}
+            <div className="space-y-4">
+              <h3 className="font-medium">Napredak po evaluatoru</h3>
+              <div className="grid gap-4">
+                {evaluationStatus
+                  .sort((a, b) => a.position - b.position)
+                  .map((user) => {
+                    const percentage = getUserProgressPercentage(user);
+                    return (
+                      <div key={user.userId} className="border rounded-lg p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center space-x-2">
+                            <span className="font-medium">{user.username}</span>
+                            <Badge variant="secondary" className="text-xs">
+                              Pozicija {user.position}
+                            </Badge>
+                            {percentage === 100 && (
+                              <CheckCircle className="h-4 w-4 text-green-500" />
+                            )}
+                          </div>
+                          <span className="text-sm font-mono">
+                            {user.totalCompleted} / {user.totalSamples}
+                          </span>
+                        </div>
+                        <Progress 
+                          value={percentage} 
+                          className={`h-2 ${getProgressColor(percentage)}`}
+                        />
+                        <div className="flex justify-between items-center mt-2">
+                          <p className="text-sm text-muted-foreground">
+                            {percentage.toFixed(1)}% završeno
+                          </p>
+                          {percentage === 100 && (
+                            <Badge variant="default" className="bg-green-500">
+                              Završeno
+                            </Badge>
+                          )}
+                        </div>
+
+                        {/* Sample breakdown by product type */}
+                        <div className="mt-3 space-y-1">
+                          {user.completedSamples.map((productType, index) => (
+                            <div key={index} className="text-xs">
+                              <span className="font-medium">{productType.productTypeName}:</span>
+                              <span className="ml-2">
+                                {productType.samples.filter(s => s.isCompleted).length} / {productType.samples.length} uzoraka
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            </div>
           </div>
         )}
       </CardContent>
