@@ -229,6 +229,7 @@ export async function getProductTypes(eventId: string): Promise<ProductType[]> {
       baseCode: item.base_code,
       displayOrder: item.display_order,
       baseProductTypeId: item.base_product_type_id,
+      hasRandomization: item.has_randomization, // Now properly mapping this field
       samples: (item.samples || []).map((sample: any) => ({
         id: sample.id,
         productTypeId: sample.product_type_id,
