@@ -1,194 +1,171 @@
-import { supabase } from '@/integrations/supabase/client'
-import { Randomization } from '@/types'
 
-// Generate randomization table logic with proper Latin square design
-function generateRandomizationTable(samples: any[]): Record<number, Record<number, string>> {
-  const numSamples = samples.length;
-  const numPositions = 12;
-  const table: Record<number, Record<number, string>> = {};
+import { supabase } from '@/integrations/supabase/client';
+import { getRandomization, createRandomizationRecord } from './randomization/core';
+import { generateLatinSquare, shuffleArray, generateRandomizedOrder } from './randomization/generator';
 
-  console.log('Generating randomization table for samples:', samples.map(s => s.blind_code));
+export { getRandomization };
 
-  // Initialize table
-  for (let position = 1; position <= numPositions; position++) {
-    table[position] = {};
-  }
+export async function createRandomization(eventId: string): Promise<any> {
+  try {
+    console.log('=== CREATING RANDOMIZATION FOR EVENT ===');
+    console.log('Event ID:', eventId);
 
-  // Latin square generation for balanced design
-  for (let round = 1; round <= numSamples; round++) {
-    const sampleOrder = [];
-    
-    // Generate order for this round using Latin square principles
-    for (let i = 0; i < numSamples; i++) {
-      const sampleIndex = (i + round - 1) % numSamples;
-      sampleOrder.push(samples[sampleIndex].blind_code);
+    // Get all product types for this event
+    const { data: productTypes, error: ptError } = await supabase
+      .from('product_types')
+      .select('*')
+      .eq('event_id', eventId)
+      .order('display_order');
+
+    if (ptError) throw ptError;
+
+    if (!productTypes || productTypes.length === 0) {
+      throw new Error('No product types found for this event');
     }
-    
-    console.log(`Round ${round} order:`, sampleOrder);
-    
-    // Assign to positions
-    for (let position = 1; position <= numPositions; position++) {
-      const sampleIndex = (position - 1) % numSamples;
-      table[position][round] = sampleOrder[sampleIndex];
-    }
-  }
 
-  console.log('Generated randomization table:', table);
-  return table;
+    console.log('Found product types:', productTypes.length);
+
+    // Create randomization for each product type
+    const results = [];
+    
+    for (const productType of productTypes) {
+      console.log(`Creating randomization for product type: ${productType.product_name}`);
+      
+      // Check if randomization already exists
+      const existingRandomization = await getRandomization(productType.id);
+      if (existingRandomization) {
+        console.log('Randomization already exists for this product type');
+        results.push(existingRandomization);
+        continue;
+      }
+
+      // Get samples for this product type
+      const { data: samples, error: samplesError } = await supabase
+        .from('samples')
+        .select('*')
+        .eq('product_type_id', productType.id);
+
+      if (samplesError) throw samplesError;
+
+      if (!samples || samples.length === 0) {
+        console.log('No samples found for product type:', productType.product_name);
+        continue;
+      }
+
+      console.log('Found samples:', samples.length);
+
+      // Create randomization table
+      const randomizationTable = await createRandomizationTable(samples);
+      
+      // Save randomization to database
+      const randomizationRecord = await createRandomizationRecord(
+        productType.id, 
+        randomizationTable
+      );
+      
+      results.push(randomizationRecord);
+      
+      // Update samples with blind codes
+      await updateSamplesWithBlindCodes(samples, randomizationTable);
+    }
+
+    console.log('=== RANDOMIZATION CREATION COMPLETE ===');
+    return results;
+  } catch (error) {
+    console.error('=== ERROR CREATING RANDOMIZATION ===');
+    console.error('Error details:', error);
+    throw error;
+  }
 }
 
-export async function getRandomization(productTypeId: string): Promise<Randomization | null> {
-  try {
-    console.log('=== SUPABASE getRandomization ===');
-    console.log('Product Type ID:', productTypeId);
+async function createRandomizationTable(samples: any[]): Promise<any> {
+  const numSamples = samples.length;
+  const numEvaluators = 12;
+
+  console.log(`Creating randomization table for ${numSamples} samples and ${numEvaluators} evaluators`);
+
+  if (numSamples > numEvaluators) {
+    throw new Error(`Cannot randomize ${numSamples} samples with only ${numEvaluators} evaluators. Maximum samples: ${numEvaluators}`);
+  }
+
+  // Generate Latin Square for randomization
+  const latinSquare = generateLatinSquare(numEvaluators);
+  
+  // Create randomization table
+  const randomizationTable: any = {
+    samples: samples.map((sample, index) => ({
+      id: sample.id,
+      brand: sample.brand,
+      retailerCode: sample.retailer_code,
+      blindCode: `${101 + index}`,
+      position: index + 1
+    })),
+    evaluators: []
+  };
+
+  // Create evaluator assignments
+  for (let evaluatorPos = 1; evaluatorPos <= numEvaluators; evaluatorPos++) {
+    const evaluatorAssignment: any = {
+      evaluatorPosition: evaluatorPos,
+      sampleOrder: []
+    };
+
+    // Use Latin Square to determine sample order for this evaluator
+    const baseRow = latinSquare[evaluatorPos - 1];
     
-    const { data, error } = await supabase
-      .from('randomizations')
-      .select('*')
-      .eq('product_type_id', productTypeId)
-      .maybeSingle();
+    // Create sample order for this evaluator
+    for (let sampleIndex = 0; sampleIndex < numSamples; sampleIndex++) {
+      const latinSquareValue = baseRow[sampleIndex];
+      const actualSampleIndex = (latinSquareValue - 1) % numSamples;
+      const sample = randomizationTable.samples[actualSampleIndex];
+      
+      evaluatorAssignment.sampleOrder.push({
+        sampleId: sample.id,
+        blindCode: sample.blindCode,
+        presentationOrder: sampleIndex + 1,
+        brand: sample.brand
+      });
+    }
+
+    randomizationTable.evaluators.push(evaluatorAssignment);
+  }
+
+  console.log('Randomization table created successfully');
+  return randomizationTable;
+}
+
+async function updateSamplesWithBlindCodes(samples: any[], randomizationTable: any): Promise<void> {
+  console.log('Updating samples with blind codes...');
+  
+  for (const sampleData of randomizationTable.samples) {
+    const { error } = await supabase
+      .from('samples')
+      .update({ blind_code: sampleData.blindCode })
+      .eq('id', sampleData.id);
 
     if (error) {
-      console.error('Error fetching randomization:', error);
+      console.error('Error updating sample blind code:', error);
       throw error;
     }
-
-    if (!data) {
-      console.log('No randomization found for product type:', productTypeId);
-      return null;
-    }
-
-    console.log('Randomization found:', data);
-    
-    return {
-      id: data.id,
-      productTypeId: data.product_type_id,
-      table: data.randomization_table as Record<number, Record<number, string>>,
-      createdAt: data.created_at
-    };
-  } catch (error) {
-    console.error('=== ERROR getRandomization ===');
-    console.error('Error details:', error);
-    return null;
   }
-}
-
-export async function createRandomization(productTypeId: string): Promise<Randomization | null> {
-  try {
-    console.log('=== SUPABASE createRandomization ===');
-    console.log('Product Type ID:', productTypeId);
-    
-    // First get the product type and its samples
-    const { data: productType, error: productError } = await supabase
-      .from('product_types')
-      .select(`
-        *,
-        samples (*)
-      `)
-      .eq('id', productTypeId)
-      .single();
-
-    if (productError || !productType) {
-      console.error('Error fetching product type:', productError);
-      throw new Error('Product type not found');
-    }
-
-    if (!productType.samples || productType.samples.length === 0) {
-      console.error('No samples found for product type');
-      throw new Error('No samples found for this product type');
-    }
-
-    console.log('Product type:', productType);
-    console.log('Samples before blind code assignment:', productType.samples);
-
-    // Step 1: Assign blind codes to samples if they don't have them
-    const samplesWithBlindCodes = [];
-    for (let i = 0; i < productType.samples.length; i++) {
-      const sample = productType.samples[i];
-      const expectedBlindCode = `${productType.base_code}${i + 1}`;
-      
-      if (!sample.blind_code || sample.blind_code !== expectedBlindCode) {
-        console.log(`Updating sample ${sample.id} with blind code: ${expectedBlindCode}`);
-        
-        // Update the sample with the correct blind code
-        const { data: updatedSample, error: updateError } = await supabase
-          .from('samples')
-          .update({ blind_code: expectedBlindCode })
-          .eq('id', sample.id)
-          .select()
-          .single();
-
-        if (updateError) {
-          console.error('Error updating sample blind code:', updateError);
-          throw updateError;
-        }
-        
-        samplesWithBlindCodes.push(updatedSample);
-      } else {
-        samplesWithBlindCodes.push(sample);
-      }
-    }
-
-    console.log('Samples with blind codes:', samplesWithBlindCodes);
-
-    // Step 2: Generate randomization table using samples with blind codes
-    const randomizationTable = generateRandomizationTable(samplesWithBlindCodes);
-
-    // Step 3: Save randomization to database
-    const { data: randomization, error: insertError } = await supabase
-      .from('randomizations')
-      .insert({
-        product_type_id: productTypeId,
-        randomization_table: randomizationTable
-      })
-      .select()
-      .single();
-
-    if (insertError) {
-      console.error('Error inserting randomization:', insertError);
-      throw insertError;
-    }
-
-    // Step 4: Update product type to mark it has randomization
-    const { error: updateError } = await supabase
-      .from('product_types')
-      .update({ has_randomization: true })
-      .eq('id', productTypeId);
-
-    if (updateError) {
-      console.error('Error updating product type randomization flag:', updateError);
-      // Don't throw here, randomization was created successfully
-    }
-
-    console.log('Randomization created successfully:', randomization);
-
-    return {
-      id: randomization.id,
-      productTypeId: randomization.product_type_id,
-      table: randomization.randomization_table as Record<number, Record<number, string>>,
-      createdAt: randomization.created_at
-    };
-  } catch (error) {
-    console.error('=== ERROR createRandomization ===');
-    console.error('Error details:', error);
-    return null;
-  }
+  
+  console.log('Samples updated with blind codes');
 }
 
 export async function getNextSample(
-  userId: string,
-  eventId: string,
-  productTypeId?: string,
+  userId: string, 
+  eventId: string, 
+  productTypeId?: string, 
   completedSampleIds?: string[]
-): Promise<{ sample: any; round: number; isComplete: boolean }> {
+): Promise<any> {
   try {
-    console.log('=== SUPABASE getNextSample ===');
+    console.log('=== GETTING NEXT SAMPLE ===');
     console.log('User ID:', userId);
     console.log('Event ID:', eventId);
     console.log('Product Type ID:', productTypeId);
-    console.log('Completed Sample IDs from parameter:', completedSampleIds);
-    
-    // Get user position
+    console.log('Completed Sample IDs:', completedSampleIds);
+
+    // Get user's evaluator position
     const { data: user, error: userError } = await supabase
       .from('users')
       .select('evaluator_position')
@@ -196,107 +173,114 @@ export async function getNextSample(
       .single();
 
     if (userError || !user) {
-      console.error('Error fetching user:', userError);
-      throw new Error('User not found');
+      throw new Error('User not found or not an evaluator');
     }
 
     const evaluatorPosition = user.evaluator_position;
-    if (!evaluatorPosition) {
-      console.error('User has no evaluator position');
-      throw new Error('User has no evaluator position');
-    }
-
     console.log('Evaluator position:', evaluatorPosition);
 
-    // Always refresh completed evaluations from database to get the latest state
-    console.log('Refreshing completed evaluations from database...');
-    const { data: evaluations, error: evalError } = await supabase
-      .from('evaluations')
-      .select('sample_id')
-      .eq('user_id', userId)
-      .eq('event_id', eventId)
-      .eq('product_type_id', productTypeId);
-
-    if (evalError) {
-      console.error('Error fetching completed evaluations:', evalError);
-      throw evalError;
-    }
-
-    const completedFromDB = (evaluations || []).map(e => e.sample_id);
-    console.log('Completed samples from database:', completedFromDB);
-
-    // Use database data as the source of truth
-    const completedSet = new Set(completedFromDB);
-
-    // Get randomization for this product type
-    const randomization = await getRandomization(productTypeId!);
-    if (!randomization) {
-      console.error('No randomization found for product type:', productTypeId);
-      return { sample: null, round: 0, isComplete: true };
-    }
-
-    console.log('Randomization table:', randomization.table);
-
-    // Get samples for this product type
-    const { data: samples, error: samplesError } = await supabase
-      .from('samples')
-      .select('*')
-      .eq('product_type_id', productTypeId)
-      .order('created_at');
-
-    if (samplesError || !samples) {
-      console.error('Error fetching samples:', samplesError);
-      return { sample: null, round: 0, isComplete: true };
-    }
-
-    console.log('Available samples:', samples.map(s => ({ id: s.id, blind_code: s.blind_code })));
-
-    // Find next sample from randomization table
-    const positionSchedule = randomization.table[evaluatorPosition] || {};
-    console.log('Position schedule for evaluator', evaluatorPosition, ':', positionSchedule);
+    // Get product types for this event (if not specified)
+    let productTypesToCheck = [];
     
-    for (let round = 1; round <= samples.length; round++) {
-      const blindCode = positionSchedule[round];
-      if (!blindCode) {
-        console.log(`No blind code for round ${round}`);
+    if (productTypeId) {
+      const { data: specificProductType, error: ptError } = await supabase
+        .from('product_types')
+        .select('*')
+        .eq('id', productTypeId)
+        .eq('event_id', eventId)
+        .single();
+        
+      if (ptError) throw ptError;
+      productTypesToCheck = [specificProductType];
+    } else {
+      const { data: allProductTypes, error: ptError } = await supabase
+        .from('product_types')
+        .select('*')
+        .eq('event_id', eventId)
+        .order('display_order');
+        
+      if (ptError) throw ptError;
+      productTypesToCheck = allProductTypes || [];
+    }
+
+    console.log('Product types to check:', productTypesToCheck.length);
+
+    // Get completed evaluations if not provided
+    if (!completedSampleIds) {
+      const { data: evaluations, error: evalError } = await supabase
+        .from('evaluations')
+        .select('sample_id')
+        .eq('user_id', userId)
+        .eq('event_id', eventId);
+
+      if (evalError) throw evalError;
+      
+      completedSampleIds = evaluations?.map(e => e.sample_id) || [];
+    }
+
+    console.log('Completed samples:', completedSampleIds.length);
+
+    // Check each product type for the next sample
+    for (const productType of productTypesToCheck) {
+      console.log(`Checking product type: ${productType.product_name}`);
+      
+      // Get randomization for this product type
+      const randomization = await getRandomization(productType.id);
+      
+      if (!randomization) {
+        console.log('No randomization found for product type:', productType.id);
         continue;
       }
-      
-      const sample = samples.find(s => s.blind_code === blindCode);
-      if (!sample) {
-        console.log(`Sample not found for blind code ${blindCode}`);
+
+      // Find evaluator's assignment
+      const evaluatorAssignment = randomization.randomization_table.evaluators.find(
+        (e: any) => e.evaluatorPosition === evaluatorPosition
+      );
+
+      if (!evaluatorAssignment) {
+        console.log('No assignment found for evaluator position:', evaluatorPosition);
         continue;
       }
-      
-      console.log(`Checking round ${round}, blind code ${blindCode}, sample ID ${sample.id}`);
-      console.log(`Is completed: ${completedSet.has(sample.id)}`);
-      
-      if (!completedSet.has(sample.id)) {
-        console.log('Next sample found:', sample.id, blindCode, 'round:', round);
-        return {
-          sample: {
-            id: sample.id,
-            productTypeId: sample.product_type_id,
-            brand: sample.brand,
-            retailerCode: sample.retailer_code,
-            blindCode: sample.blind_code,
-            images: {
-              prepared: sample.images_prepared,
-              packaging: sample.images_packaging,
-              details: sample.images_details || []
-            }
-          },
-          round,
-          isComplete: false
-        };
+
+      console.log('Found evaluator assignment with', evaluatorAssignment.sampleOrder.length, 'samples');
+
+      // Find next uncompleted sample
+      for (const sampleAssignment of evaluatorAssignment.sampleOrder) {
+        if (!completedSampleIds.includes(sampleAssignment.sampleId)) {
+          console.log('Found next sample:', sampleAssignment.sampleId);
+          
+          // Get full sample data
+          const { data: sample, error: sampleError } = await supabase
+            .from('samples')
+            .select('*')
+            .eq('id', sampleAssignment.sampleId)
+            .single();
+
+          if (sampleError) {
+            console.error('Error fetching sample:', sampleError);
+            continue;
+          }
+
+          const nextSample = {
+            ...sample,
+            productTypeId: productType.id,
+            productTypeName: productType.product_name,
+            presentationOrder: sampleAssignment.presentationOrder,
+            blindCode: sampleAssignment.blindCode
+          };
+
+          console.log('=== NEXT SAMPLE FOUND ===');
+          console.log('Sample:', nextSample);
+          return nextSample;
+        }
       }
     }
 
-    console.log('All samples completed for this product type');
-    return { sample: null, round: 0, isComplete: true };
+    console.log('=== NO MORE SAMPLES ===');
+    return null;
   } catch (error) {
-    console.error('=== ERROR getNextSample ===');
+    console.error('=== ERROR GETTING NEXT SAMPLE ===');
     console.error('Error details:', error);
-    return { sample: null, round: 0, isComplete: true };
+    throw error;
   }
 }

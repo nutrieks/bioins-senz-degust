@@ -1,15 +1,17 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { EventStatus, Event } from "@/types";
-import { CalendarClock, Users, Calendar, Package } from "lucide-react";
+import { CalendarClock, Users, Calendar, Package, Trash2 } from "lucide-react";
 import { EvaluationProgressTracker } from "./EvaluationProgressTracker";
+import { DeleteEventDialog } from "./DeleteEventDialog";
 
 interface EventInfoCardProps {
   event: Event;
   isUpdating: boolean;
   onUpdateStatus: (status: EventStatus) => Promise<void>;
+  onDeleteEvent: () => Promise<void>;
   formatDate: (date: string) => string;
   getStatusLabel: (status: EventStatus) => string;
 }
@@ -18,9 +20,12 @@ export function EventInfoCard({
   event,
   isUpdating,
   onUpdateStatus,
+  onDeleteEvent,
   formatDate,
   getStatusLabel,
 }: EventInfoCardProps) {
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+
   const statusColor = {
     [EventStatus.PREPARATION]: "bg-blue-100 text-blue-800",
     [EventStatus.ACTIVE]: "bg-green-100 text-green-800",
@@ -103,20 +108,40 @@ export function EventInfoCard({
           </div>
         </div>
 
-        {nextAction && (
-          <div className="mt-6 flex justify-end">
+        <div className="mt-6 flex justify-between items-center">
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={() => setShowDeleteDialog(true)}
+            disabled={isUpdating}
+          >
+            <Trash2 className="mr-2 h-4 w-4" />
+            Obriši događaj
+          </Button>
+
+          {nextAction && (
             <Button
               onClick={() => onUpdateStatus(nextAction.status)}
               disabled={isUpdating || nextAction.disabled}
             >
               {isUpdating ? "Ažuriranje..." : nextAction.label}
             </Button>
-          </div>
-        )}
+          )}
+        </div>
         
         {event.status === EventStatus.ACTIVE && (
           <EvaluationProgressTracker eventId={event.id} />
         )}
+
+        <DeleteEventDialog
+          open={showDeleteDialog}
+          onOpenChange={setShowDeleteDialog}
+          onConfirm={async () => {
+            await onDeleteEvent();
+            setShowDeleteDialog(false);
+          }}
+          eventDate={formatDate(event.date)}
+        />
       </CardContent>
     </Card>
   );

@@ -4,11 +4,17 @@ import { useNavigate } from "react-router-dom";
 import { LoginForm } from "@/components/login/LoginForm";
 import { useAuth } from "@/contexts/AuthContext";
 import { UserRole } from "@/types";
+import { cleanupAuthState } from "@/utils/authUtils";
 
 export default function Login() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const [showTimeout, setShowTimeout] = useState(false);
+
+  // Clean up auth state when login page loads
+  useEffect(() => {
+    cleanupAuthState();
+  }, []);
 
   useEffect(() => {
     console.log('Login page - user:', user?.username, 'loading:', loading);

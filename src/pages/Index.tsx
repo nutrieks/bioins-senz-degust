@@ -1,12 +1,14 @@
 
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { cleanupAuthState } from "@/utils/authUtils";
 
 const Index = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Redirect to login page
+    // Clean up any existing auth state and redirect to login
+    cleanupAuthState();
     navigate("/login");
   }, [navigate]);
 

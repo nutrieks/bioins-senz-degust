@@ -1,16 +1,10 @@
+
 import { 
   BaseProductType, 
   ProductType, 
   JARAttribute 
 } from "@/types";
 import { createBaseJARAttribute, getJARAttributes as getJARAttributesSupabase } from './supabase/jarAttributes';
-import { supabase } from '@/integrations/supabase/client';
-import { 
-  createEvent as createEventSupabase, 
-  getEvents as getEventsSupabase, 
-  getEvent as getEventSupabase,
-  updateEventStatus as updateEventStatusSupabase 
-} from './supabase/events';
 import { 
   getAllProductTypes as getAllProductTypesSupabase,
   getProductTypes as getProductTypesSupabase,
@@ -20,11 +14,6 @@ import {
   deleteProductType as deleteProductTypeSupabase,
   createBaseProductType as createBaseProductTypeSupabase
 } from './supabase/productTypes';
-import { 
-  getSamples as getSamplesSupabase, 
-  createSample as createSampleSupabase, 
-  updateSampleImages as updateSampleImagesSupabase 
-} from './supabase/samples';
 import { 
   submitEvaluation as submitEvaluationSupabase,
   getCompletedEvaluations as getCompletedEvaluationsSupabase,
@@ -40,6 +29,27 @@ import {
   generateJARReport as generateJARReportSupabase,
   getRawData as getRawDataSupabase
 } from './supabase/reports';
+
+// Re-export from new service modules
+export { 
+  createEvent, 
+  getEvent, 
+  getEvents, 
+  updateEventStatus, 
+  deleteEvent 
+} from './events';
+
+export { 
+  getUsers, 
+  updateUserPassword, 
+  updateUserStatus 
+} from './users';
+
+export { 
+  getSamples, 
+  createSample, 
+  updateSampleImages 
+} from './samples';
 
 // JAR Attribute Management
 export async function getJARAttributes(productTypeId: string): Promise<JARAttribute[]> {
@@ -103,37 +113,6 @@ export async function createProductType(
   return await createProductTypeSupabase(eventId, customerCode, baseProductTypeId, baseCode, displayOrder);
 }
 
-// Event Management
-export async function createEvent(date: string) {
-  return await createEventSupabase(date);
-}
-
-export async function getEvent(eventId: string): Promise<any> {
-  return await getEventSupabase(eventId);
-}
-
-export async function getEvents(): Promise<any[]> {
-  return await getEventsSupabase();
-}
-
-export async function updateEventStatus(eventId: string, status: string): Promise<boolean> {
-  return await updateEventStatusSupabase(eventId, status as any);
-}
-
-// Sample Management
-export async function getSamples(productTypeId: string): Promise<any[]> {
-  return await getSamplesSupabase(productTypeId);
-}
-
-export async function createSample(productTypeId: string, brand: string, retailerCode: string): Promise<any> {
-  return await createSampleSupabase(productTypeId, brand, retailerCode as any);
-}
-
-export async function updateSampleImages(sampleId: string, images: any): Promise<boolean> {
-  const { preparedImage, packagingImage, detailImages } = images;
-  return await updateSampleImagesSupabase(sampleId, preparedImage, packagingImage, detailImages);
-}
-
 // Evaluation Management
 export async function submitEvaluation(evaluationData: any): Promise<any> {
   const { userId, sampleId, productTypeId, eventId, hedonic, jar } = evaluationData;
@@ -168,12 +147,11 @@ export async function getRandomization(eventId: string): Promise<any> {
   return await getRandomizationSupabase(eventId);
 }
 
-// Add a new function to check if all product types have randomizations
+// Check if all product types have randomizations
 export async function checkRandomizationsComplete(eventId: string): Promise<boolean> {
   try {
     console.log('Checking if all product types have randomizations for event:', eventId);
     
-    // Get all product types for this event
     const productTypes = await getProductTypesSupabase(eventId);
     
     if (productTypes.length === 0) {
@@ -181,7 +159,6 @@ export async function checkRandomizationsComplete(eventId: string): Promise<bool
       return false;
     }
     
-    // Check each product type for randomization
     for (const productType of productTypes) {
       const randomization = await getRandomizationSupabase(productType.id);
       if (!randomization) {
@@ -209,50 +186,6 @@ export async function generateJARReport(eventId: string): Promise<any> {
 
 export async function getRawData(eventId: string): Promise<any> {
   return await getRawDataSupabase(eventId);
-}
-
-// User Management - Using Supabase
-export async function getUsers(): Promise<any[]> {
-  try {
-    const { data, error } = await supabase
-      .from('users')
-      .select('*')
-      .order('username');
-    
-    if (error) throw error;
-    return data || [];
-  } catch (error) {
-    console.error('Error fetching users:', error);
-    return [];
-  }
-}
-
-export async function updateUserPassword(userId: string, password: string): Promise<boolean> {
-  try {
-    const { error } = await supabase
-      .from('users')
-      .update({ password })
-      .eq('id', userId);
-    
-    return !error;
-  } catch (error) {
-    console.error('Error updating user password:', error);
-    return false;
-  }
-}
-
-export async function updateUserStatus(userId: string, isActive: boolean): Promise<boolean> {
-  try {
-    const { error } = await supabase
-      .from('users')
-      .update({ is_active: isActive })
-      .eq('id', userId);
-    
-    return !error;
-  } catch (error) {
-    console.error('Error updating user status:', error);
-    return false;
-  }
 }
 
 // Legacy aliases for backwards compatibility

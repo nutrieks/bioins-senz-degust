@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client'
 import { Event, EventStatus } from '@/types'
 
@@ -99,5 +98,27 @@ export async function updateEventStatus(eventId: string, status: EventStatus): P
   } catch (error) {
     console.error('Error updating event status:', error)
     return false
+  }
+}
+
+export async function deleteEvent(eventId: string): Promise<boolean> {
+  try {
+    console.log('Deleting event:', eventId);
+    
+    const { error } = await supabase
+      .from('events')
+      .delete()
+      .eq('id', eventId);
+
+    if (error) {
+      console.error('Error deleting event:', error);
+      return false;
+    }
+
+    console.log('Event deleted successfully');
+    return true;
+  } catch (error) {
+    console.error('Error deleting event:', error);
+    return false;
   }
 }

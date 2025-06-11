@@ -11,10 +11,11 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
-import { getEvents } from "@/services/dataService";
+import { getEvents, deleteEvent } from "@/services/dataService";
 import { Event, EventStatus } from "@/types";
 import { EventCard } from "@/components/admin/EventCard";
 import { PlusCircle, Search } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 export default function EventsPage() {
   const [events, setEvents] = useState<Event[]>([]);
@@ -23,6 +24,7 @@ export default function EventsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   const fetchEvents = async () => {
     try {
@@ -34,6 +36,11 @@ export default function EventsPage() {
       setFilteredEvents(eventsData);
     } catch (error) {
       console.error("Error fetching events:", error);
+      toast({
+        title: "Greška",
+        description: "Došlo je do greške prilikom dohvaćanja događaja.",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -83,6 +90,30 @@ export default function EventsPage() {
     fetchEvents();
   };
 
+  const handleDeleteEvent = async (eventId: string) => {
+    try {
+      console.log('Deleting event:', eventId);
+      const success = await deleteEvent(eventId);
+      
+      if (success) {
+        toast({
+          title: "Uspjeh",
+          description: "Događaj je uspješno obrisan.",
+        });
+        fetchEvents(); // Refresh the events list
+      } else {
+        throw new Error('Failed to delete event');
+      }
+    } catch (error) {
+      console.error('Error deleting event:', error);
+      toast({
+        title: "Greška",
+        description: "Došlo je do greške prilikom brisanja događaja.",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <AdminLayout>
       <div className="space-y-6">
@@ -129,7 +160,8 @@ export default function EventsPage() {
               <EventCard 
                 key={event.id} 
                 event={event} 
-                onEventUpdated={handleEventUpdated} 
+                onEventUpdated={handleEventUpdated}
+                onEventDeleted={() => handleDeleteEvent(event.id)}
               />
             ))}
           </div>
