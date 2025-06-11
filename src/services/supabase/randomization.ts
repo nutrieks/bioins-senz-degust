@@ -115,9 +115,13 @@ async function createRandomizationTable(samples: any[]): Promise<any> {
 }
 
 async function updateSamplesWithBlindCodes(samples: any[], randomizationTable: any): Promise<void> {
-  console.log('Updating samples with blind codes...');
+  console.log('=== UPDATING SAMPLES WITH BLIND CODES ===');
+  console.log('Samples to update:', samples.length);
+  console.log('Randomization table samples:', randomizationTable.samples.length);
   
   for (const sampleData of randomizationTable.samples) {
+    console.log(`Updating sample ${sampleData.id} with blind code ${sampleData.blindCode}`);
+    
     const { error } = await supabase
       .from('samples')
       .update({ blind_code: sampleData.blindCode })
@@ -129,7 +133,7 @@ async function updateSamplesWithBlindCodes(samples: any[], randomizationTable: a
     }
   }
   
-  console.log('Samples updated with blind codes');
+  console.log('=== SAMPLES UPDATED WITH BLIND CODES ===');
 }
 
 export async function getNextSample(

@@ -30,3 +30,7 @@ export function generateRandomizedOrder(samples: any[]): any[] {
     blindCode: `${101 + index}`
   }));
 }
+
+export function generateBlindCode(index: number): string {
+  return `${101 + index}`;
+}
