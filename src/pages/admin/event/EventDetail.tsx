@@ -393,6 +393,33 @@ export default function EventDetail() {
     }
   };
 
+  // Transform randomization data from database format to table format
+  const transformRandomizationData = (randomizationData: any) => {
+    if (!randomizationData || !randomizationData.evaluators) {
+      return null;
+    }
+
+    const table: any = {};
+    
+    // Initialize table structure - 12 positions, variable rounds based on samples
+    for (let position = 1; position <= 12; position++) {
+      table[position] = {};
+    }
+
+    // Fill the table with data from evaluators
+    randomizationData.evaluators.forEach((evaluator: any) => {
+      const position = evaluator.evaluatorPosition;
+      
+      evaluator.sampleOrder.forEach((sample: any, index: number) => {
+        const round = index + 1;
+        table[position][round] = sample.blindCode;
+      });
+    });
+
+    console.log('Transformed randomization table:', table);
+    return table;
+  };
+
   const handleViewRandomization = async (productType: ProductType) => {
     setSelectedProductType(productType);
     
@@ -401,8 +428,13 @@ export default function EventDetail() {
       console.log('Product Type ID:', productType.id);
       
       const randomization = await getRandomization(productType.id);
-      if (randomization) {
-        setRandomizationTable(randomization.table);
+      console.log('Raw randomization data:', randomization);
+      
+      if (randomization && randomization.randomization_table) {
+        // Transform the data to the expected table format
+        const tableData = transformRandomizationData(randomization.randomization_table);
+        console.log('Setting randomization table data:', tableData);
+        setRandomizationTable(tableData);
         setRandomizationView(true);
       } else {
         toast({
