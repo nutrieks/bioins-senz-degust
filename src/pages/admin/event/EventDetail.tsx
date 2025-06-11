@@ -10,7 +10,8 @@ import {
   getRandomization,
   getProductTypes,
   deleteEventProductType,
-  updateEventProductType
+  updateEventProductType,
+  deleteEvent
 } from "@/services/dataService";
 import { Event, EventStatus, BaseProductType, ProductType, RetailerCode } from "@/types";
 import { ArrowLeft } from "lucide-react";
@@ -478,6 +479,44 @@ export default function EventDetail() {
     document.body.removeChild(link);
   };
 
+  const handleDeleteEvent = async () => {
+    if (!eventId) return;
+    
+    try {
+      console.log('=== EventDetail handleDeleteEvent ===');
+      console.log('Event ID:', eventId);
+      
+      setIsUpdating(true);
+      
+      const success = await deleteEvent(eventId);
+      
+      if (success) {
+        toast({
+          title: "Uspješno",
+          description: "Događaj je uspješno obrisan.",
+        });
+        
+        // Navigate back to events page
+        navigate("/admin");
+      } else {
+        toast({
+          title: "Greška",
+          description: "Došlo je do pogreške prilikom brisanja događaja.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("EventDetail - Error deleting event:", error);
+      toast({
+        title: "Greška",
+        description: "Došlo je do pogreške prilikom brisanja događaja.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <AdminLayout>
@@ -512,6 +551,7 @@ export default function EventDetail() {
           event={event}
           isUpdating={isUpdating}
           onUpdateStatus={handleUpdateStatus}
+          onDeleteEvent={handleDeleteEvent}
           formatDate={formatDate}
           getStatusLabel={getStatusLabel}
         />

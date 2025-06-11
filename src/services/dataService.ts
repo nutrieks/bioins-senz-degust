@@ -4,6 +4,7 @@ import {
   ProductType, 
   JARAttribute 
 } from "@/types";
+import { supabase } from '@/integrations/supabase/client';
 import { createBaseJARAttribute, getJARAttributes as getJARAttributesSupabase } from './supabase/jarAttributes';
 import { 
   getAllProductTypes as getAllProductTypesSupabase,

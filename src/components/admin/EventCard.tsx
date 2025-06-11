@@ -1,6 +1,7 @@
+
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calendar, CheckCircle, ClipboardList, Settings } from "lucide-react";
+import { Calendar, CheckCircle, ClipboardList, Settings, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Event, EventStatus } from "@/types";
 import { updateEventStatus } from "@/services/dataService";
@@ -20,9 +21,10 @@ import {
 interface EventCardProps {
   event: Event;
   onEventUpdated: () => void;
+  onEventDeleted: () => Promise<void>;
 }
 
-export function EventCard({ event, onEventUpdated }: EventCardProps) {
+export function EventCard({ event, onEventUpdated, onEventDeleted }: EventCardProps) {
   const [isUpdating, setIsUpdating] = useState(false);
 
   const handleActivate = async () => {
@@ -81,6 +83,22 @@ export function EventCard({ event, onEventUpdated }: EventCardProps) {
       toast({
         title: "Greška",
         description: "Došlo je do pogreške prilikom arhiviranja događaja.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    setIsUpdating(true);
+    try {
+      await onEventDeleted();
+    } catch (error) {
+      console.error("Error deleting event:", error);
+      toast({
+        title: "Greška",
+        description: "Došlo je do pogreške prilikom brisanja događaja.",
         variant: "destructive",
       });
     } finally {
@@ -151,6 +169,29 @@ export function EventCard({ event, onEventUpdated }: EventCardProps) {
                 </DialogContent>
               </Dialog>
           )}
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="destructive" size="sm" disabled={isUpdating}>
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle>Obriši događaj</DialogTitle>
+                <DialogDescription>
+                  Jeste li sigurni da želite obrisati ovaj događaj? Ova akcija se ne može poništiti.
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button type="button" variant="secondary">Odustani</Button>
+                </DialogClose>
+                <Button type="submit" variant="destructive" onClick={handleDelete}>
+                  Obriši
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
       </CardHeader>
       <CardContent className="p-4">
