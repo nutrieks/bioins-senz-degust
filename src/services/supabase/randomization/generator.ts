@@ -22,15 +22,6 @@ export function shuffleArray<T>(array: T[]): T[] {
   return shuffled;
 }
 
-export function generateRandomizedOrder(samples: any[]): any[] {
-  const shuffledSamples = shuffleArray(samples);
-  return shuffledSamples.map((sample, index) => ({
-    ...sample,
-    presentationOrder: index + 1,
-    blindCode: `${101 + index}`
-  }));
-}
-
-export function generateBlindCode(index: number): string {
-  return `${101 + index}`;
-}
+// Note: generateRandomizedOrder and generateBlindCode are no longer used
+// Blind codes are now managed by the samples.ts service when creating samples
+// This ensures consistency and prevents overwriting existing blind codes

@@ -1,6 +1,7 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { getRandomization, createRandomizationRecord } from './randomization/core';
-import { generateLatinSquare, shuffleArray, generateRandomizedOrder } from './randomization/generator';
+import { generateLatinSquare, shuffleArray } from './randomization/generator';
 
 export { getRandomization };
 
@@ -31,7 +32,7 @@ export async function createRandomization(productTypeId: string): Promise<any> {
 
     console.log('Found samples:', samples.length);
 
-    // Create randomization table
+    // Create randomization table using existing blind codes
     const randomizationTable = await createRandomizationTable(samples);
     
     // Save randomization to database
@@ -39,9 +40,6 @@ export async function createRandomization(productTypeId: string): Promise<any> {
       productTypeId, 
       randomizationTable
     );
-    
-    // Update samples with blind codes
-    await updateSamplesWithBlindCodes(samples, randomizationTable);
     
     // Update product type to mark it has randomization
     await supabase
@@ -71,17 +69,19 @@ async function createRandomizationTable(samples: any[]): Promise<any> {
   // Generate Latin Square for randomization
   const latinSquare = generateLatinSquare(numEvaluators);
   
-  // Create randomization table
+  // Create randomization table using existing blind codes from samples
   const randomizationTable: any = {
     samples: samples.map((sample, index) => ({
       id: sample.id,
       brand: sample.brand,
       retailerCode: sample.retailer_code,
-      blindCode: `${101 + index}`,
+      blindCode: sample.blind_code, // Use existing blind code from sample
       position: index + 1
     })),
     evaluators: []
   };
+
+  console.log('Using existing blind codes from samples:', randomizationTable.samples.map(s => s.blindCode));
 
   // Create evaluator assignments
   for (let evaluatorPos = 1; evaluatorPos <= numEvaluators; evaluatorPos++) {
@@ -101,7 +101,7 @@ async function createRandomizationTable(samples: any[]): Promise<any> {
       
       evaluatorAssignment.sampleOrder.push({
         sampleId: sample.id,
-        blindCode: sample.blindCode,
+        blindCode: sample.blindCode, // Use existing blind code
         presentationOrder: sampleIndex + 1,
         brand: sample.brand
       });
@@ -112,28 +112,6 @@ async function createRandomizationTable(samples: any[]): Promise<any> {
 
   console.log('Randomization table created successfully');
   return randomizationTable;
-}
-
-async function updateSamplesWithBlindCodes(samples: any[], randomizationTable: any): Promise<void> {
-  console.log('=== UPDATING SAMPLES WITH BLIND CODES ===');
-  console.log('Samples to update:', samples.length);
-  console.log('Randomization table samples:', randomizationTable.samples.length);
-  
-  for (const sampleData of randomizationTable.samples) {
-    console.log(`Updating sample ${sampleData.id} with blind code ${sampleData.blindCode}`);
-    
-    const { error } = await supabase
-      .from('samples')
-      .update({ blind_code: sampleData.blindCode })
-      .eq('id', sampleData.id);
-
-    if (error) {
-      console.error('Error updating sample blind code:', error);
-      throw error;
-    }
-  }
-  
-  console.log('=== SAMPLES UPDATED WITH BLIND CODES ===');
 }
 
 export async function getNextSample(
