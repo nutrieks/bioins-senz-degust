@@ -115,7 +115,7 @@ export function EventInfoCard({
         )}
         
         {event.status === EventStatus.ACTIVE && (
-          <EvaluationProgressTracker eventId={event.id} refreshInterval={15000} />
+          <EvaluationProgressTracker eventId={event.id} />
         )}
       </CardContent>
     </Card>
