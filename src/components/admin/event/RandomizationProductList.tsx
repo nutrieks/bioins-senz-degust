@@ -5,13 +5,13 @@ import { Shuffle, Eye } from "lucide-react";
 
 interface RandomizationProductListProps {
   productTypes: ProductType[];
-  onViewRandomization: (productType: ProductType) => void;
+  generatingRandomization: { [productTypeId: string]: boolean };
   onGenerateRandomization: (productTypeId: string) => void;
 }
 
 export function RandomizationProductList({
   productTypes,
-  onViewRandomization,
+  generatingRandomization,
   onGenerateRandomization,
 }: RandomizationProductListProps) {
   return (
@@ -21,6 +21,7 @@ export function RandomizationProductList({
         {productTypes.map((productType) => {
           const samplesWithBlindCodes = productType.samples.filter(s => s.blindCode);
           const allSamplesHaveBlindCodes = productType.samples.length > 0 && samplesWithBlindCodes.length === productType.samples.length;
+          const isGenerating = generatingRandomization[productType.id] || false;
           
           return (
             <div 
@@ -50,21 +51,21 @@ export function RandomizationProductList({
               <div className="flex items-center space-x-2">
                 {productType.hasRandomization ? (
                   <Button 
-                    onClick={() => onViewRandomization(productType)}
                     className="flex items-center"
                     variant="outline"
+                    disabled
                   >
                     <Eye className="mr-1 h-4 w-4" />
-                    Pregled randomizacije
+                    Randomizacija generirana
                   </Button>
                 ) : (
                   <Button 
                     onClick={() => onGenerateRandomization(productType.id)}
-                    disabled={productType.samples.length === 0}
+                    disabled={productType.samples.length === 0 || isGenerating}
                     className="flex items-center"
                   >
                     <Shuffle className="mr-1 h-4 w-4" />
-                    Generiraj randomizaciju
+                    {isGenerating ? "Generiranje..." : "Generiraj randomizaciju"}
                   </Button>
                 )}
               </div>

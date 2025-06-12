@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ProductType, RetailerCode } from "@/types";
@@ -19,16 +18,14 @@ import {
 
 interface ProductTypesListProps {
   productTypes: ProductType[];
-  onViewRandomization: (productType: ProductType) => void;
-  onGenerateRandomization: (productTypeId: string) => void;
+  onRefresh: () => Promise<void>;
   onEditProductType?: (productTypeId: string, customerCode: string, baseCode: string) => void;
   onDeleteProductType?: (productTypeId: string) => void;
 }
 
 export function ProductTypesList({
   productTypes,
-  onViewRandomization,
-  onGenerateRandomization,
+  onRefresh,
   onEditProductType,
   onDeleteProductType,
 }: ProductTypesListProps) {
