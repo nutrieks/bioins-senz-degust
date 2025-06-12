@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ProductType, RetailerCode } from "@/types";
@@ -133,7 +134,7 @@ export function ProductTypesList({
                   <Button 
                     variant="outline" 
                     size="sm"
-                    onClick={() => onViewRandomization(productType)}
+                    disabled
                     className="flex items-center"
                   >
                     <Shuffle className="mr-1 h-4 w-4" />
@@ -143,7 +144,6 @@ export function ProductTypesList({
                   <Button 
                     variant="outline" 
                     size="sm"
-                    onClick={() => onGenerateRandomization(productType.id)}
                     disabled={productType.samples.length === 0}
                     className="flex items-center"
                   >
