@@ -1,36 +1,39 @@
 
-import { useEffect, useState } from "react";
-import { EvaluatorLayout } from "@/components/layout/EvaluatorLayout";
+import React from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Loader2, AlertTriangle } from "lucide-react";
 
-export function LoadingState() {
-  const [showTimeout, setShowTimeout] = useState(false);
+interface LoadingStateProps {
+  message?: string;
+  isError?: boolean;
+}
 
-  useEffect(() => {
-    // Pokažij timeout poruku nakon 8 sekundi
-    const timer = setTimeout(() => {
-      setShowTimeout(true);
-    }, 8000);
-
-    return () => clearTimeout(timer);
-  }, []);
-
+export function LoadingState({ 
+  message = "Učitavanje...", 
+  isError = false 
+}: LoadingStateProps) {
   return (
-    <EvaluatorLayout>
-      <div className="flex flex-col justify-center items-center min-h-[60vh] space-y-4">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-        <p className="text-lg">Učitavanje...</p>
-        
-        {showTimeout && (
-          <div className="text-center space-y-2 mt-4">
-            <p className="text-sm text-yellow-600">
-              Učitavanje traje duže nego obično...
+    <div className="min-h-screen flex items-center justify-center p-4">
+      <Card className="w-full max-w-md">
+        <CardContent className="flex flex-col items-center justify-center p-8 text-center">
+          {isError ? (
+            <AlertTriangle className="h-12 w-12 text-amber-500 mb-4" />
+          ) : (
+            <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+          )}
+          <p className="text-lg font-medium mb-2">
+            {isError ? "Ocjenjivanje nije dostupno" : "Učitavanje"}
+          </p>
+          <p className="text-muted-foreground">
+            {message}
+          </p>
+          {isError && (
+            <p className="text-sm text-muted-foreground mt-4">
+              Molimo kontaktirajte administratora za više informacija.
             </p>
-            <p className="text-xs text-muted-foreground">
-              Molimo osvježite stranicu ako se problem nastavi.
-            </p>
-          </div>
-        )}
-      </div>
-    </EvaluatorLayout>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 }

@@ -152,3 +152,32 @@ export function getNextSampleForEvaluator(
   console.log(`No more samples for evaluator ${evaluatorPosition}`);
   return null;
 }
+
+/**
+ * Checks if all product types in an event have randomization generated
+ */
+export function checkAllRandomizationsGenerated(productTypes: any[]): {
+  allGenerated: boolean;
+  missingCount: number;
+  missingProductTypes: any[];
+} {
+  const missingProductTypes = productTypes.filter(pt => !pt.hasRandomization);
+  
+  return {
+    allGenerated: missingProductTypes.length === 0,
+    missingCount: missingProductTypes.length,
+    missingProductTypes
+  };
+}
+
+/**
+ * Formats error message for missing randomizations
+ */
+export function formatRandomizationErrorMessage(missingProductTypes: any[]): string {
+  if (missingProductTypes.length === 1) {
+    return `Randomizacija nije generirana za tip proizvoda: ${missingProductTypes[0].productName}`;
+  }
+  
+  return `Randomizacija nije generirana za ${missingProductTypes.length} tipova proizvoda. ` +
+    `Generirajte randomizacije prije aktivacije događaja.`;
+}
