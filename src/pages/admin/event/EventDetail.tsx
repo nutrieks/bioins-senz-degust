@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { 
@@ -395,10 +396,21 @@ export default function EventDetail() {
 
   // Transform randomization data from database format to table format
   const transformRandomizationData = (randomizationData: any) => {
+    console.log('=== TRANSFORMING RANDOMIZATION DATA ===');
+    console.log('Input data structure:', randomizationData);
+    
     if (!randomizationData || !randomizationData.evaluators) {
+      console.log('No evaluators found in randomization data');
       return null;
     }
 
+    // Check if the data already has the table format
+    if (randomizationData.table) {
+      console.log('Data already has table format, using it directly');
+      return randomizationData.table;
+    }
+
+    // Transform from evaluator format to table format
     const table: any = {};
     
     // Initialize table structure - 12 positions, variable rounds based on samples
@@ -410,13 +422,16 @@ export default function EventDetail() {
     randomizationData.evaluators.forEach((evaluator: any) => {
       const position = evaluator.evaluatorPosition;
       
-      evaluator.sampleOrder.forEach((sample: any, index: number) => {
-        const round = index + 1;
-        table[position][round] = sample.blindCode;
-      });
+      if (evaluator.sampleOrder && evaluator.sampleOrder.length > 0) {
+        evaluator.sampleOrder.forEach((sample: any, index: number) => {
+          const round = index + 1;
+          table[position][round] = sample.blindCode;
+        });
+      }
     });
 
     console.log('Transformed randomization table:', table);
+    console.log('Sample table entry for position 1:', table[1]);
     return table;
   };
 
@@ -434,6 +449,18 @@ export default function EventDetail() {
         // Transform the data to the expected table format
         const tableData = transformRandomizationData(randomization.randomization_table);
         console.log('Setting randomization table data:', tableData);
+        
+        // Validate that we got a proper table structure
+        if (!tableData || Object.keys(tableData).length === 0) {
+          console.error('Failed to transform randomization data properly');
+          toast({
+            title: "Greška",
+            description: "Problem s formatom randomizacije. Molimo generirajte randomizaciju ponovno.",
+            variant: "destructive",
+          });
+          return;
+        }
+        
         setRandomizationTable(tableData);
         setRandomizationView(true);
       } else {

@@ -49,33 +49,62 @@ export async function handleEvaluationSubmit(
       jar: jarRatings
     });
     
-    // Slanje ocjene na backend with better error handling
-    const submitResult = await submitEvaluationAPI({
-      userId,
-      sampleId: currentSample.id,
-      productTypeId: currentSample.productTypeId,
-      eventId,
-      hedonicRatings,
-      jarRatings
-    });
-    
-    console.log("Evaluation submission result:", submitResult);
+    // Enhanced submission with retry logic
+    let submitResult = null;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      console.log(`Evaluation submission attempt ${attempt}/3`);
+      try {
+        submitResult = await submitEvaluationAPI({
+          userId,
+          sampleId: currentSample.id,
+          productTypeId: currentSample.productTypeId,
+          eventId,
+          hedonicRatings,
+          jarRatings
+        });
+        
+        if (submitResult) {
+          console.log("Evaluation submission successful on attempt:", attempt);
+          break;
+        }
+      } catch (error) {
+        console.error(`Evaluation submission attempt ${attempt} failed:`, error);
+        if (attempt === 3) throw error;
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+    }
     
     if (!submitResult) {
-      throw new Error("Failed to submit evaluation - no result returned");
+      throw new Error("Failed to submit evaluation after 3 attempts");
     }
+    
+    console.log("Evaluation submission result:", submitResult);
     
     toast.toast({
       title: "Ocjena spremljena",
       description: `Uspješno ste ocijenili uzorak ${currentSample.blindCode}.`,
     });
     
-    // Refresh completed evaluations from database to ensure we have latest data
+    // Refresh completed evaluations from database with retry logic
     console.log("Refreshing completed evaluations from database...");
-    const refreshedEvaluations = await getCompletedEvaluations(eventId, userId);
-    console.log("Refreshed evaluations count:", refreshedEvaluations.length);
+    let refreshedEvaluations = [];
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      console.log(`Evaluations refresh attempt ${attempt}/3`);
+      try {
+        refreshedEvaluations = await getCompletedEvaluations(eventId, userId);
+        console.log("Refreshed evaluations count:", refreshedEvaluations.length);
+        break;
+      } catch (error) {
+        console.error(`Evaluations refresh attempt ${attempt} failed:`, error);
+        if (attempt === 3) {
+          console.warn("Could not refresh evaluations, continuing anyway");
+        } else {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      }
+    }
     
-    // Completely reset the form - this resets the internal state
+    // Completely reset the form
     form.reset({
       hedonic: {
         appearance: "",
@@ -90,7 +119,7 @@ export async function handleEvaluationSubmit(
     // Generate a new key to force radio buttons to reset
     setFormKey(Date.now());
     
-    // Wait a bit to ensure database consistency, then load next sample
+    // Enhanced next sample loading with better error handling
     setTimeout(async () => {
       try {
         console.log("Loading next sample after evaluation submission...");
@@ -105,13 +134,13 @@ export async function handleEvaluationSubmit(
         console.error("Error loading next sample:", error);
         toast.toast({
           title: "Greška",
-          description: "Problema s učitavanjem sljedećeg uzorka.",
+          description: "Problem s učitavanjem sljedećeg uzorka. Molimo osvježite stranicu.",
           variant: "destructive",
         });
       } finally {
         setIsSubmitting(false);
       }
-    }, 1500); // Increased delay to ensure database consistency
+    }, 2000); // Increased delay for better database consistency
     
   } catch (error) {
     console.error("=== ERROR SUBMITTING EVALUATION ===");

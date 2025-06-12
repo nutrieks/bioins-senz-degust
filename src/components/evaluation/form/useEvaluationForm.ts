@@ -18,7 +18,7 @@ export function useEvaluationForm(
   const { user } = useAuth();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formKey, setFormKey] = useState<number>(Date.now()); // Key to force form reset
+  const [formKey, setFormKey] = useState<number>(Date.now());
   const scrollRef = useRef<HTMLDivElement>(null);
   
   // Inicijalizacija obrasca kroz react-hook-form
@@ -36,8 +36,11 @@ export function useEvaluationForm(
     mode: "onSubmit"
   });
   
-  // Reset form when current sample changes
+  // Reset form when current sample changes with enhanced debugging
   useEffect(() => {
+    console.log('=== FORM RESET TRIGGERED ===');
+    console.log('Current sample:', currentSample?.id, currentSample?.blindCode);
+    
     form.reset({
       hedonic: {
         appearance: "",
@@ -56,15 +59,32 @@ export function useEvaluationForm(
     if (scrollRef.current) {
       scrollRef.current.scrollIntoView({ behavior: 'smooth' });
     }
+    
+    console.log('Form reset completed for sample:', currentSample?.blindCode);
   }, [currentSample, form]);
 
+  // Enhanced submit function with better error handling
   const onSubmit = async (data: FormData) => {
-    if (!user || !currentSample) return;
+    console.log('=== FORM SUBMIT TRIGGERED ===');
+    console.log('User:', user?.username);
+    console.log('Current sample:', currentSample?.blindCode);
+    console.log('Form data:', data);
+    
+    if (!user || !currentSample) {
+      console.error('Missing user or current sample for submission');
+      toast({
+        title: "Greška",
+        description: "Nedostaju potrebni podaci za slanje ocjene.",
+        variant: "destructive",
+      });
+      return;
+    }
     
     // Validate the form
     const { isValid, errorFields } = validateEvaluationForm(data, form, currentJARAttributes);
     
     if (!isValid) {
+      console.log('Form validation failed:', errorFields);
       toast({
         title: "Nepotpuna ocjena",
         description: `Molimo ispunite sva polja. Nedostaju: ${errorFields}`,
@@ -72,6 +92,8 @@ export function useEvaluationForm(
       });
       return;
     }
+    
+    console.log('Form validation passed, proceeding with submission');
     
     // Submit the form
     await handleEvaluationSubmit(

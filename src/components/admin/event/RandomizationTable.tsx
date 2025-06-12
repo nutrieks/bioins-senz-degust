@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { 
   Table, 
@@ -126,21 +125,24 @@ export function RandomizationTable({
   };
 
   const handleExportCSV = () => {
-    // Create CSV content
+    // Create CSV content using the correct table structure
     let csvContent = "Pozicija,";
     roundNumbers.forEach(round => {
       csvContent += `Dijeljenje ${round},`;
     });
-    csvContent = csvContent.slice(0, -1) + "\n"; // Remove last comma and add newline
+    csvContent = csvContent.slice(0, -1) + "\n";
 
-    // Add data rows
+    // Add data rows - use the table structure from randomization data
     positions.forEach(position => {
       csvContent += `Mjesto ${position},`;
       roundNumbers.forEach(round => {
-        const value = randomizationTable?.[position]?.[round] || "-";
+        // Get value from the table structure in randomization data
+        const value = randomizationTable?.table?.[position]?.[round] || 
+                     randomizationTable?.[position]?.[round] || 
+                     "-";
         csvContent += `${value},`;
       });
-      csvContent = csvContent.slice(0, -1) + "\n"; // Remove last comma and add newline
+      csvContent = csvContent.slice(0, -1) + "\n";
     });
 
     // Add legend
@@ -284,7 +286,9 @@ export function RandomizationTable({
                 </TableCell>
                 {positions.map((position) => (
                   <TableCell key={position} className="text-center py-2 px-2 text-sm border border-black font-mono font-bold">
-                    {randomizationTable?.[position]?.[round] || "-"}
+                    {randomizationTable?.table?.[position]?.[round] || 
+                     randomizationTable?.[position]?.[round] || 
+                     "-"}
                   </TableCell>
                 ))}
               </TableRow>
