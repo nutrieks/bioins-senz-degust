@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -217,9 +216,10 @@ export default function EventDetail() {
             <TabsTrigger value="reports">Izvještaji</TabsTrigger>
           </TabsList>
           <TabsContent value="productTypes">
-            <ProductTypesTab
-              productTypes={productTypes}
+            <ProductTypesTab 
+              productTypes={event.productTypes} 
               refreshEventData={refreshEventData}
+              eventId={eventId}
             />
           </TabsContent>
           <TabsContent value="randomization">
