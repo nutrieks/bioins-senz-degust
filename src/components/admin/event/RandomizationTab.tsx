@@ -6,30 +6,14 @@ import { RandomizationTable } from "./RandomizationTable";
 
 interface RandomizationTabProps {
   productTypes: ProductType[];
-  randomizationView: boolean;
-  selectedProductType: ProductType | null;
-  randomizationTable: any;
-  onViewRandomization: (productType: ProductType) => void;
+  generatingRandomization: { [productTypeId: string]: boolean };
   onGenerateRandomization: (productTypeId: string) => void;
-  onPrintRandomizationTable: () => void;
-  onExportRandomizationTable: () => void;
-  onBackFromRandomization: () => void;
-  onNavigateToNextProductType: () => void;
-  onNavigateToPrevProductType: () => void;
 }
 
 export function RandomizationTab({
   productTypes,
-  randomizationView,
-  selectedProductType,
-  randomizationTable,
-  onViewRandomization,
+  generatingRandomization,
   onGenerateRandomization,
-  onPrintRandomizationTable,
-  onExportRandomizationTable,
-  onBackFromRandomization,
-  onNavigateToNextProductType,
-  onNavigateToPrevProductType,
 }: RandomizationTabProps) {
   return (
     <Card>
@@ -46,22 +30,10 @@ export function RandomizationTab({
               Nema dodanih tipova proizvoda za koje bi se mogla generirati randomizacija.
             </p>
           </div>
-        ) : randomizationView && selectedProductType ? (
-          <RandomizationTable 
-            selectedProductType={selectedProductType}
-            randomizationTable={randomizationTable}
-            onNavigateNext={onNavigateToNextProductType}
-            onNavigatePrev={onNavigateToPrevProductType}
-            onExport={onExportRandomizationTable}
-            onPrint={onPrintRandomizationTable}
-            onBack={onBackFromRandomization}
-            productTypeIndex={productTypes.findIndex(pt => pt.id === selectedProductType.id)}
-            totalProductTypes={productTypes.length}
-          />
         ) : (
           <RandomizationProductList 
             productTypes={productTypes}
-            onViewRandomization={onViewRandomization}
+            generatingRandomization={generatingRandomization}
             onGenerateRandomization={onGenerateRandomization}
           />
         )}

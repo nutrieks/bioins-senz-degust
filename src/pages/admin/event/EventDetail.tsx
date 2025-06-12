@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -14,9 +15,10 @@ import {
 } from "@/services/supabase/events";
 import { getProductTypes } from "@/services/supabase/productTypes";
 import { createRandomization, getRandomization } from "@/services/supabase/randomization";
-import { formatDate } from "@/utils";
+import { formatDate } from "@/utils/dateUtils";
 import { EventStatus, Event, ProductType } from "@/types";
 import { useToast } from "@/hooks/use-toast";
+import { checkAllRandomizationsGenerated, formatRandomizationErrorMessage } from "@/utils/randomizationUtils";
 
 export default function EventDetail() {
   const { eventId } = useParams<{ eventId: string }>();
@@ -68,6 +70,21 @@ export default function EventDetail() {
 
   const handleUpdateStatus = async (status: EventStatus) => {
     if (!eventId) return;
+
+    // Add validation for ACTIVE status
+    if (status === EventStatus.ACTIVE) {
+      const { allGenerated, missingProductTypes } = checkAllRandomizationsGenerated(productTypes);
+      
+      if (!allGenerated) {
+        const errorMessage = formatRandomizationErrorMessage(missingProductTypes);
+        toast({
+          title: "Nemožete aktivirati događaj",
+          description: errorMessage,
+          variant: "destructive",
+        });
+        return;
+      }
+    }
 
     setIsUpdating(true);
     try {
@@ -201,14 +218,12 @@ export default function EventDetail() {
           </TabsList>
           <TabsContent value="productTypes">
             <ProductTypesTab
-              eventId={eventId}
               productTypes={productTypes}
               refreshEventData={refreshEventData}
             />
           </TabsContent>
           <TabsContent value="randomization">
             <RandomizationTab
-              eventId={eventId}
               productTypes={productTypes}
               generatingRandomization={generatingRandomization}
               onGenerateRandomization={handleGenerateRandomization}
