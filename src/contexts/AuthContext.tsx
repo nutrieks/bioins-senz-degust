@@ -22,11 +22,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     console.log('=== POKRETANJE AUTH PROVIDER ===');
     
-    // Postavi timeout za loading (maksimalno 10 sekundi)
+    // Povećaj timeout na 20 sekundi za sporije veze
     const loadingTimeout = setTimeout(() => {
       console.log('Loading timeout - prisilno postavljam loading na false');
       setLoading(false);
-    }, 10000);
+    }, 20000);
 
     // Set up auth state listener FIRST (bez async!)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
@@ -68,10 +68,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Ako postoji session, auth state change listener će ga handled
     });
 
-    // Funkcija za dohvaćanje korisničkih podataka
-    const fetchUserData = async (userId: string) => {
+    // Funkcija za dohvaćanje korisničkih podataka s retry logikom
+    const fetchUserData = async (userId: string, retries = 3) => {
       try {
-        console.log('Fetching user data for:', userId);
+        console.log('Fetching user data for:', userId, 'retries left:', retries);
         
         const { data: userData, error } = await supabase
           .from('users')
@@ -90,16 +90,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             password: userData.password
           };
           
-          console.log('User data fetched successfully:', appUser.username);
+          console.log('User data fetched successfully:', appUser.username, 'position:', appUser.evaluatorPosition);
           setUser(appUser);
           localStorage.setItem("sensorUser", JSON.stringify(appUser));
         } else {
           console.error('User not found or inactive:', error);
-          // Ako korisnik nije pronađen, odjavi ga
+          // Retry ako ima još pokušaja
+          if (retries > 0) {
+            console.log('Retrying user data fetch in 2 seconds...');
+            setTimeout(() => fetchUserData(userId, retries - 1), 2000);
+            return;
+          }
+          // Ako korisnik nije pronađen nakon svih pokušaja, odjavi ga
           await supabase.auth.signOut();
         }
       } catch (error) {
         console.error('Error fetching user data:', error);
+        // Retry ako ima još pokušaja
+        if (retries > 0) {
+          console.log('Retrying user data fetch in 2 seconds...');
+          setTimeout(() => fetchUserData(userId, retries - 1), 2000);
+          return;
+        }
         await supabase.auth.signOut();
       } finally {
         setLoading(false);
@@ -138,7 +150,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       console.log('Attempting Supabase login with identifier:', identifier);
-      const authenticatedUser = await loginWithSupabase(identifier, password);
+      
+      // Pokušaj login s retry logikom
+      let authenticatedUser = null;
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        console.log(`Login attempt ${attempt}/3`);
+        try {
+          authenticatedUser = await loginWithSupabase(identifier, password);
+          if (authenticatedUser) break;
+        } catch (error) {
+          console.error(`Login attempt ${attempt} failed:`, error);
+          if (attempt === 3) throw error;
+          await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second before retry
+        }
+      }
       
       if (authenticatedUser) {
         // The auth state change listener will handle setting the user
@@ -166,7 +191,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.error('Login error:', error);
       toast({
         title: "Greška pri prijavi",
-        description: "Došlo je do pogreške prilikom prijave.",
+        description: "Došlo je do pogreške prilikom prijave. Pokušajte ponovno.",
         variant: "destructive",
       });
       setLoading(false);

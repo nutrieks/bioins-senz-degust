@@ -17,13 +17,26 @@ export async function createRandomization(productTypeId: string): Promise<any> {
       return existingRandomization;
     }
 
-    // Get samples for this product type
-    const { data: samples, error: samplesError } = await supabase
-      .from('samples')
-      .select('*')
-      .eq('product_type_id', productTypeId);
+    // Get samples for this product type s retry logikom
+    let samples = null;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      console.log(`Fetching samples attempt ${attempt}/3`);
+      const { data, error } = await supabase
+        .from('samples')
+        .select('*')
+        .eq('product_type_id', productTypeId);
 
-    if (samplesError) throw samplesError;
+      if (!error && data) {
+        samples = data;
+        break;
+      }
+      
+      if (attempt === 3) {
+        throw error || new Error('Failed to fetch samples after 3 attempts');
+      }
+      
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
 
     if (!samples || samples.length === 0) {
       console.log('No samples found for product type:', productTypeId);
@@ -31,21 +44,45 @@ export async function createRandomization(productTypeId: string): Promise<any> {
     }
 
     console.log('Found samples:', samples.length);
+    console.log('Sample blind codes:', samples.map(s => s.blind_code));
 
     // Create randomization table using existing blind codes
     const randomizationTable = await createRandomizationTable(samples);
     
-    // Save randomization to database
-    const randomizationRecord = await createRandomizationRecord(
-      productTypeId, 
-      randomizationTable
-    );
+    // Save randomization to database s retry logikom
+    let randomizationRecord = null;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      console.log(`Creating randomization record attempt ${attempt}/3`);
+      try {
+        randomizationRecord = await createRandomizationRecord(
+          productTypeId, 
+          randomizationTable
+        );
+        break;
+      } catch (error) {
+        console.error(`Randomization creation attempt ${attempt} failed:`, error);
+        if (attempt === 3) throw error;
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+    }
     
-    // Update product type to mark it has randomization
-    await supabase
-      .from('product_types')
-      .update({ has_randomization: true })
-      .eq('id', productTypeId);
+    // Update product type to mark it has randomization s retry logikom
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      console.log(`Updating product type attempt ${attempt}/3`);
+      const { error } = await supabase
+        .from('product_types')
+        .update({ has_randomization: true })
+        .eq('id', productTypeId);
+
+      if (!error) break;
+      
+      if (attempt === 3) {
+        console.error('Failed to update product type after 3 attempts:', error);
+        // Ne blokiraj cijeli proces zbog ovoga
+      }
+      
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
 
     console.log('=== RANDOMIZATION CREATION COMPLETE ===');
     return randomizationRecord;
@@ -111,6 +148,7 @@ async function createRandomizationTable(samples: any[]): Promise<any> {
   }
 
   console.log('Randomization table created successfully');
+  console.log('First evaluator sample order:', randomizationTable.evaluators[0]?.sampleOrder);
   return randomizationTable;
 }
 
@@ -127,19 +165,29 @@ export async function getNextSample(
     console.log('Product Type ID:', productTypeId);
     console.log('Completed Sample IDs:', completedSampleIds);
 
-    // Get user's evaluator position
+    // Get user's evaluator position s dodatnim debug info
     const { data: user, error: userError } = await supabase
       .from('users')
-      .select('evaluator_position')
+      .select('evaluator_position, username, role')
       .eq('id', userId)
       .single();
 
     if (userError || !user) {
+      console.error('User lookup error:', userError);
       throw new Error('User not found or not an evaluator');
     }
 
     const evaluatorPosition = user.evaluator_position;
-    console.log('Evaluator position:', evaluatorPosition);
+    console.log('User details:', {
+      username: user.username,
+      role: user.role,
+      evaluatorPosition: evaluatorPosition
+    });
+
+    if (!evaluatorPosition) {
+      console.error('User has no evaluator position');
+      throw new Error('User is not assigned an evaluator position');
+    }
 
     // Get product types for this event (if not specified)
     let productTypesToCheck = [];
@@ -152,7 +200,10 @@ export async function getNextSample(
         .eq('event_id', eventId)
         .single();
         
-      if (ptError) throw ptError;
+      if (ptError) {
+        console.error('Product type lookup error:', ptError);
+        throw ptError;
+      }
       productTypesToCheck = [specificProductType];
     } else {
       const { data: allProductTypes, error: ptError } = await supabase
@@ -161,7 +212,10 @@ export async function getNextSample(
         .eq('event_id', eventId)
         .order('display_order');
         
-      if (ptError) throw ptError;
+      if (ptError) {
+        console.error('Product types lookup error:', ptError);
+        throw ptError;
+      }
       productTypesToCheck = allProductTypes || [];
     }
 
@@ -175,7 +229,10 @@ export async function getNextSample(
         .eq('user_id', userId)
         .eq('event_id', eventId);
 
-      if (evalError) throw evalError;
+      if (evalError) {
+        console.error('Evaluations lookup error:', evalError);
+        throw evalError;
+      }
       
       completedSampleIds = evaluations?.map(e => e.sample_id) || [];
     }
@@ -184,7 +241,7 @@ export async function getNextSample(
 
     // Check each product type for the next sample
     for (const productType of productTypesToCheck) {
-      console.log(`Checking product type: ${productType.product_name}`);
+      console.log(`Checking product type: ${productType.product_name} (${productType.id})`);
       
       // Get randomization for this product type
       const randomization = await getRandomization(productType.id);
@@ -194,6 +251,8 @@ export async function getNextSample(
         continue;
       }
 
+      console.log('Found randomization with', randomization.randomization_table?.evaluators?.length, 'evaluators');
+
       // Find evaluator's assignment
       const evaluatorAssignment = randomization.randomization_table.evaluators.find(
         (e: any) => e.evaluatorPosition === evaluatorPosition
@@ -201,6 +260,7 @@ export async function getNextSample(
 
       if (!evaluatorAssignment) {
         console.log('No assignment found for evaluator position:', evaluatorPosition);
+        console.log('Available evaluator positions:', randomization.randomization_table.evaluators.map((e: any) => e.evaluatorPosition));
         continue;
       }
 
@@ -208,6 +268,7 @@ export async function getNextSample(
 
       // Find next uncompleted sample
       for (const sampleAssignment of evaluatorAssignment.sampleOrder) {
+        console.log(`Checking sample ${sampleAssignment.sampleId} (blind code: ${sampleAssignment.blindCode})`);
         if (!completedSampleIds.includes(sampleAssignment.sampleId)) {
           console.log('Found next sample:', sampleAssignment.sampleId);
           
@@ -232,7 +293,12 @@ export async function getNextSample(
           };
 
           console.log('=== NEXT SAMPLE FOUND ===');
-          console.log('Sample:', nextSample);
+          console.log('Sample details:', {
+            id: nextSample.id,
+            brand: nextSample.brand,
+            blindCode: nextSample.blindCode,
+            presentationOrder: nextSample.presentationOrder
+          });
           return nextSample;
         }
       }

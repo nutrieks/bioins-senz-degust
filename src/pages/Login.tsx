@@ -31,11 +31,11 @@ export default function Login() {
   }, [user, loading, navigate]);
 
   useEffect(() => {
-    // Pokažij timeout poruku ako loading traje duže od 8 sekundi
+    // Pokažij timeout poruku ako loading traje duže od 15 sekundi
     if (loading) {
       const timer = setTimeout(() => {
         setShowTimeout(true);
-      }, 8000);
+      }, 15000);
 
       return () => clearTimeout(timer);
     } else {
@@ -56,7 +56,7 @@ export default function Login() {
                 Učitavanje traje duže nego obično...
               </p>
               <p className="text-xs text-muted-foreground">
-                Molimo osvježite stranicu ako se problem nastavi.
+                Molimo pričekajte ili osvježite stranicu ako se problem nastavi.
               </p>
               <button 
                 onClick={() => window.location.reload()} 
