@@ -177,11 +177,12 @@ export async function getNextSample(
   completedSampleIds?: string[]
 ): Promise<any> {
   try {
-    console.log('=== GETTING NEXT SAMPLE ===');
-    console.log('User ID:', userId);
-    console.log('Event ID:', eventId);
-    console.log('Product Type ID:', productTypeId);
-    console.log('Completed Sample IDs:', completedSampleIds);
+    console.log('=== GETTING NEXT SAMPLE - ENHANCED DEBUGGING ===');
+    console.log('Input parameters:');
+    console.log('- User ID:', userId);
+    console.log('- Event ID:', eventId);
+    console.log('- Product Type ID:', productTypeId);
+    console.log('- Completed Sample IDs:', completedSampleIds);
 
     // Get user's evaluator position s dodatnim debug info i retry logikom
     let user = null;
@@ -195,6 +196,11 @@ export async function getNextSample(
 
       if (!error && data) {
         user = data;
+        console.log('User found:', {
+          username: user.username,
+          role: user.role,
+          evaluatorPosition: user.evaluator_position
+        });
         break;
       }
       
@@ -207,23 +213,18 @@ export async function getNextSample(
     }
 
     const evaluatorPosition = user.evaluator_position;
-    console.log('User details:', {
-      username: user.username,
-      role: user.role,
-      evaluatorPosition: evaluatorPosition
-    });
 
     if (!evaluatorPosition) {
-      console.error('User has no evaluator position');
+      console.error('User has no evaluator position assigned');
       throw new Error('User is not assigned an evaluator position');
     }
 
-    // Get product types for this event (if not specified) s retry logikom
+    // Get product types for this event
     let productTypesToCheck = [];
     
     if (productTypeId) {
+      console.log('Fetching specific product type:', productTypeId);
       for (let attempt = 1; attempt <= 3; attempt++) {
-        console.log(`Product type lookup attempt ${attempt}/3`);
         const { data: specificProductType, error } = await supabase
           .from('product_types')
           .select('*')
@@ -233,6 +234,7 @@ export async function getNextSample(
           
         if (!error && specificProductType) {
           productTypesToCheck = [specificProductType];
+          console.log('Specific product type found:', specificProductType);
           break;
         }
         
@@ -244,8 +246,8 @@ export async function getNextSample(
         await new Promise(resolve => setTimeout(resolve, 1000));
       }
     } else {
+      console.log('Fetching all product types for event:', eventId);
       for (let attempt = 1; attempt <= 3; attempt++) {
-        console.log(`All product types lookup attempt ${attempt}/3`);
         const { data: allProductTypes, error } = await supabase
           .from('product_types')
           .select('*')
@@ -254,6 +256,7 @@ export async function getNextSample(
           
         if (!error && allProductTypes) {
           productTypesToCheck = allProductTypes;
+          console.log('All product types found:', allProductTypes.length);
           break;
         }
         
@@ -268,10 +271,10 @@ export async function getNextSample(
 
     console.log('Product types to check:', productTypesToCheck.length);
 
-    // Get completed evaluations if not provided s retry logikom
+    // Get completed evaluations if not provided
     if (!completedSampleIds) {
+      console.log('Fetching completed evaluations for user');
       for (let attempt = 1; attempt <= 3; attempt++) {
-        console.log(`Evaluations lookup attempt ${attempt}/3`);
         const { data: evaluations, error } = await supabase
           .from('evaluations')
           .select('sample_id')
@@ -280,6 +283,7 @@ export async function getNextSample(
 
         if (!error) {
           completedSampleIds = evaluations?.map(e => e.sample_id) || [];
+          console.log('Completed evaluations found:', completedSampleIds.length);
           break;
         }
         
@@ -292,19 +296,19 @@ export async function getNextSample(
       }
     }
 
-    console.log('Completed samples:', completedSampleIds?.length || 0);
-
     // Check each product type for the next sample
-    for (const productType of productTypesToCheck) {
-      console.log(`Checking product type: ${productType.product_name} (${productType.id})`);
+    for (const [index, productType] of productTypesToCheck.entries()) {
+      console.log(`\n--- Checking product type ${index + 1}/${productTypesToCheck.length} ---`);
+      console.log(`Product type: ${productType.product_name} (ID: ${productType.id})`);
       
-      // Get randomization for this product type s retry logikom
+      // Get randomization for this product type
       let randomization = null;
       for (let attempt = 1; attempt <= 3; attempt++) {
         console.log(`Randomization lookup attempt ${attempt}/3 for product type ${productType.id}`);
         randomization = await getRandomization(productType.id);
         
         if (randomization) {
+          console.log('Randomization found');
           break;
         }
         
@@ -316,17 +320,26 @@ export async function getNextSample(
       }
       
       if (!randomization) {
-        console.log('No randomization found for product type:', productType.id);
+        console.log('Skipping product type - no randomization');
         continue;
       }
 
-      console.log('Found randomization with', randomization.randomization_table?.evaluators?.length, 'evaluators');
-
-      // Provjeri strukturu randomization_table
-      if (!randomization.randomization_table || !randomization.randomization_table.evaluators) {
-        console.error('Invalid randomization table structure:', randomization.randomization_table);
+      // Validate randomization structure
+      if (!randomization.randomization_table) {
+        console.error('Invalid randomization - missing randomization_table');
         continue;
       }
+
+      if (!randomization.randomization_table.evaluators) {
+        console.error('Invalid randomization - missing evaluators array');
+        continue;
+      }
+
+      console.log('Randomization structure:', {
+        hasTable: !!randomization.randomization_table.table,
+        hasEvaluators: !!randomization.randomization_table.evaluators,
+        evaluatorsCount: randomization.randomization_table.evaluators?.length || 0
+      });
 
       // Find evaluator's assignment
       const evaluatorAssignment = randomization.randomization_table.evaluators.find(
@@ -335,29 +348,36 @@ export async function getNextSample(
 
       if (!evaluatorAssignment) {
         console.log('No assignment found for evaluator position:', evaluatorPosition);
-        console.log('Available evaluator positions:', randomization.randomization_table.evaluators.map((e: any) => e.evaluatorPosition));
+        console.log('Available evaluator positions:', 
+          randomization.randomization_table.evaluators.map((e: any) => e.evaluatorPosition)
+        );
         continue;
       }
 
-      console.log('Found evaluator assignment with', evaluatorAssignment.sampleOrder?.length || 0, 'samples');
+      console.log('Evaluator assignment found:', {
+        position: evaluatorAssignment.evaluatorPosition,
+        samplesCount: evaluatorAssignment.sampleOrder?.length || 0
+      });
 
-      // Provjeri da sampleOrder postoji i nije prazan
       if (!evaluatorAssignment.sampleOrder || evaluatorAssignment.sampleOrder.length === 0) {
-        console.error('No sample order found for evaluator:', evaluatorPosition);
+        console.error('No sample order found for evaluator');
         continue;
       }
 
       // Find next uncompleted sample
-      for (const sampleAssignment of evaluatorAssignment.sampleOrder) {
-        console.log(`Checking sample ${sampleAssignment.sampleId} (blind code: ${sampleAssignment.blindCode})`);
+      for (const [sampleIndex, sampleAssignment] of evaluatorAssignment.sampleOrder.entries()) {
+        console.log(`Checking sample ${sampleIndex + 1}/${evaluatorAssignment.sampleOrder.length}:`, {
+          sampleId: sampleAssignment.sampleId,
+          blindCode: sampleAssignment.blindCode,
+          isCompleted: completedSampleIds?.includes(sampleAssignment.sampleId)
+        });
         
         if (!completedSampleIds?.includes(sampleAssignment.sampleId)) {
-          console.log('Found next sample:', sampleAssignment.sampleId);
+          console.log('Found uncompleted sample:', sampleAssignment.sampleId);
           
-          // Get full sample data s retry logikom
+          // Get full sample data
           let sample = null;
           for (let attempt = 1; attempt <= 3; attempt++) {
-            console.log(`Sample data lookup attempt ${attempt}/3`);
             const { data, error } = await supabase
               .from('samples')
               .select('*')
@@ -395,18 +415,24 @@ export async function getNextSample(
             id: nextSample.id,
             brand: nextSample.brand,
             blindCode: nextSample.blindCode,
-            presentationOrder: nextSample.presentationOrder
+            presentationOrder: nextSample.presentationOrder,
+            productType: nextSample.productTypeName
           });
+          
           return nextSample;
         }
       }
+
+      console.log('All samples completed for this product type');
     }
 
-    console.log('=== NO MORE SAMPLES ===');
+    console.log('=== NO MORE SAMPLES AVAILABLE ===');
+    console.log('All product types checked, no uncompleted samples found');
     return null;
   } catch (error) {
     console.error('=== ERROR GETTING NEXT SAMPLE ===');
     console.error('Error details:', error);
+    console.error('Stack trace:', error.stack);
     throw error;
   }
 }

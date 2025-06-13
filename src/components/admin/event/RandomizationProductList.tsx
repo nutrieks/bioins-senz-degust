@@ -1,18 +1,22 @@
 
 import { Button } from "@/components/ui/button";
 import { ProductType } from "@/types";
-import { Shuffle, Eye } from "lucide-react";
+import { Shuffle, Eye, Loader2 } from "lucide-react";
 
 interface RandomizationProductListProps {
   productTypes: ProductType[];
   generatingRandomization: { [productTypeId: string]: boolean };
   onGenerateRandomization: (productTypeId: string) => void;
+  onViewRandomization: (productType: ProductType) => void;
+  isLoadingRandomization: boolean;
 }
 
 export function RandomizationProductList({
   productTypes,
   generatingRandomization,
   onGenerateRandomization,
+  onViewRandomization,
+  isLoadingRandomization,
 }: RandomizationProductListProps) {
   return (
     <div className="space-y-4">
@@ -51,12 +55,17 @@ export function RandomizationProductList({
               <div className="flex items-center space-x-2">
                 {productType.hasRandomization ? (
                   <Button 
+                    onClick={() => onViewRandomization(productType)}
+                    disabled={isLoadingRandomization}
                     className="flex items-center"
                     variant="outline"
-                    disabled
                   >
-                    <Eye className="mr-1 h-4 w-4" />
-                    Randomizacija generirana
+                    {isLoadingRandomization ? (
+                      <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Eye className="mr-1 h-4 w-4" />
+                    )}
+                    Prikaži randomizaciju
                   </Button>
                 ) : (
                   <Button 
