@@ -8,6 +8,7 @@ import { CompletionMessage } from "./CompletionMessage";
 import { SampleRevealScreen } from "./SampleRevealScreen";
 import { LoadingState } from "./LoadingState";
 import { ProductType } from "@/types";
+import { useNavigate } from "react-router-dom";
 
 interface EvaluationContentProps {
   eventId: string;
@@ -23,6 +24,7 @@ export function EvaluationContent({
   productTypes 
 }: EvaluationContentProps) {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { 
     currentSample, 
     completedSamples,
@@ -95,6 +97,10 @@ export function EvaluationContent({
     fetchNextSample();
   };
 
+  const handleReturnToDashboard = () => {
+    navigate('/evaluator');
+  };
+
   // Debug information display (remove in production)
   const debugInfo = (
     <div className="mb-4 p-4 bg-gray-100 rounded text-xs">
@@ -148,7 +154,7 @@ export function EvaluationContent({
       <div>
         {debugInfo}
         <CompletionMessage 
-          completedCount={completedSamples.length}
+          onReturn={handleReturnToDashboard}
         />
       </div>
     );
