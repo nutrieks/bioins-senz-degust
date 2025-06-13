@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEvaluation } from "@/contexts/EvaluationContext";
-import { getNextSample } from "@/services/supabase/randomization";
 import { EvaluationForm } from "./EvaluationForm";
 import { CompletionMessage } from "./CompletionMessage";
 import { SampleRevealScreen } from "./SampleRevealScreen";
@@ -29,11 +28,13 @@ export function EvaluationContent({
     currentSample, 
     completedSamples,
     isComplete,
-    loadNextSample
+    loadNextSample,
+    showSampleReveal,
+    setShowSampleReveal,
+    currentProductType
   } = useEvaluation();
   
   const [isLoading, setIsLoading] = useState(true);
-  const [showRevealScreen, setShowRevealScreen] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   console.log('=== EVALUATION CONTENT RENDER ===');
@@ -42,59 +43,67 @@ export function EvaluationContent({
   console.log('Current sample:', currentSample);
   console.log('Completed samples:', completedSamples.length);
   console.log('Is complete:', isComplete);
+  console.log('Show sample reveal:', showSampleReveal);
 
-  const fetchNextSample = async () => {
-    if (!user?.id || !eventId) {
-      console.log('Missing user or eventId, cannot fetch sample');
-      setIsLoading(false);
-      return;
-    }
-
-    console.log('=== FETCHING NEXT SAMPLE ===');
-    console.log('User ID:', user.id);
-    console.log('Event ID:', eventId);
-    console.log('Completed sample IDs:', completedSamples);
-
-    try {
-      setError(null);
-      // Use the context method instead of direct service call
-      await loadNextSample(eventId);
-    } catch (error) {
-      console.error('Error fetching next sample:', error);
-      setError(error instanceof Error ? error.message : 'Neočekivana greška');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
+  // Initial load
   useEffect(() => {
-    console.log('=== EVALUATION CONTENT EFFECT ===');
-    console.log('Dependencies changed:', { 
+    console.log('=== EVALUATION CONTENT INITIAL EFFECT ===');
+    console.log('Dependencies:', { 
       userId: user?.id, 
       eventId, 
       completedSamplesLength: completedSamples.length 
     });
 
+    const initialLoad = async () => {
+      if (!user?.id || !eventId) {
+        console.log('Missing user or eventId, cannot load');
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        setError(null);
+        console.log('Starting initial load of samples...');
+        
+        // Load the first sample (context will handle which product type)
+        await loadNextSample(eventId);
+        
+      } catch (error) {
+        console.error('Error in initial load:', error);
+        setError(error instanceof Error ? error.message : 'Neočekivana greška');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    // Only load initially if we don't have a current sample and we're not complete
     if (!currentSample && !isComplete) {
-      console.log('No current sample and not completed - fetching next sample');
-      fetchNextSample();
+      console.log('No current sample and not completed - starting initial load');
+      initialLoad();
     } else {
-      console.log('Current sample exists or evaluation completed - not fetching');
+      console.log('Current sample exists or evaluation completed - not loading initially');
       setIsLoading(false);
     }
-  }, [user?.id, eventId, completedSamples.length]);
+  }, [user?.id, eventId]); // Removed completedSamples.length dependency to avoid loops
 
   const handleSampleSubmitted = () => {
     console.log('=== SAMPLE SUBMITTED ===');
-    setShowRevealScreen(true);
-    // Context will handle data refresh
+    setShowSampleReveal(true);
   };
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     console.log('=== CONTINUING TO NEXT SAMPLE ===');
-    setShowRevealScreen(false);
+    setShowSampleReveal(false);
     setIsLoading(true);
-    fetchNextSample();
+    
+    try {
+      await loadNextSample(eventId, currentSample?.productTypeId);
+    } catch (error) {
+      console.error('Error loading next sample:', error);
+      setError(error instanceof Error ? error.message : 'Greška prilikom učitavanja sljedećeg uzorka');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleReturnToDashboard = () => {
@@ -109,8 +118,10 @@ export function EvaluationContent({
       Event: {eventId}<br/>
       Product Types: {productTypes.length}<br/>
       Current Sample: {currentSample ? currentSample.id : 'None'}<br/>
+      Current Sample Blind Code: {currentSample ? currentSample.blindCode || 'None' : 'None'}<br/>
       Completed: {completedSamples.length}<br/>
       Is Completed: {isComplete ? 'Yes' : 'No'}<br/>
+      Show Reveal: {showSampleReveal ? 'Yes' : 'No'}<br/>
       Loading: {isLoading ? 'Yes' : 'No'}<br/>
       Error: {error || 'None'}
     </div>
@@ -138,7 +149,7 @@ export function EvaluationContent({
             onClick={() => {
               setError(null);
               setIsLoading(true);
-              fetchNextSample();
+              loadNextSample(eventId).finally(() => setIsLoading(false));
             }}
             className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
           >
@@ -149,7 +160,7 @@ export function EvaluationContent({
     );
   }
 
-  if (isComplete || !currentSample) {
+  if (isComplete) {
     return (
       <div>
         {debugInfo}
@@ -160,7 +171,7 @@ export function EvaluationContent({
     );
   }
 
-  if (showRevealScreen && currentSample) {
+  if (showSampleReveal && currentSample) {
     return (
       <div>
         {debugInfo}
@@ -174,12 +185,28 @@ export function EvaluationContent({
     );
   }
 
+  if (!currentSample) {
+    return (
+      <div>
+        {debugInfo}
+        <div className="text-center p-6">
+          <h2 className="text-xl font-semibold mb-4">
+            Nema dostupnih uzoraka
+          </h2>
+          <p className="text-muted-foreground">
+            Trenutno nema uzoraka za ocjenjivanje.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
       {debugInfo}
       <EvaluationForm
         eventId={eventId}
-        onComplete={handleContinue}
+        onComplete={handleSampleSubmitted}
       />
     </div>
   );

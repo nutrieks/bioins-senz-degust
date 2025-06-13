@@ -79,7 +79,7 @@ export const EvaluationProvider: React.FC<{
     }
 
     try {
-      console.log("=== LOADING NEXT SAMPLE ===");
+      console.log("=== CONTEXT LOADING NEXT SAMPLE ===");
       console.log("Event ID:", eventId);
       console.log("Product Type ID:", productTypeId);
       console.log("User ID:", user.id);
@@ -91,20 +91,19 @@ export const EvaluationProvider: React.FC<{
       console.log("Fresh completed sample IDs:", completedSampleIds);
       setCompletedSamples(completedSampleIds);
 
-      // Get next sample with refreshed completion data
+      // Get next sample with refreshed completion data - now expecting correct structure
       console.log("Getting next sample with fresh completion data...");
-      const { sample, round, isComplete: complete } = await getNextSample(
+      const result = await getNextSample(
         user.id,
         eventId,
         productTypeId,
         completedSampleIds
       );
 
-      console.log("Next sample result:", {
-        sample: sample ? { id: sample.id, blindCode: sample.blindCode } : null,
-        round,
-        isComplete: complete
-      });
+      console.log("Next sample result:", result);
+
+      // Destructure the correct structure
+      const { sample, round, isComplete: complete } = result;
 
       setCurrentSample(sample);
       setCurrentRound(round);

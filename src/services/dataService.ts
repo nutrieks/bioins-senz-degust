@@ -135,8 +135,54 @@ export async function getEvaluationsStatus(eventId: string): Promise<any> {
   return await getEvaluationsStatusSupabase(eventId);
 }
 
-export async function getNextSample(userId: string, eventId: string, productTypeId?: string, completedSampleIds?: string[]): Promise<any> {
-  return await getNextSampleSupabase(userId, eventId, productTypeId, completedSampleIds);
+// Fixed getNextSample to return correct structure expected by context
+export async function getNextSample(
+  userId: string, 
+  eventId: string, 
+  productTypeId?: string, 
+  completedSampleIds?: string[]
+): Promise<{ sample: any | null; round: number; isComplete: boolean }> {
+  console.log('=== DATA SERVICE getNextSample ===');
+  console.log('Parameters:', { userId, eventId, productTypeId, completedSampleIds });
+
+  try {
+    // Call the Supabase service
+    const sample = await getNextSampleSupabase(userId, eventId, productTypeId, completedSampleIds);
+    
+    console.log('Sample from Supabase service:', sample);
+    
+    if (!sample) {
+      // No more samples available
+      console.log('No sample returned - evaluation complete');
+      return {
+        sample: null,
+        round: 0,
+        isComplete: true
+      };
+    }
+
+    // Calculate the round based on completed samples for this product type
+    let round = 1;
+    if (completedSampleIds && sample.productTypeId) {
+      // Get completed samples for this specific product type
+      const completedForProductType = await getCompletedEvaluationsSupabase(userId, eventId);
+      const completedForThisType = completedForProductType.filter(
+        e => e.productTypeId === sample.productTypeId
+      );
+      round = completedForThisType.length + 1;
+    }
+
+    console.log('Returning sample with round:', round);
+    
+    return {
+      sample,
+      round,
+      isComplete: false
+    };
+  } catch (error) {
+    console.error('Error in getNextSample:', error);
+    throw error;
+  }
 }
 
 // Randomization Management - Updated to work with productTypeId
