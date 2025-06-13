@@ -62,6 +62,18 @@ export function RandomizationTab({
     window.print();
   };
 
+  const handleExport = () => {
+    // Simple export functionality - could be enhanced
+    const dataStr = JSON.stringify(randomizationData, null, 2);
+    const dataBlob = new Blob([dataStr], {type: 'application/json'});
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `randomization-${selectedProductType?.productName || 'table'}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   const handleNavigateNext = () => {
     if (!selectedProductType) return;
     
@@ -108,6 +120,7 @@ export function RandomizationTab({
             onNavigateNext={handleNavigateNext}
             onNavigatePrev={handleNavigatePrev}
             onPrint={handlePrint}
+            onExport={handleExport}
             onBack={handleBackToList}
             productTypeIndex={currentIndex}
             totalProductTypes={productTypes.length}

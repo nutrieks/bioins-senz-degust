@@ -25,10 +25,9 @@ export function EvaluationContent({
   const { user } = useAuth();
   const { 
     currentSample, 
-    setCurrentSample, 
-    completedSamples, 
-    isCompleted,
-    refreshData 
+    completedSamples,
+    isComplete,
+    loadNextSample
   } = useEvaluation();
   
   const [isLoading, setIsLoading] = useState(true);
@@ -40,7 +39,7 @@ export function EvaluationContent({
   console.log('User:', user ? { id: user.id, username: user.username, role: user.role } : 'No user');
   console.log('Current sample:', currentSample);
   console.log('Completed samples:', completedSamples.length);
-  console.log('Is completed:', isCompleted);
+  console.log('Is complete:', isComplete);
 
   const fetchNextSample = async () => {
     if (!user?.id || !eventId) {
@@ -56,22 +55,8 @@ export function EvaluationContent({
 
     try {
       setError(null);
-      const sample = await getNextSample(
-        user.id,
-        eventId,
-        undefined,
-        completedSamples
-      );
-
-      console.log('Next sample result:', sample);
-
-      if (sample) {
-        setCurrentSample(sample);
-        console.log('Sample set as current sample');
-      } else {
-        console.log('No more samples - evaluation completed');
-        setCurrentSample(null);
-      }
+      // Use the context method instead of direct service call
+      await loadNextSample(eventId);
     } catch (error) {
       console.error('Error fetching next sample:', error);
       setError(error instanceof Error ? error.message : 'Neočekivana greška');
@@ -88,7 +73,7 @@ export function EvaluationContent({
       completedSamplesLength: completedSamples.length 
     });
 
-    if (!currentSample && !isCompleted) {
+    if (!currentSample && !isComplete) {
       console.log('No current sample and not completed - fetching next sample');
       fetchNextSample();
     } else {
@@ -100,13 +85,12 @@ export function EvaluationContent({
   const handleSampleSubmitted = () => {
     console.log('=== SAMPLE SUBMITTED ===');
     setShowRevealScreen(true);
-    refreshData();
+    // Context will handle data refresh
   };
 
   const handleContinue = () => {
     console.log('=== CONTINUING TO NEXT SAMPLE ===');
     setShowRevealScreen(false);
-    setCurrentSample(null);
     setIsLoading(true);
     fetchNextSample();
   };
@@ -120,7 +104,7 @@ export function EvaluationContent({
       Product Types: {productTypes.length}<br/>
       Current Sample: {currentSample ? currentSample.id : 'None'}<br/>
       Completed: {completedSamples.length}<br/>
-      Is Completed: {isCompleted ? 'Yes' : 'No'}<br/>
+      Is Completed: {isComplete ? 'Yes' : 'No'}<br/>
       Loading: {isLoading ? 'Yes' : 'No'}<br/>
       Error: {error || 'None'}
     </div>
@@ -159,25 +143,25 @@ export function EvaluationContent({
     );
   }
 
-  if (isCompleted || !currentSample) {
+  if (isComplete || !currentSample) {
     return (
       <div>
         {debugInfo}
         <CompletionMessage 
-          eventName={eventName}
-          eventDate={eventDate}
           completedCount={completedSamples.length}
         />
       </div>
     );
   }
 
-  if (showRevealScreen) {
+  if (showRevealScreen && currentSample) {
     return (
       <div>
         {debugInfo}
         <SampleRevealScreen
-          sample={currentSample}
+          eventId={eventId}
+          productTypeId={currentSample.productTypeId}
+          productName={productTypes.find(pt => pt.id === currentSample.productTypeId)?.productName || ''}
           onContinue={handleContinue}
         />
       </div>
@@ -188,9 +172,8 @@ export function EvaluationContent({
     <div>
       {debugInfo}
       <EvaluationForm
-        sample={currentSample}
         eventId={eventId}
-        onSampleSubmitted={handleSampleSubmitted}
+        onComplete={handleContinue}
       />
     </div>
   );
