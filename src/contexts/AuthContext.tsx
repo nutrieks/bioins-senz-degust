@@ -1,228 +1,216 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { User, UserRole } from "../types";
-import { useToast } from "@/hooks/use-toast";
-import { loginWithSupabase, logout as logoutSupabase } from "@/services/supabase/auth";
 import { supabase } from "@/integrations/supabase/client";
+import { User } from "../types";
 
 interface AuthContextType {
   user: User | null;
-  loading: boolean;
-  login: (identifier: string, password: string) => Promise<boolean>;
+  login: (username: string, password: string) => Promise<boolean>;
   logout: () => void;
+  isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(true);
 
+  // Check for existing session on mount
   useEffect(() => {
-    console.log('=== POKRETANJE AUTH PROVIDER ===');
-    
-    // Povećaj timeout na 20 sekundi za sporije veze
-    const loadingTimeout = setTimeout(() => {
-      console.log('Loading timeout - prisilno postavljam loading na false');
-      setLoading(false);
-    }, 20000);
-
-    // Set up auth state listener FIRST (bez async!)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('Auth state change:', event, session?.user?.id);
-      
-      // Samo sinkronizovane operacije ovdje
-      if (event === 'SIGNED_IN' && session?.user) {
-        console.log('User signed in, deferring user data fetch');
-        
-        // Deferiraj Supabase pozive sa setTimeout(0)
-        setTimeout(() => {
-          fetchUserData(session.user.id);
-        }, 0);
-      } else if (event === 'SIGNED_OUT') {
-        console.log('User signed out');
-        setUser(null);
-        localStorage.removeItem("sensorUser");
-        setLoading(false);
-      }
-      
-      // Očisti timeout kad dobijemo auth event
-      clearTimeout(loadingTimeout);
-    });
-
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session }, error }) => {
-      console.log('Initial session check:', session?.user?.id, error);
-      
-      if (error) {
-        console.error('Session error:', error);
-        setLoading(false);
-        return;
-      }
-
-      if (!session) {
-        console.log('No session found');
-        setLoading(false);
-      }
-      // Ako postoji session, auth state change listener će ga handled
-    });
-
-    // Funkcija za dohvaćanje korisničkih podataka s retry logikom
-    const fetchUserData = async (userId: string, retries = 3) => {
+    const checkUser = async () => {
       try {
-        console.log('Fetching user data for:', userId, 'retries left:', retries);
+        const { data: { session }, error } = await supabase.auth.getSession();
         
-        const { data: userData, error } = await supabase
-          .from('users')
-          .select('*')
-          .eq('id', userId)
-          .eq('is_active', true)
-          .single();
-
-        if (!error && userData) {
-          const appUser: User = {
-            id: userData.id,
-            username: userData.username,
-            role: userData.role as UserRole,
-            evaluatorPosition: userData.evaluator_position || undefined,
-            isActive: userData.is_active,
-            password: userData.password
-          };
-          
-          console.log('User data fetched successfully:', appUser.username, 'position:', appUser.evaluatorPosition);
-          setUser(appUser);
-          localStorage.setItem("sensorUser", JSON.stringify(appUser));
-        } else {
-          console.error('User not found or inactive:', error);
-          // Retry ako ima još pokušaja
-          if (retries > 0) {
-            console.log('Retrying user data fetch in 2 seconds...');
-            setTimeout(() => fetchUserData(userId, retries - 1), 2000);
-            return;
-          }
-          // Ako korisnik nije pronađen nakon svih pokušaja, odjavi ga
-          await supabase.auth.signOut();
-        }
-      } catch (error) {
-        console.error('Error fetching user data:', error);
-        // Retry ako ima još pokušaja
-        if (retries > 0) {
-          console.log('Retrying user data fetch in 2 seconds...');
-          setTimeout(() => fetchUserData(userId, retries - 1), 2000);
+        if (error) {
+          console.error('Error checking session:', error);
+          setUser(null);
+          setIsLoading(false);
           return;
         }
-        await supabase.auth.signOut();
+
+        if (session?.user) {
+          console.log('Found existing session:', session.user.id);
+          
+          // Get user details from our users table
+          const { data: userData, error: userError } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+
+          if (userError) {
+            console.error('Error fetching user data:', userError);
+            setUser(null);
+          } else if (userData) {
+            console.log('User data from database:', userData);
+            setUser({
+              id: userData.id,
+              username: userData.username,
+              role: userData.role,
+              isActive: userData.is_active,
+              evaluatorPosition: userData.evaluator_position
+            });
+          }
+        } else {
+          console.log('No existing session found');
+          setUser(null);
+        }
+      } catch (error) {
+        console.error('Error in checkUser:', error);
+        setUser(null);
       } finally {
-        setLoading(false);
+        setIsLoading(false);
       }
     };
 
-    return () => {
-      console.log('Cleaning up auth subscription');
-      clearTimeout(loadingTimeout);
-      subscription.unsubscribe();
-    };
+    checkUser();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log('Auth state changed:', event, session?.user?.id);
+        
+        if (event === 'SIGNED_IN' && session?.user) {
+          // Get user details from our users table
+          const { data: userData, error: userError } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+
+          if (userError) {
+            console.error('Error fetching user data after sign in:', userError);
+            setUser(null);
+          } else if (userData) {
+            console.log('User signed in:', userData);
+            setUser({
+              id: userData.id,
+              username: userData.username,
+              role: userData.role,
+              isActive: userData.is_active,
+              evaluatorPosition: userData.evaluator_position
+            });
+          }
+        } else if (event === 'SIGNED_OUT') {
+          console.log('User signed out');
+          setUser(null);
+        }
+      }
+    );
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  const login = async (identifier: string, password: string): Promise<boolean> => {
-    console.log('Login attempt with identifier:', identifier);
-    setLoading(true);
-    
+  const login = async (username: string, password: string): Promise<boolean> => {
     try {
-      // Determine username based on identifier
-      let username = identifier;
-      if (identifier !== "ADMIN") {
-        // Check if it's a valid evaluator position (1-12)
-        if (/^([1-9]|1[0-2])$/.test(identifier)) {
-          username = `evaluator${identifier}`;
-        } else {
-          toast({
-            title: "Greška pri prijavi",
-            description: "Nevažeće korisničko ime. Unesite ADMIN ili broj od 1 do 12.",
-            variant: "destructive",
-          });
-          setLoading(false);
-          return false;
-        }
-      } else {
-        username = "admin";
-      }
+      console.log('=== LOGIN ATTEMPT ===');
+      console.log('Username:', username);
+      
+      // First, get user data from our users table to validate
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('username', username)
+        .eq('password', password)
+        .eq('is_active', true)
+        .single();
 
-      console.log('Attempting Supabase login with identifier:', identifier);
-      
-      // Pokušaj login s retry logikom
-      let authenticatedUser = null;
-      for (let attempt = 1; attempt <= 3; attempt++) {
-        console.log(`Login attempt ${attempt}/3`);
-        try {
-          authenticatedUser = await loginWithSupabase(identifier, password);
-          if (authenticatedUser) break;
-        } catch (error) {
-          console.error(`Login attempt ${attempt} failed:`, error);
-          if (attempt === 3) throw error;
-          await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second before retry
-        }
-      }
-      
-      if (authenticatedUser) {
-        // The auth state change listener will handle setting the user
-        const welcomeMessage = authenticatedUser.role === UserRole.ADMIN 
-          ? "Dobrodošli, Administrator!" 
-          : `Dobrodošli, Ocjenjivač ${authenticatedUser.evaluatorPosition}!`;
-          
-        toast({
-          title: "Uspješna prijava",
-          description: welcomeMessage,
-        });
-        
-        // Loading će biti postavljen na false u auth state listener
-        return true;
-      } else {
-        toast({
-          title: "Greška pri prijavi",
-          description: "Pogrešno korisničko ime ili lozinka.",
-          variant: "destructive",
-        });
-        setLoading(false);
+      if (userError || !userData) {
+        console.error('User validation failed:', userError);
         return false;
       }
+
+      console.log('User validated:', userData);
+
+      // Create a Supabase auth session using the user's email
+      // We'll use username@bioins.local as email format
+      const email = `${username}@bioins.local`;
+      
+      // Try to sign in - if user doesn't exist in auth.users, we'll create them
+      let { data: authData, error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password: userData.id // Use user ID as password for auth
+      });
+
+      if (signInError && signInError.message.includes('Invalid login credentials')) {
+        console.log('User not found in auth, creating...');
+        
+        // User doesn't exist in auth.users, create them
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+          email,
+          password: userData.id, // Use user ID as password
+          options: {
+            data: {
+              username: userData.username,
+              role: userData.role
+            }
+          }
+        });
+
+        if (signUpError) {
+          console.error('Error creating auth user:', signUpError);
+          return false;
+        }
+
+        authData = signUpData;
+      } else if (signInError) {
+        console.error('Error signing in:', signInError);
+        return false;
+      }
+
+      if (authData.user) {
+        console.log('Auth successful, updating user ID mapping...');
+        
+        // Update our users table with the auth user ID
+        const { error: updateError } = await supabase
+          .from('users')
+          .update({ id: authData.user.id })
+          .eq('username', username);
+
+        if (updateError) {
+          console.error('Error updating user ID:', updateError);
+          // Continue anyway, the session is valid
+        }
+
+        setUser({
+          id: authData.user.id,
+          username: userData.username,
+          role: userData.role,
+          isActive: userData.is_active,
+          evaluatorPosition: userData.evaluator_position
+        });
+
+        console.log('Login successful for user:', userData.username);
+        return true;
+      }
+
+      return false;
     } catch (error) {
       console.error('Login error:', error);
-      toast({
-        title: "Greška pri prijavi",
-        description: "Došlo je do pogreške prilikom prijave. Pokušajte ponovno.",
-        variant: "destructive",
-      });
-      setLoading(false);
       return false;
     }
   };
 
   const logout = async () => {
-    console.log('Logout initiated');
-    setLoading(true);
-    
     try {
-      await logoutSupabase();
-      toast({
-        title: "Odjava",
-        description: "Uspješno ste se odjavili.",
-      });
+      console.log('=== LOGOUT ===');
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        console.error('Error signing out:', error);
+      }
+      
+      setUser(null);
+      console.log('Logout successful');
     } catch (error) {
       console.error('Logout error:', error);
-      toast({
-        title: "Greška",
-        description: "Došlo je do pogreške prilikom odjave.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
+      setUser(null);
     }
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, login, logout, isLoading }}>
       {children}
     </AuthContext.Provider>
   );

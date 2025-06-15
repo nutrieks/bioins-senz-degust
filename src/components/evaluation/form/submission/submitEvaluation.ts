@@ -49,59 +49,36 @@ export async function handleEvaluationSubmit(
       jar: jarRatings
     });
     
-    // Enhanced submission with retry logic
-    let submitResult = null;
-    for (let attempt = 1; attempt <= 3; attempt++) {
-      console.log(`Evaluation submission attempt ${attempt}/3`);
-      try {
-        submitResult = await submitEvaluationAPI({
-          userId,
-          sampleId: currentSample.id,
-          productTypeId: currentSample.productTypeId,
-          eventId,
-          hedonicRatings,
-          jarRatings
-        });
-        
-        if (submitResult) {
-          console.log("Evaluation submission successful on attempt:", attempt);
-          break;
-        }
-      } catch (error) {
-        console.error(`Evaluation submission attempt ${attempt} failed:`, error);
-        if (attempt === 3) throw error;
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      }
-    }
+    // Submit evaluation with improved error handling
+    console.log("Submitting evaluation to API...");
+    const submitResult = await submitEvaluationAPI({
+      userId,
+      sampleId: currentSample.id,
+      productTypeId: currentSample.productTypeId,
+      eventId,
+      hedonicRatings,
+      jarRatings
+    });
     
     if (!submitResult) {
-      throw new Error("Failed to submit evaluation after 3 attempts");
+      throw new Error("Failed to submit evaluation - no result returned");
     }
     
-    console.log("Evaluation submission result:", submitResult);
+    console.log("Evaluation submission successful");
     
     toast.toast({
       title: "Ocjena spremljena",
       description: `Uspješno ste ocijenili uzorak ${currentSample.blindCode}.`,
     });
     
-    // Refresh completed evaluations from database with retry logic
+    // Refresh completed evaluations from database
     console.log("Refreshing completed evaluations from database...");
-    let refreshedEvaluations = [];
-    for (let attempt = 1; attempt <= 3; attempt++) {
-      console.log(`Evaluations refresh attempt ${attempt}/3`);
-      try {
-        refreshedEvaluations = await getCompletedEvaluations(eventId, userId);
-        console.log("Refreshed evaluations count:", refreshedEvaluations.length);
-        break;
-      } catch (error) {
-        console.error(`Evaluations refresh attempt ${attempt} failed:`, error);
-        if (attempt === 3) {
-          console.warn("Could not refresh evaluations, continuing anyway");
-        } else {
-          await new Promise(resolve => setTimeout(resolve, 1000));
-        }
-      }
+    try {
+      const refreshedEvaluations = await getCompletedEvaluations(eventId, userId);
+      console.log("Refreshed evaluations count:", refreshedEvaluations.length);
+    } catch (refreshError) {
+      console.warn("Could not refresh evaluations:", refreshError);
+      // Continue anyway, the evaluation was saved
     }
     
     // Completely reset the form
@@ -119,7 +96,7 @@ export async function handleEvaluationSubmit(
     // Generate a new key to force radio buttons to reset
     setFormKey(Date.now());
     
-    // Enhanced next sample loading with better error handling
+    // Load next sample after successful submission
     setTimeout(async () => {
       try {
         console.log("Loading next sample after evaluation submission...");
@@ -140,14 +117,29 @@ export async function handleEvaluationSubmit(
       } finally {
         setIsSubmitting(false);
       }
-    }, 2000); // Increased delay for better database consistency
+    }, 1500); // Reduced delay
     
   } catch (error) {
     console.error("=== ERROR SUBMITTING EVALUATION ===");
     console.error("Error details:", error);
+    
+    let errorMessage = "Došlo je do pogreške prilikom spremanja ocjene.";
+    
+    if (error instanceof Error) {
+      if (error.message.includes('dozvolu')) {
+        errorMessage = error.message;
+      } else if (error.message.includes('autentifikacijom')) {
+        errorMessage = "Problem s autentifikacijom. Molimo prijavite se ponovno.";
+      } else if (error.message.includes('Authentication')) {
+        errorMessage = "Problem s autentifikacijom. Molimo prijavite se ponovno.";
+      } else {
+        errorMessage = `Greška: ${error.message}`;
+      }
+    }
+    
     toast.toast({
       title: "Greška",
-      description: "Došlo je do pogreške prilikom spremanja ocjene. Molimo pokušajte ponovno.",
+      description: errorMessage,
       variant: "destructive",
     });
     setIsSubmitting(false);
