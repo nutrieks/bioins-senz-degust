@@ -131,17 +131,51 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log(`Pokušaj Supabase prijave za korisnika ${userData.username} s emailom ${email}`);
 
       // 4. Prijava putem Supabase Auth servisa
-      const { error: authError } = await supabase.auth.signInWithPassword({
+      const { error: signInError } = await supabase.auth.signInWithPassword({
         email: email,
         password: password,
       });
 
-      if (authError) {
-        console.error('Supabase signInWithPassword greška:', authError.message);
+      // 5. Ako prijava ne uspije jer korisnik ne postoji, registriraj ga
+      if (signInError && signInError.message === 'Invalid login credentials') {
+        console.log('Korisnik ne postoji u Supabase Auth. Pokušaj registracije...');
+        
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+          email: email,
+          password: password,
+        });
+
+        if (signUpError) {
+          console.error('Supabase signUp greška nakon neuspješne prijave:', signUpError.message);
+          return false;
+        }
+
+        if (signUpData.user) {
+          console.log(`Korisnik ${email} uspješno registriran u Supabase Auth. Ažuriranje public.users...`);
+          
+          const { error: updateError } = await supabase
+            .from('users')
+            .update({ id: signUpData.user.id })
+            .eq('username', userData.username);
+
+          if (updateError) {
+            console.error('Greška pri ažuriranju ID-a korisnika u public.users:', updateError.message);
+            return false;
+          }
+          console.log('ID korisnika u public.users je uspješno sinkroniziran.');
+          // onAuthStateChange listener će se pobrinuti za postavljanje stanja korisnika.
+          return true;
+        } else {
+            console.error('SignUp nije vratio korisnika, prijava neuspješna.');
+            return false;
+        }
+
+      } else if (signInError) {
+        console.error('Supabase signInWithPassword greška:', signInError.message);
         return false;
       }
 
-      // onAuthStateChange listener će se pobrinuti za postavljanje stanja korisnika.
+      // Ako je signIn bio uspješan
       return true;
 
     } catch (error) {
