@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEvaluation } from "@/contexts/EvaluationContext";
@@ -84,7 +83,7 @@ export function EvaluationContent({
       console.log('Current sample exists or evaluation completed - not loading initially');
       setIsLoading(false);
     }
-  }, [user?.id, eventId]); // Removed completedSamples.length dependency to avoid loops
+  }, [user?.id, eventId]);
 
   const handleSampleSubmitted = () => {
     console.log('=== SAMPLE SUBMITTED ===');
@@ -110,104 +109,67 @@ export function EvaluationContent({
     navigate('/evaluator');
   };
 
-  // Debug information display (remove in production)
-  const debugInfo = (
-    <div className="mb-4 p-4 bg-gray-100 rounded text-xs">
-      <strong>Debug Info:</strong><br/>
-      User: {user ? `${user.username} (${user.role})` : 'None'}<br/>
-      Event: {eventId}<br/>
-      Product Types: {productTypes.length}<br/>
-      Current Sample: {currentSample ? currentSample.id : 'None'}<br/>
-      Current Sample Blind Code: {currentSample ? currentSample.blindCode || 'None' : 'None'}<br/>
-      Completed: {completedSamples.length}<br/>
-      Is Completed: {isComplete ? 'Yes' : 'No'}<br/>
-      Show Reveal: {showSampleReveal ? 'Yes' : 'No'}<br/>
-      Loading: {isLoading ? 'Yes' : 'No'}<br/>
-      Error: {error || 'None'}
-    </div>
-  );
-
   if (isLoading) {
-    return (
-      <div>
-        {debugInfo}
-        <LoadingState />
-      </div>
-    );
+    return <LoadingState />;
   }
 
   if (error) {
     return (
-      <div>
-        {debugInfo}
-        <div className="text-center p-6">
-          <h2 className="text-xl font-semibold text-red-600 mb-4">
-            Greška prilikom učitavanja
-          </h2>
-          <p className="text-muted-foreground mb-4">{error}</p>
-          <button 
-            onClick={() => {
-              setError(null);
-              setIsLoading(true);
-              loadNextSample(eventId).finally(() => setIsLoading(false));
-            }}
-            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-          >
-            Pokušaj ponovno
-          </button>
-        </div>
+      <div className="text-center p-6">
+        <h2 className="text-xl font-semibold text-red-600 mb-4">
+          Greška prilikom učitavanja
+        </h2>
+        <p className="text-muted-foreground mb-4">{error}</p>
+        <button 
+          onClick={() => {
+            setError(null);
+            setIsLoading(true);
+            loadNextSample(eventId).finally(() => setIsLoading(false));
+          }}
+          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+        >
+          Pokušaj ponovno
+        </button>
       </div>
     );
   }
 
   if (isComplete) {
     return (
-      <div>
-        {debugInfo}
-        <CompletionMessage 
-          onReturn={handleReturnToDashboard}
-        />
-      </div>
+      <CompletionMessage 
+        onReturn={handleReturnToDashboard}
+      />
     );
   }
 
   if (showSampleReveal && currentSample) {
     return (
-      <div>
-        {debugInfo}
-        <SampleRevealScreen
-          eventId={eventId}
-          productTypeId={currentSample.productTypeId}
-          productName={productTypes.find(pt => pt.id === currentSample.productTypeId)?.productName || ''}
-          onContinue={handleContinue}
-        />
-      </div>
+      <SampleRevealScreen
+        eventId={eventId}
+        productTypeId={currentSample.productTypeId}
+        productName={productTypes.find(pt => pt.id === currentSample.productTypeId)?.productName || ''}
+        onContinue={handleContinue}
+      />
     );
   }
 
   if (!currentSample) {
     return (
-      <div>
-        {debugInfo}
-        <div className="text-center p-6">
-          <h2 className="text-xl font-semibold mb-4">
-            Nema dostupnih uzoraka
-          </h2>
-          <p className="text-muted-foreground">
-            Trenutno nema uzoraka za ocjenjivanje.
-          </p>
-        </div>
+      <div className="text-center p-6">
+        <h2 className="text-xl font-semibold mb-4">
+          Nema dostupnih uzoraka
+        </h2>
+        <p className="text-muted-foreground">
+          Trenutno nema uzoraka za ocjenjivanje.
+        </p>
       </div>
     );
   }
 
   return (
-    <div>
-      {debugInfo}
-      <EvaluationForm
-        eventId={eventId}
-        onComplete={handleSampleSubmitted}
-      />
-    </div>
+    <EvaluationForm
+      eventId={eventId}
+      onComplete={handleSampleSubmitted}
+    />
   );
 }

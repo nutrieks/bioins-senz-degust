@@ -54,29 +54,13 @@ export async function getCompletedEvaluations(
 
 export async function submitEvaluation(evaluation: EvaluationSubmission): Promise<boolean> {
   try {
-    console.log('=== SUPABASE submitEvaluation ===');
+    console.log('=== SUPABASE submitEvaluation (simplified) ===');
     console.log('Evaluation data to insert:', evaluation);
-    
-    // Check current authentication status
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    console.log('Current auth user:', user ? { id: user.id, email: user.email } : 'No user');
-    
-    if (authError) {
-      console.error('Auth error when getting user:', authError);
-      throw new Error('Authentication error: ' + authError.message);
-    }
-    
-    if (!user) {
-      console.error('No authenticated user found');
-      throw new Error('User must be authenticated to submit evaluations');
-    }
-    
-    // Verify the user ID matches
-    if (user.id !== evaluation.userId) {
-      console.error('User ID mismatch:', { authUserId: user.id, evaluationUserId: evaluation.userId });
-      throw new Error('User ID mismatch - authentication issue');
-    }
-    
+
+    // Uklonili smo provjeru Supabase korisnika jer koristimo prilagođeni sustav prijave.
+    // Podaci se sada spremaju na temelju ID-a korisnika iz našeg AuthContext-a,
+    // a nova RLS politika na bazi to dopušta.
+
     const insertData = {
       user_id: evaluation.userId,
       sample_id: evaluation.sampleId,
@@ -89,9 +73,9 @@ export async function submitEvaluation(evaluation: EvaluationSubmission): Promis
       hedonic_overall_liking: evaluation.hedonicRatings.overallLiking,
       jar_ratings: evaluation.jarRatings
     };
-    
+
     console.log('Inserting data into evaluations table:', insertData);
-    
+
     const { data, error } = await supabase
       .from('evaluations')
       .insert(insertData)
@@ -104,37 +88,34 @@ export async function submitEvaluation(evaluation: EvaluationSubmission): Promis
       console.error('Error details:', error.details);
       console.error('Error hint:', error.hint);
       console.error('Error message:', error.message);
-      
-      // Provide more specific error messages
+
       if (error.code === '42501') {
         throw new Error('Nemate dozvolu za spremanje ocjena. Molimo kontaktirajte administratora.');
-      } else if (error.code === 'PGRST301') {
-        throw new Error('Problem s autentifikacijom. Molimo prijavite se ponovno.');
       } else {
         throw new Error(`Greška pri spremanju: ${error.message}`);
       }
     }
 
     console.log('Evaluation submitted successfully:', data);
-    
-    // Verify the insertion by fetching the record
+
+    // Provjera unosa radi sigurnosti
     const { data: verifyData, error: verifyError } = await supabase
       .from('evaluations')
       .select('*')
       .eq('id', data.id)
       .single();
-      
+
     if (verifyError) {
       console.warn('Could not verify evaluation insertion:', verifyError);
     } else {
       console.log('Verified evaluation was inserted:', verifyData);
     }
-    
+
     return true;
   } catch (error) {
     console.error('=== ERROR submitEvaluation ===');
     console.error('Error details:', error);
-    throw error; // Re-throw to propagate specific error messages
+    throw error; // Ponovno bacamo grešku kako bi se prikazala u sučelju
   }
 }
 
