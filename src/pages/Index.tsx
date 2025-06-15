@@ -1,14 +1,13 @@
 
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { cleanupAuthState } from "@/utils/authUtils";
 
 const Index = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Clean up any existing auth state and redirect to login
-    cleanupAuthState();
+    // Samo preusmjeravamo na login, bez čišćenja stanja,
+    // kako bi se izbjegli konflikti s inicijalizacijom AuthContext-a.
     navigate("/login");
   }, [navigate]);
 

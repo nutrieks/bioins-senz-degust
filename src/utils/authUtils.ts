@@ -1,16 +1,25 @@
+
 export const cleanupAuthState = () => {
-  console.log('Performing minimal auth cleanup...');
+  console.log('Performing thorough auth state cleanup...');
   
-  // Only remove problematic keys, keep session persistence
-  const keysToRemove = [
-    'supabase.auth.debug',
-    'supabase.auth.error'
-  ];
+  // Temeljito čisti sve Supabase ključeve iz localStorage i sessionStorage
+  // kako bi se spriječila "auth limbo" stanja.
+  const clearStorage = (storage: Storage) => {
+    if (!storage) return;
+    const keysToRemove: string[] = [];
+    for (let i = 0; i < storage.length; i++) {
+      const key = storage.key(i);
+      if (key && (key.startsWith('supabase.auth.') || key.startsWith('sb-'))) {
+        keysToRemove.push(key);
+      }
+    }
+    keysToRemove.forEach(key => storage.removeItem(key));
+  };
+
+  clearStorage(localStorage);
+  if (typeof sessionStorage !== 'undefined') {
+    clearStorage(sessionStorage);
+  }
   
-  keysToRemove.forEach(key => {
-    localStorage.removeItem(key);
-    sessionStorage.removeItem(key);
-  });
-  
-  console.log('Minimal auth cleanup completed');
+  console.log('Thorough auth cleanup completed');
 };

@@ -47,16 +47,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     };
 
-    // 1. Provjeri postojanje sesije prilikom inicijalnog učitavanja aplikacije
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      console.log("Inicijalna provjera sesije završena.");
-      if (session) {
-        console.log("Pronađena postojeća sesija, dohvaćam profil.");
-        const profile = await fetchUser(session.user);
-        setUser(profile);
-      }
+    const loadingTimeout = setTimeout(() => {
+      console.warn("Auth context je premašio vrijeme čekanja. Forsirano zaustavljanje učitavanja.");
       setIsLoading(false);
-    });
+    }, 8000);
+
+    // 1. Provjeri postojanje sesije prilikom inicijalnog učitavanja aplikacije
+    supabase.auth.getSession()
+      .then(async ({ data: { session } }) => {
+        console.log("Inicijalna provjera sesije završena.");
+        if (session) {
+          console.log("Pronađena postojeća sesija, dohvaćam profil.");
+          const profile = await fetchUser(session.user);
+          setUser(profile);
+        }
+      })
+      .catch(error => {
+        console.error("Greška pri dohvaćanju sesije:", error);
+      })
+      .finally(() => {
+        clearTimeout(loadingTimeout);
+        setIsLoading(false);
+      });
 
     // 2. Postavi listener za buduće promjene u stanju autentifikacije
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
@@ -70,6 +82,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
 
     return () => {
+      clearTimeout(loadingTimeout);
       subscription?.unsubscribe();
     };
   }, []);
