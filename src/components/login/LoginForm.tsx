@@ -20,8 +20,19 @@ export function LoginForm() {
     setError("");
     
     try {
-      console.log('Attempting login with:', identifier);
-      const success = await login(identifier, password);
+      console.log('Form submitting with:', identifier);
+      
+      // Convert identifier to username format
+      let username = identifier;
+      if (identifier === "ADMIN") {
+        username = "admin";
+      } else if (/^([1-9]|1[0-2])$/.test(identifier)) {
+        username = `evaluator${identifier}`;
+      }
+
+      console.log('Attempting login with username:', username);
+      
+      const success = await login(username, password);
       
       if (!success) {
         setError("Neispravno korisničko ime ili lozinka");

@@ -18,85 +18,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Check for existing session on mount
   useEffect(() => {
-    const checkUser = async () => {
+    const checkStoredUser = () => {
       try {
-        console.log('Checking for existing session...');
-        const { data: { session }, error } = await supabase.auth.getSession();
+        console.log('Checking for stored user session...');
+        const storedUser = localStorage.getItem('bioins_current_user');
         
-        if (error) {
-          console.error('Error checking session:', error);
-          setUser(null);
-          setIsLoading(false);
-          return;
-        }
-
-        if (session?.user) {
-          console.log('Found existing session for user:', session.user.id);
-          await loadUserData(session.user.id);
+        if (storedUser) {
+          const userData = JSON.parse(storedUser);
+          console.log('Found stored user:', userData.username);
+          setUser(userData);
         } else {
-          console.log('No existing session found');
-          setUser(null);
+          console.log('No stored user found');
         }
       } catch (error) {
-        console.error('Error in checkUser:', error);
-        setUser(null);
+        console.error('Error checking stored user:', error);
+        localStorage.removeItem('bioins_current_user');
       } finally {
         setIsLoading(false);
       }
     };
 
-    checkUser();
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('Auth state changed:', event, session?.user?.id);
-        
-        if (event === 'SIGNED_IN' && session?.user) {
-          console.log('User signed in, loading user data...');
-          await loadUserData(session.user.id);
-        } else if (event === 'SIGNED_OUT') {
-          console.log('User signed out');
-          setUser(null);
-        }
-      }
-    );
-
-    return () => subscription.unsubscribe();
+    checkStoredUser();
   }, []);
-
-  const loadUserData = async (authUserId: string) => {
-    try {
-      console.log('Loading user data for auth user ID:', authUserId);
-      
-      // Get user details from our users table
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', authUserId)
-        .eq('is_active', true)
-        .single();
-
-      if (userError || !userData) {
-        console.error('User not found or inactive:', userError);
-        setUser(null);
-        return;
-      }
-
-      console.log('User data loaded:', userData);
-      setUser({
-        id: userData.id,
-        username: userData.username,
-        role: userData.role as UserRole,
-        isActive: userData.is_active,
-        evaluatorPosition: userData.evaluator_position,
-        password: userData.password
-      });
-    } catch (error) {
-      console.error('Error loading user data:', error);
-      setUser(null);
-    }
-  };
 
   const login = async (username: string, password: string): Promise<boolean> => {
     try {
@@ -104,7 +47,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log('Username:', username);
       setIsLoading(true);
       
-      // First, validate credentials against our users table
+      // Validate credentials against our users table
       const { data: userData, error: userError } = await supabase
         .from('users')
         .select('*')
@@ -121,78 +64,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       console.log('Credentials validated for user:', userData.username);
 
-      // Create email format for Supabase auth
-      const email = `${username.toLowerCase()}@bioins.local`;
-      
-      console.log('Attempting auth with email:', email);
-      
-      // Try to sign in with Supabase auth
-      let { data: authData, error: signInError } = await supabase.auth.signInWithPassword({
-        email,
-        password: userData.id // Use user ID as password for consistency
-      });
+      // Create user object
+      const authenticatedUser: User = {
+        id: userData.id,
+        username: userData.username,
+        role: userData.role as UserRole,
+        isActive: userData.is_active,
+        evaluatorPosition: userData.evaluator_position,
+        password: userData.password
+      };
 
-      // If user doesn't exist in auth system, create them
-      if (signInError && signInError.message.includes('Invalid login credentials')) {
-        console.log('Creating new auth user...');
-        
-        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-          email,
-          password: userData.id,
-          options: {
-            data: {
-              username: userData.username,
-              role: userData.role
-            }
-          }
-        });
+      // Store user in localStorage and state
+      localStorage.setItem('bioins_current_user', JSON.stringify(authenticatedUser));
+      setUser(authenticatedUser);
 
-        if (signUpError) {
-          console.error('Error creating auth user:', signUpError);
-          setIsLoading(false);
-          return false;
-        }
-
-        authData = signUpData;
-      } else if (signInError) {
-        console.error('Auth sign in error:', signInError);
-        setIsLoading(false);
-        return false;
-      }
-
-      if (authData.user) {
-        console.log('Auth successful for user ID:', authData.user.id);
-        
-        // Update our users table with the correct auth user ID if needed
-        if (authData.user.id !== userData.id) {
-          console.log('Updating user ID mapping...');
-          const { error: updateError } = await supabase
-            .from('users')
-            .update({ id: authData.user.id })
-            .eq('username', username);
-
-          if (updateError) {
-            console.warn('Could not update user ID mapping:', updateError);
-          }
-        }
-
-        // Set user data immediately
-        setUser({
-          id: authData.user.id,
-          username: userData.username,
-          role: userData.role as UserRole,
-          isActive: userData.is_active,
-          evaluatorPosition: userData.evaluator_position,
-          password: userData.password
-        });
-
-        console.log('Login successful');
-        setIsLoading(false);
-        return true;
-      }
-
+      console.log('Login successful for:', authenticatedUser.username);
       setIsLoading(false);
-      return false;
+      return true;
     } catch (error) {
       console.error('Login error:', error);
       setIsLoading(false);
@@ -200,16 +88,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const logout = async () => {
+  const logout = () => {
     try {
       console.log('=== LOGOUT ===');
-      
-      const { error } = await supabase.auth.signOut();
-      
-      if (error) {
-        console.error('Error signing out:', error);
-      }
-      
+      localStorage.removeItem('bioins_current_user');
       setUser(null);
       console.log('Logout successful');
     } catch (error) {
