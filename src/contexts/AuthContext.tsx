@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User, UserRole } from "../types";
-import { loginWithSupabase, logout as logoutService } from '@/services/supabase/auth';
+import { logout as logoutService } from '@/services/supabase/auth';
 
 interface AuthContextType {
   user: User | null;
@@ -72,20 +72,62 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (identifier: string, password: string): Promise<boolean> => {
     setIsLoading(true);
     try {
-      console.log('=== LOGIN ATTEMPT with Supabase Auth ===');
-      const authenticatedUser = await loginWithSupabase(identifier, password);
+      console.log('=== NEW LOGIN ATTEMPT ===');
       
-      if (authenticatedUser) {
-        setUser(authenticatedUser);
-        console.log('Supabase Auth login successful for:', authenticatedUser.username);
-        return true;
+      // 1. Pronalazimo korisnika u našoj `users` tablici
+      let userQuery = supabase.from('users').select('*');
+      const upperIdentifier = identifier.toUpperCase();
+
+      if (upperIdentifier === 'ADMIN') {
+        userQuery = userQuery.eq('username', 'ADMIN');
+      } else if (!isNaN(Number(identifier)) && Number(identifier) >= 1 && Number(identifier) <= 12) {
+        userQuery = userQuery.eq('evaluator_position', Number(identifier));
       } else {
-        console.error('Supabase Auth login failed.');
-        setUser(null);
+        userQuery = userQuery.eq('username', identifier);
+      }
+
+      const { data: userData, error: userError } = await userQuery.single();
+
+      if (userError || !userData) {
+        console.error('Korisnik nije pronađen u public.users tablici:', userError?.message);
         return false;
       }
+      
+      // 2. Provjera lozinke
+      if (userData.password !== password) {
+        console.error('Pogrešna lozinka za korisnika:', userData.username);
+        return false;
+      }
+      
+      // 3. Kreiranje emaila za Supabase autentifikaciju
+      let email;
+      if (userData.role === 'ADMIN') {
+        email = `admin@bioins.local`;
+      } else if (userData.role === 'EVALUATOR' && userData.evaluator_position) {
+        email = `evaluator${userData.evaluator_position}@bioins.local`;
+      } else {
+        console.error(`Nije moguće kreirati email za korisnika s ulogom ${userData.role} i pozicijom ${userData.evaluator_position}`);
+        return false;
+      }
+      
+      console.log(`Pokušaj Supabase prijave za korisnika ${userData.username} s emailom ${email}`);
+
+      // 4. Prijava putem Supabase Auth servisa
+      const { error: authError } = await supabase.auth.signInWithPassword({
+        email: email,
+        password: password,
+      });
+
+      if (authError) {
+        console.error('Supabase signInWithPassword greška:', authError.message);
+        return false;
+      }
+
+      // onAuthStateChange listener će se pobrinuti za postavljanje stanja korisnika.
+      return true;
+
     } catch (error) {
-      console.error('Login function threw an exception:', error);
+      console.error('Login funkcija je bacila iznimku:', error);
       setUser(null);
       return false;
     } finally {
