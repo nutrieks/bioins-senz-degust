@@ -24,7 +24,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .select('*')
         .eq('id', sessionUser.id)
         .single();
-      return userData;
+      
+      if (!userData) {
+        return null;
+      }
+      
+      // Map Supabase DB user (snake_case) to application User type (camelCase)
+      const profile: User = {
+        id: userData.id,
+        username: userData.username,
+        role: userData.role,
+        evaluatorPosition: userData.evaluator_position,
+        isActive: userData.is_active,
+        password: userData.password,
+      };
+
+      return profile;
     };
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
