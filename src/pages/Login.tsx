@@ -4,17 +4,11 @@ import { useNavigate } from "react-router-dom";
 import { LoginForm } from "@/components/login/LoginForm";
 import { useAuth } from "@/contexts/AuthContext";
 import { UserRole } from "@/types";
-import { cleanupAuthState } from "@/utils/authUtils";
 
 export default function Login() {
   const { user, isLoading } = useAuth();
   const navigate = useNavigate();
   const [showTimeout, setShowTimeout] = useState(false);
-
-  // Clean up auth state when login page loads
-  useEffect(() => {
-    cleanupAuthState();
-  }, []);
 
   useEffect(() => {
     console.log('Login page - user:', user?.username, 'loading:', isLoading);
@@ -31,7 +25,7 @@ export default function Login() {
   }, [user, isLoading, navigate]);
 
   useEffect(() => {
-    // Pokažij timeout poruku ako loading traje duže od 15 sekundi
+    // Show timeout message if loading takes longer than 15 seconds
     if (isLoading) {
       const timer = setTimeout(() => {
         setShowTimeout(true);

@@ -20,6 +20,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const checkUser = async () => {
       try {
+        console.log('Checking for existing session...');
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) {
@@ -30,29 +31,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
 
         if (session?.user) {
-          console.log('Found existing session:', session.user.id);
-          
-          // Get user details from our users table
-          const { data: userData, error: userError } = await supabase
-            .from('users')
-            .select('*')
-            .eq('id', session.user.id)
-            .single();
-
-          if (userError) {
-            console.error('Error fetching user data:', userError);
-            setUser(null);
-          } else if (userData) {
-            console.log('User data from database:', userData);
-            setUser({
-              id: userData.id,
-              username: userData.username,
-              role: userData.role as UserRole,
-              isActive: userData.is_active,
-              evaluatorPosition: userData.evaluator_position,
-              password: userData.password
-            });
-          }
+          console.log('Found existing session for user:', session.user.id);
+          await loadUserData(session.user.id);
         } else {
           console.log('No existing session found');
           setUser(null);
@@ -73,27 +53,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.log('Auth state changed:', event, session?.user?.id);
         
         if (event === 'SIGNED_IN' && session?.user) {
-          // Get user details from our users table
-          const { data: userData, error: userError } = await supabase
-            .from('users')
-            .select('*')
-            .eq('id', session.user.id)
-            .single();
-
-          if (userError) {
-            console.error('Error fetching user data after sign in:', userError);
-            setUser(null);
-          } else if (userData) {
-            console.log('User signed in:', userData);
-            setUser({
-              id: userData.id,
-              username: userData.username,
-              role: userData.role as UserRole,
-              isActive: userData.is_active,
-              evaluatorPosition: userData.evaluator_position,
-              password: userData.password
-            });
-          }
+          console.log('User signed in, loading user data...');
+          await loadUserData(session.user.id);
         } else if (event === 'SIGNED_OUT') {
           console.log('User signed out');
           setUser(null);
@@ -104,12 +65,46 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => subscription.unsubscribe();
   }, []);
 
+  const loadUserData = async (authUserId: string) => {
+    try {
+      console.log('Loading user data for auth user ID:', authUserId);
+      
+      // Get user details from our users table
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', authUserId)
+        .eq('is_active', true)
+        .single();
+
+      if (userError || !userData) {
+        console.error('User not found or inactive:', userError);
+        setUser(null);
+        return;
+      }
+
+      console.log('User data loaded:', userData);
+      setUser({
+        id: userData.id,
+        username: userData.username,
+        role: userData.role as UserRole,
+        isActive: userData.is_active,
+        evaluatorPosition: userData.evaluator_position,
+        password: userData.password
+      });
+    } catch (error) {
+      console.error('Error loading user data:', error);
+      setUser(null);
+    }
+  };
+
   const login = async (username: string, password: string): Promise<boolean> => {
     try {
       console.log('=== LOGIN ATTEMPT ===');
       console.log('Username:', username);
+      setIsLoading(true);
       
-      // First, get user data from our users table to validate
+      // First, validate credentials against our users table
       const { data: userData, error: userError } = await supabase
         .from('users')
         .select('*')
@@ -119,29 +114,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .single();
 
       if (userError || !userData) {
-        console.error('User validation failed:', userError);
+        console.error('Invalid credentials or user not found:', userError);
+        setIsLoading(false);
         return false;
       }
 
-      console.log('User validated:', userData);
+      console.log('Credentials validated for user:', userData.username);
 
-      // Create a Supabase auth session using the user's email
-      // We'll use username@bioins.local as email format
-      const email = `${username}@bioins.local`;
+      // Create email format for Supabase auth
+      const email = `${username.toLowerCase()}@bioins.local`;
       
-      // Try to sign in - if user doesn't exist in auth.users, we'll create them
+      console.log('Attempting auth with email:', email);
+      
+      // Try to sign in with Supabase auth
       let { data: authData, error: signInError } = await supabase.auth.signInWithPassword({
         email,
-        password: userData.id // Use user ID as password for auth
+        password: userData.id // Use user ID as password for consistency
       });
 
+      // If user doesn't exist in auth system, create them
       if (signInError && signInError.message.includes('Invalid login credentials')) {
-        console.log('User not found in auth, creating...');
+        console.log('Creating new auth user...');
         
-        // User doesn't exist in auth.users, create them
         const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
           email,
-          password: userData.id, // Use user ID as password
+          password: userData.id,
           options: {
             data: {
               username: userData.username,
@@ -152,29 +149,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         if (signUpError) {
           console.error('Error creating auth user:', signUpError);
+          setIsLoading(false);
           return false;
         }
 
         authData = signUpData;
       } else if (signInError) {
-        console.error('Error signing in:', signInError);
+        console.error('Auth sign in error:', signInError);
+        setIsLoading(false);
         return false;
       }
 
       if (authData.user) {
-        console.log('Auth successful, updating user ID mapping...');
+        console.log('Auth successful for user ID:', authData.user.id);
         
-        // Update our users table with the auth user ID
-        const { error: updateError } = await supabase
-          .from('users')
-          .update({ id: authData.user.id })
-          .eq('username', username);
+        // Update our users table with the correct auth user ID if needed
+        if (authData.user.id !== userData.id) {
+          console.log('Updating user ID mapping...');
+          const { error: updateError } = await supabase
+            .from('users')
+            .update({ id: authData.user.id })
+            .eq('username', username);
 
-        if (updateError) {
-          console.error('Error updating user ID:', updateError);
-          // Continue anyway, the session is valid
+          if (updateError) {
+            console.warn('Could not update user ID mapping:', updateError);
+          }
         }
 
+        // Set user data immediately
         setUser({
           id: authData.user.id,
           username: userData.username,
@@ -184,13 +186,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           password: userData.password
         });
 
-        console.log('Login successful for user:', userData.username);
+        console.log('Login successful');
+        setIsLoading(false);
         return true;
       }
 
+      setIsLoading(false);
       return false;
     } catch (error) {
       console.error('Login error:', error);
+      setIsLoading(false);
       return false;
     }
   };
@@ -198,6 +203,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = async () => {
     try {
       console.log('=== LOGOUT ===');
+      
       const { error } = await supabase.auth.signOut();
       
       if (error) {
