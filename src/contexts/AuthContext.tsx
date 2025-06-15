@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { User } from "../types";
+import { User, UserRole } from "../types";
 
 interface AuthContextType {
   user: User | null;
@@ -47,9 +47,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setUser({
               id: userData.id,
               username: userData.username,
-              role: userData.role,
+              role: userData.role as UserRole,
               isActive: userData.is_active,
-              evaluatorPosition: userData.evaluator_position
+              evaluatorPosition: userData.evaluator_position,
+              password: userData.password
             });
           }
         } else {
@@ -87,9 +88,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setUser({
               id: userData.id,
               username: userData.username,
-              role: userData.role,
+              role: userData.role as UserRole,
               isActive: userData.is_active,
-              evaluatorPosition: userData.evaluator_position
+              evaluatorPosition: userData.evaluator_position,
+              password: userData.password
             });
           }
         } else if (event === 'SIGNED_OUT') {
@@ -176,9 +178,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser({
           id: authData.user.id,
           username: userData.username,
-          role: userData.role,
+          role: userData.role as UserRole,
           isActive: userData.is_active,
-          evaluatorPosition: userData.evaluator_position
+          evaluatorPosition: userData.evaluator_position,
+          password: userData.password
         });
 
         console.log('Login successful for user:', userData.username);

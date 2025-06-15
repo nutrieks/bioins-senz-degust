@@ -7,7 +7,7 @@ import { UserRole } from "@/types";
 import { cleanupAuthState } from "@/utils/authUtils";
 
 export default function Login() {
-  const { user, loading } = useAuth();
+  const { user, isLoading } = useAuth();
   const navigate = useNavigate();
   const [showTimeout, setShowTimeout] = useState(false);
 
@@ -17,9 +17,9 @@ export default function Login() {
   }, []);
 
   useEffect(() => {
-    console.log('Login page - user:', user?.username, 'loading:', loading);
+    console.log('Login page - user:', user?.username, 'loading:', isLoading);
     
-    if (!loading && user) {
+    if (!isLoading && user) {
       console.log('Redirecting user based on role:', user.role);
       // Redirect based on user role
       if (user.role === UserRole.ADMIN) {
@@ -28,11 +28,11 @@ export default function Login() {
         navigate("/evaluator");
       }
     }
-  }, [user, loading, navigate]);
+  }, [user, isLoading, navigate]);
 
   useEffect(() => {
     // Pokažij timeout poruku ako loading traje duže od 15 sekundi
-    if (loading) {
+    if (isLoading) {
       const timer = setTimeout(() => {
         setShowTimeout(true);
       }, 15000);
@@ -41,9 +41,9 @@ export default function Login() {
     } else {
       setShowTimeout(false);
     }
-  }, [loading]);
+  }, [isLoading]);
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center space-y-4">
