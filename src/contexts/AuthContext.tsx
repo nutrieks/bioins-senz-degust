@@ -43,11 +43,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async (username: string, password: string): Promise<boolean> => {
     try {
-      console.log('=== LOGIN ATTEMPT ===');
-      console.log('Username:', username);
+      console.log('=== LOGIN ATTEMPT in AuthContext ===');
+      console.log('Attempting to log in with:', { username, password });
       setIsLoading(true);
       
-      // Validate credentials against our users table
       const { data: userData, error: userError } = await supabase
         .from('users')
         .select('*')
@@ -56,13 +55,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .eq('is_active', true)
         .single();
 
+      // Detailed logging of Supabase response
+      if (userError) {
+        console.error('Supabase error during login:', JSON.stringify(userError, null, 2));
+      }
+      if (!userData) {
+        console.log('No user data returned from Supabase.');
+      }
+      
       if (userError || !userData) {
-        console.error('Invalid credentials or user not found:', userError);
+        console.error('Validation failed. Credentials might be invalid or user not found.');
         setIsLoading(false);
         return false;
       }
 
-      console.log('Credentials validated for user:', userData.username);
+      console.log('Supabase returned user data:', userData);
 
       // Create user object
       const authenticatedUser: User = {
@@ -82,7 +89,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsLoading(false);
       return true;
     } catch (error) {
-      console.error('Login error:', error);
+      console.error('Login function threw an exception:', error);
       setIsLoading(false);
       return false;
     }
