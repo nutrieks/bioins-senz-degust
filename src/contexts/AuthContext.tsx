@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User, UserRole } from "../types";
@@ -18,38 +19,54 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     const fetchUser = async (sessionUser: any) => {
-      const { data: userData } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', sessionUser.id)
-        .single();
-      
-      if (!userData) {
+      try {
+        const { data: userData } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', sessionUser.id)
+          .single();
+        
+        if (!userData) {
+          console.warn("Korisnički profil nije pronađen u bazi za prijavljenog korisnika.");
+          return null;
+        }
+        
+        const profile: User = {
+          id: userData.id,
+          username: userData.username,
+          role: userData.role as UserRole,
+          evaluatorPosition: userData.evaluator_position,
+          isActive: userData.is_active,
+          password: userData.password,
+        };
+
+        return profile;
+      } catch (error) {
+        console.error("Greška prilikom dohvaćanja profila korisnika:", error);
         return null;
       }
-      
-      // Map Supabase DB user (snake_case) to application User type (camelCase)
-      const profile: User = {
-        id: userData.id,
-        username: userData.username,
-        role: userData.role as UserRole,
-        evaluatorPosition: userData.evaluator_position,
-        isActive: userData.is_active,
-        password: userData.password,
-      };
-
-      return profile;
     };
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      console.log('Auth state changed:', _event);
-      if (session?.user) {
+    // 1. Provjeri postojanje sesije prilikom inicijalnog učitavanja aplikacije
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      console.log("Inicijalna provjera sesije završena.");
+      if (session) {
+        console.log("Pronađena postojeća sesija, dohvaćam profil.");
         const profile = await fetchUser(session.user);
         setUser(profile);
-      } else {
-        setUser(null);
       }
       setIsLoading(false);
+    });
+
+    // 2. Postavi listener za buduće promjene u stanju autentifikacije
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log(`Stanje autentifikacije promijenjeno: ${event}`);
+      if (event === 'SIGNED_IN' && session) {
+        const profile = await fetchUser(session.user);
+        setUser(profile);
+      } else if (event === 'SIGNED_OUT') {
+        setUser(null);
+      }
     });
 
     return () => {
