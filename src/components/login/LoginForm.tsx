@@ -20,19 +20,11 @@ export function LoginForm() {
     setError("");
     
     try {
-      console.log('Form submitting with:', identifier);
+      console.log('Form submitting with identifier:', identifier);
       
-      // Convert identifier to username format
-      let username = identifier;
-      if (identifier === "ADMIN") {
-        username = "admin";
-      } else if (/^([1-9]|1[0-2])$/.test(identifier)) {
-        username = `evaluator${identifier}`;
-      }
-
-      console.log('Attempting login with username:', username);
-      
-      const success = await login(username, password);
+      // Pass the raw identifier to the login function. 
+      // The auth context will handle the logic.
+      const success = await login(identifier, password);
       
       if (!success) {
         setError("Neispravno korisničko ime ili lozinka");

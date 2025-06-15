@@ -1,11 +1,12 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { User, UserRole } from "../types";
+import { User } from "../types";
+import { loginWithSupabase, logout as logoutService } from '@/services/supabase/auth';
 
 interface AuthContextType {
   user: User | null;
-  login: (username: string, password: string) => Promise<boolean>;
+  login: (identifier: string, password: string) => Promise<boolean>;
   logout: () => void;
   isLoading: boolean;
 }
@@ -16,95 +17,72 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Check for existing session on mount
   useEffect(() => {
-    const checkStoredUser = () => {
-      try {
-        console.log('Checking for stored user session...');
-        const storedUser = localStorage.getItem('bioins_current_user');
-        
-        if (storedUser) {
-          const userData = JSON.parse(storedUser);
-          console.log('Found stored user:', userData.username);
-          setUser(userData);
-        } else {
-          console.log('No stored user found');
-        }
-      } catch (error) {
-        console.error('Error checking stored user:', error);
-        localStorage.removeItem('bioins_current_user');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    checkStoredUser();
-  }, []);
-
-  const login = async (username: string, password: string): Promise<boolean> => {
-    try {
-      console.log('=== LOGIN ATTEMPT in AuthContext ===');
-      console.log('Attempting to log in with:', { username, password });
-      setIsLoading(true);
-      
-      const { data: userData, error: userError } = await supabase
+    const fetchUser = async (sessionUser: any) => {
+      const { data: userData } = await supabase
         .from('users')
         .select('*')
-        .eq('username', username)
-        .eq('password', password)
-        .eq('is_active', true)
+        .eq('id', sessionUser.id)
         .single();
+      return userData;
+    };
 
-      // Detailed logging of Supabase response
-      if (userError) {
-        console.error('Supabase error during login:', JSON.stringify(userError, null, 2));
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      console.log('Auth state changed:', _event);
+      if (_event === 'SIGNED_IN' && session?.user) {
+        const profile = await fetchUser(session.user);
+        setUser(profile);
+      } else if (_event === 'SIGNED_OUT') {
+        setUser(null);
       }
-      if (!userData) {
-        console.log('No user data returned from Supabase.');
+      setIsLoading(false);
+    });
+
+    const checkInitialSession = async () => {
+      setIsLoading(true);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        const profile = await fetchUser(session.user);
+        setUser(profile);
       }
+      setIsLoading(false);
+    };
+
+    checkInitialSession();
+
+    return () => {
+      subscription?.unsubscribe();
+    };
+  }, []);
+
+  const login = async (identifier: string, password: string): Promise<boolean> => {
+    setIsLoading(true);
+    try {
+      console.log('=== LOGIN ATTEMPT with Supabase Auth ===');
+      const authenticatedUser = await loginWithSupabase(identifier, password);
       
-      if (userError || !userData) {
-        console.error('Validation failed. Credentials might be invalid or user not found.');
-        setIsLoading(false);
+      if (authenticatedUser) {
+        setUser(authenticatedUser);
+        console.log('Supabase Auth login successful for:', authenticatedUser.username);
+        return true;
+      } else {
+        console.error('Supabase Auth login failed.');
+        setUser(null);
         return false;
       }
-
-      console.log('Supabase returned user data:', userData);
-
-      // Create user object
-      const authenticatedUser: User = {
-        id: userData.id,
-        username: userData.username,
-        role: userData.role as UserRole,
-        isActive: userData.is_active,
-        evaluatorPosition: userData.evaluator_position,
-        password: userData.password
-      };
-
-      // Store user in localStorage and state
-      localStorage.setItem('bioins_current_user', JSON.stringify(authenticatedUser));
-      setUser(authenticatedUser);
-
-      console.log('Login successful for:', authenticatedUser.username);
-      setIsLoading(false);
-      return true;
     } catch (error) {
       console.error('Login function threw an exception:', error);
-      setIsLoading(false);
+      setUser(null);
       return false;
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const logout = () => {
-    try {
-      console.log('=== LOGOUT ===');
-      localStorage.removeItem('bioins_current_user');
-      setUser(null);
-      console.log('Logout successful');
-    } catch (error) {
-      console.error('Logout error:', error);
-      setUser(null);
-    }
+  const logout = async () => {
+    console.log('=== LOGOUT with Supabase Auth ===');
+    await logoutService();
+    setUser(null);
   };
 
   return (
