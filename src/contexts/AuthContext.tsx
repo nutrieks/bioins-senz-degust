@@ -1,7 +1,6 @@
-
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { User } from "../types";
+import { User, UserRole } from "../types";
 import { loginWithSupabase, logout as logoutService } from '@/services/supabase/auth';
 
 interface AuthContextType {
@@ -33,7 +32,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const profile: User = {
         id: userData.id,
         username: userData.username,
-        role: userData.role,
+        role: userData.role as UserRole,
         evaluatorPosition: userData.evaluator_position,
         isActive: userData.is_active,
         password: userData.password,
