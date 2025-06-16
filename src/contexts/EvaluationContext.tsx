@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { Sample, JARAttribute, ProductType } from "../types";
 import { getNextSample, getJARAttributes } from "../services/dataService";
@@ -150,9 +151,15 @@ export const EvaluationProvider: React.FC<{
         }
       } else {
         // Handle direct sample result (backward compatibility)
-        setCurrentSample(result as Sample);
-        setCurrentRound(0);
-        setIsComplete(!result);
+        if (result) {
+          setCurrentSample(result as Sample);
+          setCurrentRound(0);
+          setIsComplete(false);
+        } else {
+          setCurrentSample(null);
+          setCurrentRound(0);
+          setIsComplete(true);
+        }
       }
     } catch (error) {
       console.error("Error loading next sample:", error);

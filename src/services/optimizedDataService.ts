@@ -1,7 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { dataCache } from '@/utils/dataCache';
-import { Event, ProductType, Sample, JARAttribute, EventStatus } from '@/types';
+import { Event, ProductType, Sample, JARAttribute, EventStatus, RetailerCode } from '@/types';
 
 interface EventWithData {
   event: Event;
@@ -91,7 +91,7 @@ export async function getEventWithAllData(eventId: string): Promise<EventWithDat
         id: sample.id,
         productTypeId: sample.product_type_id,
         brand: sample.brand,
-        retailerCode: sample.retailer_code,
+        retailerCode: sample.retailer_code as RetailerCode,
         blindCode: sample.blind_code,
         images: {
           packaging: sample.images_packaging,
