@@ -1,7 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { dataCache } from '@/utils/dataCache';
-import { Event, ProductType, Sample, JARAttribute } from '@/types';
+import { Event, ProductType, Sample, JARAttribute, EventStatus } from '@/types';
 
 interface EventWithData {
   event: Event;
@@ -69,9 +69,11 @@ export async function getEventWithAllData(eventId: string): Promise<EventWithDat
       event: {
         id: eventResult.data.id,
         date: eventResult.data.date,
-        status: eventResult.data.status,
+        status: eventResult.data.status as EventStatus,
         randomizationComplete: eventResult.data.randomization_complete,
-        productTypesCount: productTypesResult.data?.length || 0
+        productTypesCount: productTypesResult.data?.length || 0,
+        productTypes: [],
+        createdAt: eventResult.data.created_at
       },
       productTypes: (productTypesResult.data || []).map(pt => ({
         id: pt.id,
@@ -81,7 +83,9 @@ export async function getEventWithAllData(eventId: string): Promise<EventWithDat
         baseCode: pt.base_code,
         baseProductTypeId: pt.base_product_type_id,
         displayOrder: pt.display_order,
-        hasRandomization: pt.has_randomization
+        hasRandomization: pt.has_randomization,
+        samples: [],
+        jarAttributes: []
       })),
       allSamples: (samplesResult.data || []).map(sample => ({
         id: sample.id,
@@ -89,18 +93,20 @@ export async function getEventWithAllData(eventId: string): Promise<EventWithDat
         brand: sample.brand,
         retailerCode: sample.retailer_code,
         blindCode: sample.blind_code,
-        imagesPackaging: sample.images_packaging,
-        imagesPrepared: sample.images_prepared,
-        imagesDetails: sample.images_details || []
+        images: {
+          packaging: sample.images_packaging,
+          prepared: sample.images_prepared,
+          details: sample.images_details || []
+        }
       })),
       jarAttributes: (jarAttributesResult.data || []).map(attr => ({
         id: attr.id,
         productTypeId: attr.product_type_id,
         baseProductTypeId: attr.base_product_type_id,
-        nameEn: attr.name_en,
-        nameHr: attr.name_hr,
-        scaleEn: attr.scale_en,
-        scaleHr: attr.scale_hr
+        nameEN: attr.name_en,
+        nameHR: attr.name_hr,
+        scaleEN: attr.scale_en as [string, string, string, string, string],
+        scaleHR: attr.scale_hr as [string, string, string, string, string]
       }))
     };
 

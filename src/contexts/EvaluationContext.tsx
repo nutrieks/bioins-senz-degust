@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { Sample, JARAttribute, ProductType } from "../types";
 import { getNextSample, getJARAttributes } from "../services/dataService";
@@ -151,7 +150,7 @@ export const EvaluationProvider: React.FC<{
         }
       } else {
         // Handle direct sample result (backward compatibility)
-        setCurrentSample(result);
+        setCurrentSample(result as Sample);
         setCurrentRound(0);
         setIsComplete(!result);
       }
