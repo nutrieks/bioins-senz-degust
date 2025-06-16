@@ -152,10 +152,17 @@ export const EvaluationProvider: React.FC<{
       } else {
         // Handle direct sample result (backward compatibility)
         if (result) {
-          // If result is directly a Sample object, use it
-          setCurrentSample(result as Sample);
-          setCurrentRound(0);
-          setIsComplete(false);
+          // Check if result has the structure { sample, round, isComplete } but wasn't caught above
+          if (typeof result === 'object' && result.sample) {
+            setCurrentSample(result.sample);
+            setCurrentRound(result.round || 0);
+            setIsComplete(result.isComplete || false);
+          } else {
+            // If result is directly a Sample object, use it
+            setCurrentSample(result as Sample);
+            setCurrentRound(0);
+            setIsComplete(false);
+          }
         } else {
           setCurrentSample(null);
           setCurrentRound(0);
