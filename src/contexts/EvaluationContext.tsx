@@ -1,7 +1,8 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { Sample, JARAttribute, ProductType } from "../types";
-import { getNextSample, getCompletedEvaluations, getProductTypes, getJARAttributes } from "../services/dataService";
+import { getNextSample, getJARAttributes } from "../services/dataService";
+import { getEventWithAllData, getCompletedEvaluationsOptimized } from "../services/optimizedDataService";
 import { useAuth } from "./AuthContext";
 
 interface EvaluationContextType {
@@ -17,6 +18,8 @@ interface EvaluationContextType {
   loadNextProductType: (eventId: string) => Promise<boolean>;
   resetEvaluation: () => void;
   setShowSampleReveal: (show: boolean) => void;
+  isLoading: boolean;
+  loadingMessage: string;
 }
 
 const EvaluationContext = createContext<EvaluationContextType | undefined>(undefined);
@@ -36,41 +39,49 @@ export const EvaluationProvider: React.FC<{
   const [remainingProductTypes, setRemainingProductTypes] = useState<ProductType[]>([]);
   const [allProductTypes, setAllProductTypes] = useState<ProductType[]>([]);
   const [processedProductTypes, setProcessedProductTypes] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [loadingMessage, setLoadingMessage] = useState<string>("");
 
-  // Ensure JAR attributes are loaded correctly when currentSample or currentProductType changes
+  // Cache for event data to avoid repeated fetches
+  const [eventDataCache, setEventDataCache] = useState<any>(null);
+
+  // Ensure JAR attributes are loaded correctly when currentSample changes
   useEffect(() => {
     const updateJARAttributes = async () => {
-      console.log('=== UPDATING JAR ATTRIBUTES ===');
-      console.log('Current sample:', currentSample?.id);
-      console.log('Current product type:', currentProductType?.id);
+      if (!currentSample || !currentSample.productTypeId) {
+        setCurrentJARAttributes([]);
+        return;
+      }
+
+      console.log('=== OPTIMIZED: UPDATING JAR ATTRIBUTES ===');
+      setLoadingMessage("Učitavam JAR atribute...");
       
-      if (currentSample && currentSample.productTypeId) {
-        try {
-          console.log('Fetching JAR attributes for product type:', currentSample.productTypeId);
+      try {
+        // First check if we have cached JAR attributes from eventDataCache
+        if (eventDataCache?.jarAttributes) {
+          const cachedAttributes = eventDataCache.jarAttributes.filter(
+            (attr: JARAttribute) => attr.productTypeId === currentSample.productTypeId
+          );
           
-          // Use the improved getJARAttributes function that handles fallback to base product type
-          const attributes = await getJARAttributes(currentSample.productTypeId);
-          console.log("Fetched JAR attributes:", attributes.length, attributes);
-          
-          if (attributes && attributes.length > 0) {
-            setCurrentJARAttributes(attributes);
-            console.log("JAR attributes set successfully:", attributes.length);
-          } else {
-            console.warn("No JAR attributes found for product type:", currentSample.productTypeId);
-            setCurrentJARAttributes([]);
+          if (cachedAttributes.length > 0) {
+            console.log("Using cached JAR attributes:", cachedAttributes.length);
+            setCurrentJARAttributes(cachedAttributes);
+            return;
           }
-        } catch (error) {
-          console.error("Error updating JAR attributes:", error);
-          setCurrentJARAttributes([]);
         }
-      } else {
-        console.log("No current sample or product type ID available");
+
+        // Fallback to individual fetch if not in cache
+        const attributes = await getJARAttributes(currentSample.productTypeId);
+        console.log("Fetched JAR attributes:", attributes.length);
+        setCurrentJARAttributes(attributes);
+      } catch (error) {
+        console.error("Error updating JAR attributes:", error);
         setCurrentJARAttributes([]);
       }
     };
     
     updateJARAttributes();
-  }, [currentSample, currentProductType]);
+  }, [currentSample, eventDataCache]);
 
   const loadNextSample = async (eventId: string, productTypeId?: string) => {
     if (!user || !user.id) {
@@ -79,20 +90,32 @@ export const EvaluationProvider: React.FC<{
     }
 
     try {
-      console.log("=== CONTEXT LOADING NEXT SAMPLE ===");
-      console.log("Event ID:", eventId);
-      console.log("Product Type ID:", productTypeId);
-      console.log("User ID:", user.id);
+      console.log("=== OPTIMIZED: CONTEXT LOADING NEXT SAMPLE ===");
+      setIsLoading(true);
+      setLoadingMessage("Dohvaćam podatke o događaju...");
 
-      // Always refresh completed evaluations from database first
-      console.log("Fetching fresh completed evaluations from database...");
-      const completed = await getCompletedEvaluations(eventId, user.id);
-      const completedSampleIds = completed.map(e => e.sampleId);
+      // Load event data with all related data in parallel if not cached
+      if (!eventDataCache) {
+        const eventData = await getEventWithAllData(eventId);
+        if (!eventData) {
+          console.error("Could not load event data");
+          setIsLoading(false);
+          return;
+        }
+        setEventDataCache(eventData);
+        setAllProductTypes(eventData.productTypes);
+      }
+
+      setLoadingMessage("Dohvaćam završene ocjene...");
+      
+      // Get completed evaluations using optimized service
+      const completedSampleIds = await getCompletedEvaluationsOptimized(eventId, user.id);
       console.log("Fresh completed sample IDs:", completedSampleIds);
       setCompletedSamples(completedSampleIds);
 
-      // Get next sample with refreshed completion data - now expecting correct structure
-      console.log("Getting next sample with fresh completion data...");
+      setLoadingMessage("Tražim sljedeći uzorak...");
+
+      // Get next sample with refreshed completion data
       const result = await getNextSample(
         user.id,
         eventId,
@@ -102,43 +125,42 @@ export const EvaluationProvider: React.FC<{
 
       console.log("Next sample result:", result);
 
-      // Destructure the correct structure
-      const { sample, round, isComplete: complete } = result;
-
-      setCurrentSample(sample);
-      setCurrentRound(round);
-      
-      if (sample) {
-        if (allProductTypes.length > 0) {
+      // Handle the result structure properly
+      if (result && typeof result === 'object' && 'sample' in result) {
+        const { sample, round, isComplete: complete } = result;
+        setCurrentSample(sample);
+        setCurrentRound(round);
+        
+        if (sample && allProductTypes.length > 0) {
           const productType = allProductTypes.find(pt => pt.id === sample.productTypeId);
           if (productType) {
             setCurrentProductType(productType);
             console.log("Set current product type:", productType.productName);
           }
-        } else if (productTypeId) {
-          const types = await getProductTypes(eventId);
-          const productType = types.find(pt => pt.id === productTypeId);
-          if (productType) {
-            setCurrentProductType(productType);
-            setAllProductTypes(types);
-            console.log("Loaded product types and set current:", productType.productName);
-          }
         }
-      }
 
-      if (complete && productTypeId) {
-        // Current product type is complete, add to processed list
-        if (productTypeId && !processedProductTypes.includes(productTypeId)) {
-          console.log("Product type completed, adding to processed list:", productTypeId);
-          setProcessedProductTypes(prev => [...prev, productTypeId]);
+        if (complete && productTypeId) {
+          if (productTypeId && !processedProductTypes.includes(productTypeId)) {
+            console.log("Product type completed, adding to processed list:", productTypeId);
+            setProcessedProductTypes(prev => [...prev, productTypeId]);
+          }
+          setIsComplete(false);
+          setShowSampleReveal(true);
+        } else {
+          setIsComplete(complete);
         }
-        setIsComplete(false);
-        setShowSampleReveal(true);
       } else {
-        setIsComplete(complete);
+        // Handle direct sample result (backward compatibility)
+        setCurrentSample(result);
+        setCurrentRound(0);
+        setIsComplete(!result);
       }
     } catch (error) {
       console.error("Error loading next sample:", error);
+      setLoadingMessage("Greška prilikom učitavanja uzorka");
+    } finally {
+      setIsLoading(false);
+      setLoadingMessage("");
     }
   };
 
@@ -146,52 +168,49 @@ export const EvaluationProvider: React.FC<{
     if (!user || !user.id) return false;
 
     try {
-      console.log("=== LOADING NEXT PRODUCT TYPE ===");
+      console.log("=== OPTIMIZED: LOADING NEXT PRODUCT TYPE ===");
+      setIsLoading(true);
+      setLoadingMessage("Učitavam sljedeći tip proizvoda...");
       
-      // Load all product types if not already loaded
-      if (allProductTypes.length === 0) {
-        const types = await getProductTypes(eventId);
-        console.log("Loading all product types:", types);
-        setAllProductTypes(types);
-        
-        // Filter out any types that have already been processed
-        const availableTypes = types.filter(pt => !processedProductTypes.includes(pt.id));
-        console.log("Available product types:", availableTypes);
-        setRemainingProductTypes(availableTypes);
-        
-        if (availableTypes.length > 0) {
-          console.log("Loading first available product type:", availableTypes[0]);
-          await loadNextSample(eventId, availableTypes[0].id);
-          return true;
-        }
-      } else {
-        // Get product types not yet processed
-        const availableTypes = allProductTypes.filter(pt => !processedProductTypes.includes(pt.id));
-        console.log("Current product type:", currentProductType?.id);
-        console.log("Processed product types:", processedProductTypes);
-        console.log("Available product types:", availableTypes);
-        
-        setRemainingProductTypes(availableTypes);
-        
-        if (availableTypes.length > 0) {
-          console.log("Loading next available product type:", availableTypes[0]);
-          await loadNextSample(eventId, availableTypes[0].id);
-          return true;
-        }
+      // Use cached product types if available
+      let productTypes = allProductTypes;
+      if (productTypes.length === 0 && eventDataCache) {
+        productTypes = eventDataCache.productTypes;
+        setAllProductTypes(productTypes);
+      }
+
+      if (productTypes.length === 0) {
+        console.log("No product types available");
+        setIsComplete(true);
+        return false;
+      }
+
+      // Get product types not yet processed
+      const availableTypes = productTypes.filter(pt => !processedProductTypes.includes(pt.id));
+      console.log("Available product types:", availableTypes.length);
+      
+      setRemainingProductTypes(availableTypes);
+      
+      if (availableTypes.length > 0) {
+        console.log("Loading next available product type:", availableTypes[0]);
+        await loadNextSample(eventId, availableTypes[0].id);
+        return true;
       }
       
-      // Only set isComplete to true if there are no more product types
       console.log("No more product types available, evaluation complete");
       setIsComplete(true);
       return false;
     } catch (error) {
       console.error("Error loading next product type:", error);
       return false;
+    } finally {
+      setIsLoading(false);
+      setLoadingMessage("");
     }
   };
 
   const resetEvaluation = () => {
-    console.log("=== RESETTING EVALUATION ===");
+    console.log("=== OPTIMIZED: RESETTING EVALUATION ===");
     setCurrentSample(null);
     setCurrentRound(0);
     setIsComplete(false);
@@ -202,6 +221,9 @@ export const EvaluationProvider: React.FC<{
     setRemainingProductTypes([]);
     setAllProductTypes([]);
     setProcessedProductTypes([]);
+    setEventDataCache(null);
+    setIsLoading(false);
+    setLoadingMessage("");
   };
 
   return (
@@ -218,7 +240,9 @@ export const EvaluationProvider: React.FC<{
         loadNextSample,
         loadNextProductType,
         resetEvaluation,
-        setShowSampleReveal
+        setShowSampleReveal,
+        isLoading,
+        loadingMessage
       }}
     >
       {children}

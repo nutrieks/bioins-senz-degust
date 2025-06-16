@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEvaluation } from "@/contexts/EvaluationContext";
@@ -30,60 +31,53 @@ export function EvaluationContent({
     loadNextSample,
     showSampleReveal,
     setShowSampleReveal,
-    currentProductType
+    currentProductType,
+    isLoading,
+    loadingMessage
   } = useEvaluation();
   
-  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  console.log('=== EVALUATION CONTENT RENDER ===');
+  console.log('=== OPTIMIZED EVALUATION CONTENT RENDER ===');
   console.log('Props:', { eventId, eventName, eventDate, productTypesCount: productTypes.length });
   console.log('User:', user ? { id: user.id, username: user.username, role: user.role } : 'No user');
   console.log('Current sample:', currentSample);
   console.log('Completed samples:', completedSamples.length);
   console.log('Is complete:', isComplete);
   console.log('Show sample reveal:', showSampleReveal);
+  console.log('Is loading:', isLoading, 'Message:', loadingMessage);
 
-  // Initial load
+  // Initial load - optimized to run only once
   useEffect(() => {
-    console.log('=== EVALUATION CONTENT INITIAL EFFECT ===');
-    console.log('Dependencies:', { 
-      userId: user?.id, 
-      eventId, 
-      completedSamplesLength: completedSamples.length 
-    });
-
+    console.log('=== OPTIMIZED EVALUATION CONTENT INITIAL EFFECT ===');
+    
     const initialLoad = async () => {
       if (!user?.id || !eventId) {
         console.log('Missing user or eventId, cannot load');
-        setIsLoading(false);
         return;
       }
 
       try {
         setError(null);
-        console.log('Starting initial load of samples...');
+        console.log('Starting optimized initial load of samples...');
         
-        // Load the first sample (context will handle which product type)
+        // Load the first sample (context will handle optimization)
         await loadNextSample(eventId);
         
       } catch (error) {
-        console.error('Error in initial load:', error);
+        console.error('Error in optimized initial load:', error);
         setError(error instanceof Error ? error.message : 'Neočekivana greška');
-      } finally {
-        setIsLoading(false);
       }
     };
 
     // Only load initially if we don't have a current sample and we're not complete
-    if (!currentSample && !isComplete) {
-      console.log('No current sample and not completed - starting initial load');
+    if (!currentSample && !isComplete && !isLoading) {
+      console.log('No current sample and not completed - starting optimized initial load');
       initialLoad();
     } else {
-      console.log('Current sample exists or evaluation completed - not loading initially');
-      setIsLoading(false);
+      console.log('Current sample exists, evaluation completed, or already loading - not loading initially');
     }
-  }, [user?.id, eventId]);
+  }, [user?.id, eventId]); // Removed other dependencies to prevent unnecessary re-runs
 
   const handleSampleSubmitted = () => {
     console.log('=== SAMPLE SUBMITTED ===');
@@ -93,15 +87,12 @@ export function EvaluationContent({
   const handleContinue = async () => {
     console.log('=== CONTINUING TO NEXT SAMPLE ===');
     setShowSampleReveal(false);
-    setIsLoading(true);
     
     try {
       await loadNextSample(eventId, currentSample?.productTypeId);
     } catch (error) {
       console.error('Error loading next sample:', error);
       setError(error instanceof Error ? error.message : 'Greška prilikom učitavanja sljedećeg uzorka');
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -109,8 +100,15 @@ export function EvaluationContent({
     navigate('/evaluator');
   };
 
+  // Show enhanced loading state with specific messages
   if (isLoading) {
-    return <LoadingState />;
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <p className="text-lg font-medium">{loadingMessage || "Učitavanje..."}</p>
+        <p className="text-sm text-muted-foreground">Molimo pričekajte...</p>
+      </div>
+    );
   }
 
   if (error) {
@@ -123,8 +121,7 @@ export function EvaluationContent({
         <button 
           onClick={() => {
             setError(null);
-            setIsLoading(true);
-            loadNextSample(eventId).finally(() => setIsLoading(false));
+            loadNextSample(eventId);
           }}
           className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
         >
