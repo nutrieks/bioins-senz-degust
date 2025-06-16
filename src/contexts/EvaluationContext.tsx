@@ -152,6 +152,7 @@ export const EvaluationProvider: React.FC<{
       } else {
         // Handle direct sample result (backward compatibility)
         if (result) {
+          // If result is directly a Sample object, use it
           setCurrentSample(result as Sample);
           setCurrentRound(0);
           setIsComplete(false);
