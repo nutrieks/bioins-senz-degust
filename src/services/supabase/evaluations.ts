@@ -54,27 +54,69 @@ export async function getCompletedEvaluations(
 
 export async function submitEvaluation(evaluation: EvaluationSubmission): Promise<boolean> {
   try {
-    console.log('=== SUPABASE submitEvaluation (simplified) ===');
+    console.log('=== SUPABASE submitEvaluation (with validation) ===');
     console.log('Evaluation data to insert:', evaluation);
 
-    // Uklonili smo provjeru Supabase korisnika jer koristimo prilagođeni sustav prijave.
-    // Podaci se sada spremaju na temelju ID-a korisnika iz našeg AuthContext-a,
-    // a nova RLS politika na bazi to dopušta.
+    // Validate required fields
+    if (!evaluation) {
+      throw new Error('Evaluation data is missing');
+    }
+
+    const { userId, sampleId, productTypeId, eventId, hedonicRatings, jarRatings } = evaluation;
+
+    if (!userId) {
+      throw new Error('User ID is required');
+    }
+
+    if (!sampleId) {
+      throw new Error('Sample ID is required');
+    }
+
+    if (!productTypeId) {
+      throw new Error('Product Type ID is required');
+    }
+
+    if (!eventId) {
+      throw new Error('Event ID is required');
+    }
+
+    if (!hedonicRatings || typeof hedonicRatings !== 'object') {
+      throw new Error('Hedonic ratings are required and must be an object');
+    }
+
+    // Validate hedonic ratings structure and values
+    const requiredHedonicFields = ['appearance', 'odor', 'texture', 'flavor', 'overallLiking'];
+    for (const field of requiredHedonicFields) {
+      const value = hedonicRatings[field as keyof typeof hedonicRatings];
+      if (typeof value !== 'number' || isNaN(value) || value < 1 || value > 9) {
+        throw new Error(`Invalid hedonic rating for ${field}: ${value}. Must be a number between 1 and 9.`);
+      }
+    }
+
+    // Validate JAR ratings if provided
+    if (jarRatings && typeof jarRatings === 'object') {
+      Object.entries(jarRatings).forEach(([attrId, value]) => {
+        if (typeof value !== 'number' || isNaN(value) || value < 1 || value > 5) {
+          console.warn(`Invalid JAR rating for ${attrId}: ${value}. Skipping this rating.`);
+          delete jarRatings[attrId];
+        }
+      });
+    }
 
     const insertData = {
-      user_id: evaluation.userId,
-      sample_id: evaluation.sampleId,
-      product_type_id: evaluation.productTypeId,
-      event_id: evaluation.eventId,
-      hedonic_appearance: evaluation.hedonicRatings.appearance,
-      hedonic_odor: evaluation.hedonicRatings.odor,
-      hedonic_texture: evaluation.hedonicRatings.texture,
-      hedonic_flavor: evaluation.hedonicRatings.flavor,
-      hedonic_overall_liking: evaluation.hedonicRatings.overallLiking,
-      jar_ratings: evaluation.jarRatings
+      user_id: userId,
+      sample_id: sampleId,
+      product_type_id: productTypeId,
+      event_id: eventId,
+      hedonic_appearance: hedonicRatings.appearance,
+      hedonic_odor: hedonicRatings.odor,
+      hedonic_texture: hedonicRatings.texture,
+      hedonic_flavor: hedonicRatings.flavor,
+      hedonic_overall_liking: hedonicRatings.overallLiking,
+      jar_ratings: jarRatings || {}
     };
 
-    console.log('Inserting data into evaluations table:', insertData);
+    console.log('Inserting validated data into evaluations table:', insertData);
 
     const { data, error } = await supabase
       .from('evaluations')
@@ -96,6 +138,10 @@ export async function submitEvaluation(evaluation: EvaluationSubmission): Promis
       }
     }
 
+    if (!data) {
+      throw new Error('No data returned from database after insertion');
+    }
+
     console.log('Evaluation submitted successfully:', data);
 
     // Provjera unosa radi sigurnosti
@@ -115,6 +161,7 @@ export async function submitEvaluation(evaluation: EvaluationSubmission): Promis
   } catch (error) {
     console.error('=== ERROR submitEvaluation ===');
     console.error('Error details:', error);
+    console.error('Stack trace:', error instanceof Error ? error.stack : 'No stack trace');
     throw error; // Ponovno bacamo grešku kako bi se prikazala u sučelju
   }
 }

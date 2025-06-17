@@ -116,14 +116,55 @@ export async function createProductType(
 
 // Evaluation Management
 export async function submitEvaluation(evaluationData: any): Promise<any> {
-  const { userId, sampleId, productTypeId, eventId, hedonic, jar } = evaluationData;
+  console.log("=== DATA SERVICE submitEvaluation ===");
+  console.log("Received evaluation data:", evaluationData);
+  
+  // Validate required fields
+  if (!evaluationData) {
+    throw new Error("Evaluation data is missing");
+  }
+  
+  const { userId, sampleId, productTypeId, eventId, hedonicRatings, jarRatings } = evaluationData;
+  
+  // Validate all required fields
+  if (!userId) {
+    throw new Error("User ID is required");
+  }
+  
+  if (!sampleId) {
+    throw new Error("Sample ID is required");
+  }
+  
+  if (!productTypeId) {
+    throw new Error("Product Type ID is required");
+  }
+  
+  if (!eventId) {
+    throw new Error("Event ID is required");
+  }
+  
+  if (!hedonicRatings || typeof hedonicRatings !== 'object') {
+    throw new Error("Hedonic ratings are required and must be an object");
+  }
+  
+  // Validate hedonic ratings structure
+  const requiredHedonicFields = ['appearance', 'odor', 'texture', 'flavor', 'overallLiking'];
+  for (const field of requiredHedonicFields) {
+    if (!(field in hedonicRatings) || typeof hedonicRatings[field] !== 'number') {
+      throw new Error(`Hedonic rating for ${field} is missing or invalid`);
+    }
+  }
+  
+  console.log("Data validation passed, calling Supabase service");
+  
+  // Call Supabase service with properly structured data
   return await submitEvaluationSupabase({
     userId,
     sampleId,
     productTypeId,
     eventId,
-    hedonicRatings: hedonic,
-    jarRatings: jar
+    hedonicRatings,
+    jarRatings: jarRatings || {}
   });
 }
 

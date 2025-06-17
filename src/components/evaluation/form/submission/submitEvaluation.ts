@@ -21,44 +21,86 @@ export async function handleEvaluationSubmit(
   try {
     console.log("=== SUBMITTING EVALUATION ===");
     console.log("User ID:", userId);
-    console.log("Sample ID:", currentSample.id);
-    console.log("Product Type ID:", currentSample.productTypeId);
+    console.log("Sample ID:", currentSample?.id);
+    console.log("Product Type ID:", currentSample?.productTypeId);
     console.log("Event ID:", eventId);
     console.log("Form data:", data);
     
-    // Pretvorba string vrijednosti u brojeve za hedonističku skalu
+    // Validate required data before proceeding
+    if (!userId) {
+      throw new Error("User ID is missing");
+    }
+    
+    if (!currentSample?.id) {
+      throw new Error("Sample ID is missing");
+    }
+    
+    if (!currentSample?.productTypeId) {
+      throw new Error("Product Type ID is missing");
+    }
+    
+    if (!eventId) {
+      throw new Error("Event ID is missing");
+    }
+    
+    if (!data?.hedonic) {
+      throw new Error("Hedonic data is missing");
+    }
+    
+    // Safely convert hedonic ratings with validation
     const hedonicRatings: HedonicScale = {
-      appearance: parseInt(data.hedonic.appearance),
-      odor: parseInt(data.hedonic.odor),
-      texture: parseInt(data.hedonic.texture),
-      flavor: parseInt(data.hedonic.flavor),
-      overallLiking: parseInt(data.hedonic.overallLiking)
+      appearance: data.hedonic.appearance ? parseInt(data.hedonic.appearance) : 0,
+      odor: data.hedonic.odor ? parseInt(data.hedonic.odor) : 0,
+      texture: data.hedonic.texture ? parseInt(data.hedonic.texture) : 0,
+      flavor: data.hedonic.flavor ? parseInt(data.hedonic.flavor) : 0,
+      overallLiking: data.hedonic.overallLiking ? parseInt(data.hedonic.overallLiking) : 0
     };
     
-    // Pretvorba string vrijednosti u brojeve za JAR atribute
+    // Validate hedonic ratings
+    const invalidHedonic = Object.entries(hedonicRatings).find(([key, value]) => 
+      isNaN(value) || value < 1 || value > 9
+    );
+    
+    if (invalidHedonic) {
+      throw new Error(`Invalid hedonic rating for ${invalidHedonic[0]}: ${invalidHedonic[1]}`);
+    }
+    
+    // Safely convert JAR ratings with validation
     const jarRatings: JARRating = {};
     
-    Object.entries(data.jar).forEach(([attrId, value]) => {
-      if (value !== undefined && value !== '') {
-        jarRatings[attrId] = parseInt(value.toString());
-      }
-    });
+    if (data.jar && typeof data.jar === 'object') {
+      Object.entries(data.jar).forEach(([attrId, value]) => {
+        if (value !== undefined && value !== '' && value !== null) {
+          const numValue = parseInt(value.toString());
+          if (!isNaN(numValue) && numValue >= 1 && numValue <= 5) {
+            jarRatings[attrId] = numValue;
+          } else {
+            console.warn(`Invalid JAR rating for ${attrId}: ${value}`);
+          }
+        }
+      });
+    }
     
     console.log("Final ratings to submit:", {
       hedonic: hedonicRatings,
       jar: jarRatings
     });
     
-    // Submit evaluation with improved error handling
-    console.log("Submitting evaluation to API...");
-    const submitResult = await submitEvaluationAPI({
+    // Prepare evaluation data with proper structure
+    const evaluationData = {
       userId,
       sampleId: currentSample.id,
       productTypeId: currentSample.productTypeId,
       eventId,
       hedonicRatings,
       jarRatings
-    });
+    };
+    
+    console.log("Evaluation data prepared:", evaluationData);
+    
+    // Submit evaluation with improved error handling
+    console.log("Submitting evaluation to API...");
+    const submitResult = await submitEvaluationAPI(evaluationData);
     
     if (!submitResult) {
       throw new Error("Failed to submit evaluation - no result returned");
@@ -117,11 +159,12 @@ export async function handleEvaluationSubmit(
       } finally {
         setIsSubmitting(false);
       }
-    }, 1500); // Reduced delay
+    }, 1500);
     
   } catch (error) {
     console.error("=== ERROR SUBMITTING EVALUATION ===");
     console.error("Error details:", error);
+    console.error("Stack trace:", error instanceof Error ? error.stack : 'No stack trace');
     
     let errorMessage = "Došlo je do pogreške prilikom spremanja ocjene.";
     
@@ -132,6 +175,8 @@ export async function handleEvaluationSubmit(
         errorMessage = "Problem s autentifikacijom. Molimo prijavite se ponovno.";
       } else if (error.message.includes('Authentication')) {
         errorMessage = "Problem s autentifikacijom. Molimo prijavite se ponovno.";
+      } else if (error.message.includes('missing') || error.message.includes('Invalid')) {
+        errorMessage = `Greška u podacima: ${error.message}`;
       } else {
         errorMessage = `Greška: ${error.message}`;
       }
