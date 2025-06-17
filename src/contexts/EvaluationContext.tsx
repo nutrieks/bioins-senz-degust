@@ -152,16 +152,23 @@ export const EvaluationProvider: React.FC<{
       } else {
         // Handle direct sample result (backward compatibility)
         if (result) {
-          // Check if result has the structure { sample, round, isComplete } but wasn't caught above
-          if (typeof result === 'object' && result.sample) {
-            setCurrentSample(result.sample);
-            setCurrentRound(result.round || 0);
-            setIsComplete(result.isComplete || false);
-          } else {
+          // Check if result has the expected Sample interface properties
+          if (typeof result === 'object' && 
+              'id' in result && 
+              'productTypeId' in result && 
+              'brand' in result && 
+              'retailerCode' in result && 
+              'images' in result) {
             // If result is directly a Sample object, use it
             setCurrentSample(result as Sample);
             setCurrentRound(0);
             setIsComplete(false);
+          } else {
+            // Result doesn't match expected structure
+            console.warn("Received unexpected result structure:", result);
+            setCurrentSample(null);
+            setCurrentRound(0);
+            setIsComplete(true);
           }
         } else {
           setCurrentSample(null);
