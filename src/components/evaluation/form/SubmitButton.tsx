@@ -1,6 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Sample } from "@/types";
+import { Loader2 } from "lucide-react";
 
 interface SubmitButtonProps {
   isSubmitting: boolean;
@@ -18,9 +19,14 @@ export function SubmitButton({ isSubmitting, currentSample }: SubmitButtonProps)
         disabled={isSubmitting}
         className="w-full max-w-md text-lg py-6"
       >
-        {isSubmitting ? 
-          "Spremanje..." : 
-          `Predaj ocjenu za uzorak ${currentSample.blindCode}`}
+        {isSubmitting ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Spremanje...
+          </>
+        ) : (
+          `Predaj ocjenu za uzorak ${currentSample.blindCode}`
+        )}
       </Button>
     </div>
   );

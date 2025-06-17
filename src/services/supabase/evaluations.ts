@@ -54,7 +54,7 @@ export async function getCompletedEvaluations(
 
 export async function submitEvaluation(evaluation: EvaluationSubmission): Promise<boolean> {
   try {
-    console.log('=== SUPABASE submitEvaluation (with validation) ===');
+    console.log('=== SUPABASE submitEvaluation (optimized) ===');
     console.log('Evaluation data to insert:', evaluation);
 
     // Validate required fields
@@ -118,6 +118,7 @@ export async function submitEvaluation(evaluation: EvaluationSubmission): Promis
 
     console.log('Inserting validated data into evaluations table:', insertData);
 
+    // Simplified insert without complex retry logic - just one attempt
     const { data, error } = await supabase
       .from('evaluations')
       .insert(insertData)
@@ -143,26 +144,12 @@ export async function submitEvaluation(evaluation: EvaluationSubmission): Promis
     }
 
     console.log('Evaluation submitted successfully:', data);
-
-    // Provjera unosa radi sigurnosti
-    const { data: verifyData, error: verifyError } = await supabase
-      .from('evaluations')
-      .select('*')
-      .eq('id', data.id)
-      .single();
-
-    if (verifyError) {
-      console.warn('Could not verify evaluation insertion:', verifyError);
-    } else {
-      console.log('Verified evaluation was inserted:', verifyData);
-    }
-
     return true;
   } catch (error) {
     console.error('=== ERROR submitEvaluation ===');
     console.error('Error details:', error);
     console.error('Stack trace:', error instanceof Error ? error.stack : 'No stack trace');
-    throw error; // Ponovno bacamo grešku kako bi se prikazala u sučelju
+    throw error;
   }
 }
 

@@ -113,7 +113,7 @@ export async function handleEvaluationSubmit(
       description: `Uspješno ste ocijenili uzorak ${currentSample.blindCode}.`,
     });
     
-    // Refresh completed evaluations from database
+    // Refresh completed evaluations from database to invalidate cache
     console.log("Refreshing completed evaluations from database...");
     try {
       const refreshedEvaluations = await getCompletedEvaluations(eventId, userId);
@@ -138,28 +138,44 @@ export async function handleEvaluationSubmit(
     // Generate a new key to force radio buttons to reset
     setFormKey(Date.now());
     
-    // Load next sample after successful submission
-    setTimeout(async () => {
-      try {
-        console.log("Loading next sample after evaluation submission...");
-        await loadNextSample(eventId, currentSample.productTypeId);
-        console.log("Next sample loaded successfully");
-        
-        // Scroll to top after submitting
-        if (scrollRef.current) {
-          scrollRef.current.scrollIntoView({ behavior: 'smooth' });
-        }
-      } catch (error) {
-        console.error("Error loading next sample:", error);
+    // Load next sample immediately after successful submission with timeout protection
+    console.log("Loading next sample after evaluation submission...");
+    
+    try {
+      // Add timeout protection for loadNextSample
+      const loadNextPromise = loadNextSample(eventId, currentSample.productTypeId);
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error("Timeout loading next sample")), 10000)
+      );
+      
+      await Promise.race([loadNextPromise, timeoutPromise]);
+      console.log("Next sample loaded successfully");
+      
+      // Scroll to top after submitting
+      if (scrollRef.current) {
+        scrollRef.current.scrollIntoView({ behavior: 'smooth' });
+      }
+    } catch (error) {
+      console.error("Error loading next sample:", error);
+      
+      // Provide backup options for the user
+      if (error.message?.includes('Timeout')) {
         toast.toast({
-          title: "Greška",
-          description: "Problem s učitavanjem sljedećeg uzorka. Molimo osvježite stranicu.",
+          title: "Sporo učitavanje",
+          description: "Učitavanje sljedećeg uzorka traje duže od očekivanog. Molimo pričekajte ili osvježite stranicu.",
           variant: "destructive",
         });
-      } finally {
-        setIsSubmitting(false);
+      } else {
+        toast.toast({
+          title: "Greška",
+          description: "Problem s učitavanjem sljedećeg uzorka. Molimo osvježite stranicu ili se vratite na početnu.",
+          variant: "destructive",
+        });
       }
-    }, 1500);
+    }
+    
+    // Set isSubmitting to false immediately after successful submission
+    setIsSubmitting(false);
     
   } catch (error) {
     console.error("=== ERROR SUBMITTING EVALUATION ===");
@@ -187,6 +203,7 @@ export async function handleEvaluationSubmit(
       description: errorMessage,
       variant: "destructive",
     });
+    
     setIsSubmitting(false);
   }
 }

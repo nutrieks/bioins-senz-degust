@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { Sample, JARAttribute, ProductType } from "../types";
 import { getNextSample, getJARAttributes } from "../services/dataService";
@@ -77,6 +76,8 @@ export const EvaluationProvider: React.FC<{
       } catch (error) {
         console.error("Error updating JAR attributes:", error);
         setCurrentJARAttributes([]);
+      } finally {
+        setLoadingMessage("");
       }
     };
     
@@ -108,7 +109,7 @@ export const EvaluationProvider: React.FC<{
 
       setLoadingMessage("Dohvaćam završene ocjene...");
       
-      // Get completed evaluations using optimized service
+      // Clear cache by getting fresh completed evaluations
       const completedSampleIds = await getCompletedEvaluationsOptimized(eventId, user.id);
       console.log("Fresh completed sample IDs:", completedSampleIds);
       setCompletedSamples(completedSampleIds);
@@ -179,6 +180,14 @@ export const EvaluationProvider: React.FC<{
     } catch (error) {
       console.error("Error loading next sample:", error);
       setLoadingMessage("Greška prilikom učitavanja uzorka");
+      
+      // Reset loading state after error
+      setTimeout(() => {
+        setIsLoading(false);
+        setLoadingMessage("");
+      }, 2000);
+      
+      return;
     } finally {
       setIsLoading(false);
       setLoadingMessage("");
