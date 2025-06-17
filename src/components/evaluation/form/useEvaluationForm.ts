@@ -3,10 +3,11 @@ import { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { JARAttribute, Sample } from "@/types";
+import { useEvaluation } from "@/contexts/EvaluationContext";
+import { JARAttribute, Sample, HedonicScale, JARRating } from "@/types";
 import { FormData } from "./types";
 import { validateEvaluationForm } from "./validation/formValidation";
-import { handleEvaluationSubmit } from "./submission/submitEvaluation";
+import { submitEvaluation as submitEvaluationAPI, getCompletedEvaluations } from "@/services/dataService";
 
 export function useEvaluationForm(
   currentSample: Sample | null, 
@@ -17,6 +18,7 @@ export function useEvaluationForm(
 ) {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { updateCompletedSamples } = useEvaluation();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formKey, setFormKey] = useState<number>(Date.now());
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -63,28 +65,12 @@ export function useEvaluationForm(
     console.log('Form reset completed for sample:', currentSample?.blindCode);
   }, [currentSample, form]);
 
-  // Enhanced submit function with better error handling
+  // Complete onSubmit function with proper state management
   const onSubmit = async (data: FormData) => {
-    console.log('=== FORM SUBMIT TRIGGERED ===');
-    console.log('User:', user?.username);
-    console.log('Current sample:', currentSample?.blindCode);
-    console.log('Form data:', data);
-    
-    if (!user || !currentSample) {
-      console.error('Missing user or current sample for submission');
-      toast({
-        title: "Greška",
-        description: "Nedostaju potrebni podaci za slanje ocjene.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    // Validate the form
+    if (!user || !currentSample) return;
+
     const { isValid, errorFields } = validateEvaluationForm(data, form, currentJARAttributes);
-    
     if (!isValid) {
-      console.log('Form validation failed:', errorFields);
       toast({
         title: "Nepotpuna ocjena",
         description: `Molimo ispunite sva polja. Nedostaju: ${errorFields}`,
@@ -92,22 +78,62 @@ export function useEvaluationForm(
       });
       return;
     }
-    
-    console.log('Form validation passed, proceeding with submission');
-    
-    // Submit the form
-    await handleEvaluationSubmit(
-      data,
-      form,
-      user.id,
-      currentSample,
-      eventId,
-      { toast },
-      setIsSubmitting,
-      loadNextSample,
-      setFormKey,
-      scrollRef
-    );
+
+    setIsSubmitting(true);
+
+    try {
+      const hedonicRatings: HedonicScale = {
+        appearance: parseInt(data.hedonic.appearance),
+        odor: parseInt(data.hedonic.odor),
+        texture: parseInt(data.hedonic.texture),
+        flavor: parseInt(data.hedonic.flavor),
+        overallLiking: parseInt(data.hedonic.overallLiking)
+      };
+  
+      const jarRatings: JARRating = {};
+      Object.entries(data.jar).forEach(([attrId, value]) => {
+        if (value !== undefined && value !== '') jarRatings[attrId] = parseInt(value.toString());
+      });
+  
+      await submitEvaluationAPI({
+        userId: user.id,
+        sampleId: currentSample.id,
+        productTypeId: currentSample.productTypeId,
+        eventId,
+        hedonicRatings,
+        jarRatings
+      });
+
+      toast({
+        title: "Ocjena spremljena",
+        description: `Uspješno ste ocijenili uzorak ${currentSample.blindCode}.`,
+      });
+
+      // CRITICAL FIX: Update central state with new list of completed samples
+      const refreshedEvaluations = await getCompletedEvaluations(eventId, user.id);
+      const completedIds = refreshedEvaluations.map(e => e.sampleId);
+      updateCompletedSamples(completedIds);
+
+      form.reset({ hedonic: { appearance: "", odor: "", texture: "", flavor: "", overallLiking: "" }, jar: {} });
+      setFormKey(Date.now());
+
+      // Load next sample immediately after updating state
+      await loadNextSample(eventId, currentSample.productTypeId);
+
+      if (scrollRef.current) {
+        scrollRef.current.scrollIntoView({ behavior: 'smooth' });
+      }
+
+    } catch (error) {
+      console.error("Greška kod predaje ocjene:", error);
+      toast({
+        title: "Greška",
+        description: "Problem kod spremanja ocjene. Pokušajte ponovno.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return {

@@ -18,61 +18,42 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const fetchUser = async (sessionUser: any): Promise<User | null> => {
-      try {
+    // Set up auth state listener that immediately checks session state
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log(`Auth state changed: ${event}`);
+      if (session?.user) {
+        // If session exists, fetch user data from 'users' table
         const { data: userData, error } = await supabase
           .from('users')
           .select('*')
-          .eq('id', sessionUser.id)
+          .eq('id', session.user.id)
           .single();
-        
-        if (error || !userData) {
-          console.warn("Korisnički profil nije pronađen u 'users' tablici za prijavljenog korisnika. Odjava.", error?.message);
-          await supabase.auth.signOut();
-          return null;
-        }
-        
-        if (!userData.is_active) {
-            console.warn(`Korisnik ${userData.username} nije aktivan. Odjava.`);
-            await supabase.auth.signOut();
-            return null;
-        }
-        
-        const profile: User = {
-          id: userData.id,
-          username: userData.username,
-          role: userData.role as UserRole,
-          evaluatorPosition: userData.evaluator_position,
-          isActive: userData.is_active,
-          password: userData.password,
-        };
 
-        return profile;
-      } catch (error) {
-        console.error("Greška prilikom dohvaćanja profila korisnika:", error);
-        return null;
-      }
-    };
-
-    // Postavi listener za promjene u stanju autentifikacije.
-    // Ovo se aktivira pri početnom učitavanju (ako postoji sesija) i pri svakoj prijavi/odjavi.
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log(`Auth state change event: ${event}`);
-      if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN') {
-        if (session) {
-          const profile = await fetchUser(session.user);
-          setUser(profile);
+        if (userData && !error) {
+          setUser({
+            id: userData.id,
+            username: userData.username,
+            role: userData.role as UserRole,
+            evaluatorPosition: userData.evaluator_position || undefined,
+            isActive: userData.is_active,
+            password: userData.password,
+          });
         } else {
+          // If user doesn't exist in 'users' table, sign them out
           setUser(null);
+          await supabase.auth.signOut();
         }
-      } else if (event === 'SIGNED_OUT') {
+      } else {
+        // If no session, user is not logged in
         setUser(null);
       }
+      // Critical step: Set loading to false AFTER status is checked
       setIsLoading(false);
     });
 
+    // Return cleanup function to unsubscribe from listener
     return () => {
-      subscription?.unsubscribe();
+      subscription.unsubscribe();
     };
   }, []);
 

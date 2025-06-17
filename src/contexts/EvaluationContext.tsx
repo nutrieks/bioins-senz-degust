@@ -17,6 +17,7 @@ interface EvaluationContextType {
   loadNextProductType: (eventId: string) => Promise<boolean>;
   resetEvaluation: () => void;
   setShowSampleReveal: (show: boolean) => void;
+  updateCompletedSamples: (sampleIds: string[]) => void;
   isLoading: boolean;
   loadingMessage: string;
 }
@@ -43,6 +44,12 @@ export const EvaluationProvider: React.FC<{
 
   // Cache for event data to avoid repeated fetches
   const [eventDataCache, setEventDataCache] = useState<any>(null);
+
+  // Add function to update completed samples
+  const updateCompletedSamples = (sampleIds: string[]) => {
+    console.log("Updating completed samples in context:", sampleIds);
+    setCompletedSamples(sampleIds);
+  };
 
   // Ensure JAR attributes are loaded correctly when currentSample changes
   useEffect(() => {
@@ -271,6 +278,7 @@ export const EvaluationProvider: React.FC<{
         loadNextProductType,
         resetEvaluation,
         setShowSampleReveal,
+        updateCompletedSamples,
         isLoading,
         loadingMessage
       }}
