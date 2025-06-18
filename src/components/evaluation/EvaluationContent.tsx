@@ -32,6 +32,7 @@ export function EvaluationContent({
     showSampleReveal,
     setShowSampleReveal,
     currentProductType,
+    loadNextProductType,
     isLoading,
     loadingMessage
   } = useEvaluation();
@@ -84,15 +85,18 @@ export function EvaluationContent({
     setShowSampleReveal(true);
   };
 
-  const handleContinue = async () => {
-    console.log('=== CONTINUING TO NEXT SAMPLE ===');
+  const handleContinueAfterReveal = async () => {
+    console.log('=== CONTINUING AFTER REVEAL ===');
     setShowSampleReveal(false);
     
     try {
-      await loadNextSample(eventId, currentSample?.productTypeId);
+      const hasMore = await loadNextProductType(eventId);
+      if (!hasMore) {
+        console.log('No more product types available');
+      }
     } catch (error) {
-      console.error('Error loading next sample:', error);
-      setError(error instanceof Error ? error.message : 'Greška prilikom učitavanja sljedećeg uzorka');
+      console.error('Error loading next product type:', error);
+      setError(error instanceof Error ? error.message : 'Greška prilikom učitavanja sljedećeg tipa proizvoda');
     }
   };
 
@@ -139,13 +143,13 @@ export function EvaluationContent({
     );
   }
 
-  if (showSampleReveal && currentSample) {
+  if (showSampleReveal && currentProductType) {
     return (
       <SampleRevealScreen
         eventId={eventId}
-        productTypeId={currentSample.productTypeId}
-        productName={productTypes.find(pt => pt.id === currentSample.productTypeId)?.productName || ''}
-        onContinue={handleContinue}
+        productTypeId={currentProductType.id}
+        productName={currentProductType.productName}
+        onContinue={handleContinueAfterReveal}
       />
     );
   }
