@@ -42,38 +42,33 @@ export const formatSampleLabel = (sample: {retailerCode: RetailerCode, brand: st
 export const processJARData = (attrData: any) => {
   console.log("Processing JAR data:", attrData);
   
-  // Check if attrData and results exist
-  if (!attrData || !attrData.results) {
-    console.error("No attrData.results found:", attrData);
+  // ISPRAVAK: Provjerava se 'samples' umjesto 'results'
+  if (!attrData || !attrData.samples) {
+    console.error("No attrData.samples found:", attrData);
     return [];
   }
   
-  // Convert results object to array of samples
-  const samples = Object.entries(attrData.results).map(([sampleId, result]: [string, any]) => {
+  // ISPRAVAK: Iterira se preko 'attrData.samples' umjesto 'attrData.results'
+  const samples = Object.entries(attrData.samples).map(([sampleId, result]: [string, any]) => {
     console.log(`Processing sample ${sampleId}:`, result);
     return {
       id: sampleId,
       brand: result.brand,
       retailerCode: result.retailerCode,
-      frequencies: result.frequencies
+      frequencies: result.distribution // Koristi 'distribution' polje koje se računa u servisu
     };
   });
   
   console.log("Samples before sorting:", samples);
-  
-  // Sort samples using the existing sort function
   const sortedSamples = sortSamples(samples);
-  
   console.log("Samples after sorting:", sortedSamples);
   
-  // Transform to chart data format
   const chartData = sortedSamples.map(sample => {
     const data: any = { 
       name: formatSampleLabel(sample),
       id: sample.id
     };
     
-    // Add frequency data for each JAR label
     for (let i = 0; i < 5; i++) {
       data[JAR_LABELS[i]] = sample.frequencies[i] || 0;
     }
@@ -89,12 +84,15 @@ export const processJARData = (attrData: any) => {
 export function exportJARAttributeChartToCSV(attrData: any, productName: string) {
   let csv = `JAR Chart: ${attrData.nameEN} (Sample: ${productName})\n`;
   csv += "Brand," + JAR_LABELS.join(",") + "\n";
-  const samples = Object.entries(attrData.results).map(([sampleId, result]: [string, any]) => ({
+
+  // ISPRAVAK: Koristi 'attrData.samples' umjesto 'attrData.results'
+  const samples = Object.entries(attrData.samples).map(([sampleId, result]: [string, any]) => ({
     id: sampleId,
     brand: result.brand,
     retailerCode: result.retailerCode,
-    frequencies: result.frequencies
+    frequencies: result.distribution // Koristi 'distribution'
   }));
+
   const sortedSamples = sortSamples(samples);
   sortedSamples.forEach(sample => {
     csv += `${formatSampleLabel(sample)},${sample.frequencies.join(",")}\n`;
