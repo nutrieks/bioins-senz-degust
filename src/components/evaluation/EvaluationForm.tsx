@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { Form } from "@/components/ui/form";
@@ -26,27 +25,20 @@ export function EvaluationForm({ eventId, productTypeId, onComplete }: Evaluatio
   const { 
     currentSample, 
     currentJARAttributes, 
-    loadNextSample, 
     isComplete,
     currentProductType
   } = useEvaluation();
   
   const [eventDate, setEventDate] = useState<string>("");
   
-  // Use our custom hook for form management
+  // Use our custom hook for form management - simplified call
   const {
     form,
     formKey,
     isSubmitting,
     scrollRef,
     onSubmit
-  } = useEvaluationForm(
-    currentSample,
-    loadNextSample,
-    eventId,
-    productTypeId,
-    currentJARAttributes
-  );
+  } = useEvaluationForm(eventId);
   
   // Dohvati datum događaja
   useEffect(() => {

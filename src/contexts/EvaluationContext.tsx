@@ -13,7 +13,7 @@ interface EvaluationContextType {
   currentProductType: ProductType | null;
   showSampleReveal: boolean;
   remainingProductTypes: ProductType[];
-  loadNextSample: (eventId: string, productTypeId?: string) => Promise<void>;
+  loadNextSample: (eventId: string, productTypeId?: string, forcedCompletedSampleIds?: string[]) => Promise<void>;
   loadNextProductType: (eventId: string) => Promise<boolean>;
   resetEvaluation: () => void;
   setShowSampleReveal: (show: boolean) => void;
@@ -91,7 +91,7 @@ export const EvaluationProvider: React.FC<{
     updateJARAttributes();
   }, [currentSample, eventDataCache]);
 
-  const loadNextSample = async (eventId: string, productTypeId?: string) => {
+  const loadNextSample = async (eventId: string, productTypeId?: string, forcedCompletedSampleIds?: string[]) => {
     if (!user || !user.id) {
       console.log("No user available for loading next sample");
       return;
@@ -116,9 +116,9 @@ export const EvaluationProvider: React.FC<{
 
       setLoadingMessage("Dohvaćam završene ocjene...");
       
-      // Clear cache by getting fresh completed evaluations
-      const completedSampleIds = await getCompletedEvaluationsOptimized(eventId, user.id);
-      console.log("Fresh completed sample IDs:", completedSampleIds);
+      // Use forced completed sample IDs if provided, otherwise fetch fresh data
+      const completedSampleIds = forcedCompletedSampleIds ?? await getCompletedEvaluationsOptimized(eventId, user.id);
+      console.log("Using completed sample IDs:", completedSampleIds);
       setCompletedSamples(completedSampleIds);
 
       setLoadingMessage("Tražim sljedeći uzorak...");

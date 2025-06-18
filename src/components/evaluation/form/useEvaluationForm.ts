@@ -7,75 +7,54 @@ import { useEvaluation } from "@/contexts/EvaluationContext";
 import { JARAttribute, Sample, HedonicScale, JARRating } from "@/types";
 import { FormData } from "./types";
 import { validateEvaluationForm } from "./validation/formValidation";
-import { submitEvaluation as submitEvaluationAPI, getCompletedEvaluations } from "@/services/dataService";
+import { submitEvaluation as submitEvaluationAPI } from "@/services/dataService";
 
 export function useEvaluationForm(
-  currentSample: Sample | null, 
-  loadNextSample: (eventId: string, productTypeId?: string) => Promise<void>,
-  eventId: string,
-  productTypeId?: string,
-  currentJARAttributes?: JARAttribute[]
+  eventId: string
 ) {
   const { user } = useAuth();
   const { toast } = useToast();
-  const { updateCompletedSamples } = useEvaluation();
+  const {
+    currentSample,
+    currentJARAttributes,
+    loadNextSample,
+    completedSamples, // Get current list of completed samples
+    currentProductType,
+  } = useEvaluation();
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formKey, setFormKey] = useState<number>(Date.now());
   const scrollRef = useRef<HTMLDivElement>(null);
-  
-  // Inicijalizacija obrasca kroz react-hook-form
+
   const form = useForm<FormData>({
     defaultValues: {
-      hedonic: {
-        appearance: "",
-        odor: "",
-        texture: "",
-        flavor: "",
-        overallLiking: ""
-      },
-      jar: {}
+      hedonic: { appearance: "", odor: "", texture: "", flavor: "", overallLiking: "" },
+      jar: {},
     },
-    mode: "onSubmit"
+    mode: "onSubmit",
   });
-  
-  // Reset form when current sample changes with enhanced debugging
+
   useEffect(() => {
-    console.log('=== FORM RESET TRIGGERED ===');
-    console.log('Current sample:', currentSample?.id, currentSample?.blindCode);
-    
+    console.log('FORM HOOK: Resetting form for new sample:', currentSample?.blindCode);
     form.reset({
-      hedonic: {
-        appearance: "",
-        odor: "",
-        texture: "",
-        flavor: "",
-        overallLiking: ""
-      },
-      jar: {}
+      hedonic: { appearance: "", odor: "", texture: "", flavor: "", overallLiking: "" },
+      jar: {},
     });
-    
-    // Update the form key to force re-rendering of radio inputs
     setFormKey(Date.now());
-    
-    // Scroll to top when sample changes
     if (scrollRef.current) {
-      scrollRef.current.scrollIntoView({ behavior: 'smooth' });
+      scrollRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
-    
-    console.log('Form reset completed for sample:', currentSample?.blindCode);
   }, [currentSample, form]);
 
-  // Complete onSubmit function with proper state management
   const onSubmit = async (data: FormData) => {
-    if (!user || !currentSample) return;
+    if (!user || !currentSample) {
+      toast({ title: "Greška", description: "Korisnik ili uzorak nisu dostupni.", variant: "destructive" });
+      return;
+    }
 
     const { isValid, errorFields } = validateEvaluationForm(data, form, currentJARAttributes);
     if (!isValid) {
-      toast({
-        title: "Nepotpuna ocjena",
-        description: `Molimo ispunite sva polja. Nedostaju: ${errorFields}`,
-        variant: "destructive",
-      });
+      toast({ title: "Nepotpuna ocjena", description: `Molimo ispunite sva polja. Nedostaju: ${errorFields}`, variant: "destructive" });
       return;
     }
 
@@ -87,21 +66,22 @@ export function useEvaluationForm(
         odor: parseInt(data.hedonic.odor),
         texture: parseInt(data.hedonic.texture),
         flavor: parseInt(data.hedonic.flavor),
-        overallLiking: parseInt(data.hedonic.overallLiking)
+        overallLiking: parseInt(data.hedonic.overallLiking),
       };
-  
+
       const jarRatings: JARRating = {};
       Object.entries(data.jar).forEach(([attrId, value]) => {
         if (value !== undefined && value !== '') jarRatings[attrId] = parseInt(value.toString());
       });
-  
+
+      // 1. Save evaluation to database
       await submitEvaluationAPI({
         userId: user.id,
         sampleId: currentSample.id,
         productTypeId: currentSample.productTypeId,
         eventId,
         hedonicRatings,
-        jarRatings
+        jarRatings,
       });
 
       toast({
@@ -109,28 +89,15 @@ export function useEvaluationForm(
         description: `Uspješno ste ocijenili uzorak ${currentSample.blindCode}.`,
       });
 
-      // CRITICAL FIX: Update central state with new list of completed samples
-      const refreshedEvaluations = await getCompletedEvaluations(eventId, user.id);
-      const completedIds = refreshedEvaluations.map(e => e.sampleId);
-      updateCompletedSamples(completedIds);
+      // 2. **OPTIMISTIC UPDATE**: Update local state IMMEDIATELY
+      const newCompletedIds = [...completedSamples, currentSample.id];
 
-      form.reset({ hedonic: { appearance: "", odor: "", texture: "", flavor: "", overallLiking: "" }, jar: {} });
-      setFormKey(Date.now());
-
-      // Load next sample immediately after updating state
-      await loadNextSample(eventId, currentSample.productTypeId);
-
-      if (scrollRef.current) {
-        scrollRef.current.scrollIntoView({ behavior: 'smooth' });
-      }
+      // 3. Load next sample WITH UPDATED DATA
+      await loadNextSample(eventId, currentProductType?.id, newCompletedIds);
 
     } catch (error) {
       console.error("Greška kod predaje ocjene:", error);
-      toast({
-        title: "Greška",
-        description: "Problem kod spremanja ocjene. Pokušajte ponovno.",
-        variant: "destructive",
-      });
+      toast({ title: "Greška", description: "Problem kod spremanja ocjene. Pokušajte ponovno.", variant: "destructive" });
     } finally {
       setIsSubmitting(false);
     }
@@ -141,6 +108,6 @@ export function useEvaluationForm(
     formKey,
     isSubmitting,
     scrollRef,
-    onSubmit
+    onSubmit,
   };
 }
