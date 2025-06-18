@@ -18,11 +18,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Set up auth state listener that immediately checks session state
+    setIsLoading(true);
+    
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log(`Auth state changed: ${event}`);
+      console.log(`Auth state changed: ${event}`, session);
+      
       if (session?.user) {
-        // If session exists, fetch user data from 'users' table
+        // Ako postoji sesija, dohvati podatke o korisniku iz naše 'users' tablice
         const { data: userData, error } = await supabase
           .from('users')
           .select('*')
@@ -39,19 +41,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             password: userData.password,
           });
         } else {
-          // If user doesn't exist in 'users' table, sign them out
+          // Ako korisnik ne postoji u našoj bazi ili je greška, odjavi ga
+          console.error("User data not found or error fetching, signing out.", error);
           setUser(null);
           await supabase.auth.signOut();
         }
       } else {
-        // If no session, user is not logged in
+        // Ako nema sesije, korisnik nije prijavljen
         setUser(null);
       }
-      // Critical step: Set loading to false AFTER status is checked
+      
+      // Ključno: UVIJEK postavi loading na false nakon što je provjera gotova
       setIsLoading(false);
     });
 
-    // Return cleanup function to unsubscribe from listener
     return () => {
       subscription.unsubscribe();
     };
