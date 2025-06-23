@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -17,11 +17,13 @@ export function EvaluationProgressTracker({ eventId }: EvaluationProgressTracker
   const [evaluationStatus, setEvaluationStatus] = useState<EvaluationStatus[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  
+  // Ref for debounce timer
+  const debounceTimer = useRef<NodeJS.Timeout | null>(null);
 
   const fetchEvaluationStatus = async () => {
     try {
       console.log("Fetching evaluation status for event:", eventId);
-      setIsLoading(true);
       const status = await getEvaluationsStatus(eventId);
       console.log("Evaluation status received:", status);
       setEvaluationStatus(status);
@@ -29,24 +31,24 @@ export function EvaluationProgressTracker({ eventId }: EvaluationProgressTracker
     } catch (error) {
       console.error("Error fetching evaluation status:", error);
     } finally {
-      setIsLoading(false);
+      setIsLoading(false); // Ensure loading is always turned off
     }
   };
 
   useEffect(() => {
     if (eventId) {
-      fetchEvaluationStatus();
+      fetchEvaluationStatus(); // Initial fetch
     }
   }, [eventId]);
 
-  // Set up real-time subscription for evaluation updates
+  // Set up real-time subscription with debouncing
   useEffect(() => {
     if (!eventId) return;
 
-    console.log("Setting up real-time subscription for evaluations");
+    console.log("Setting up debounced real-time subscription for evaluations");
     
     const channel = supabase
-      .channel('evaluation-updates')
+      .channel(`evaluation-progress-${eventId}`) // Unique channel per event
       .on(
         'postgres_changes',
         {
@@ -56,20 +58,33 @@ export function EvaluationProgressTracker({ eventId }: EvaluationProgressTracker
           filter: `event_id=eq.${eventId}`
         },
         (payload) => {
-          console.log('Real-time evaluation update received:', payload);
-          // Refresh the status when evaluations change
-          fetchEvaluationStatus();
+          console.log('Real-time update received:', payload);
+          
+          // DEBOUNCING LOGIC:
+          // Clear previous timer if it exists
+          if (debounceTimer.current) {
+            clearTimeout(debounceTimer.current);
+          }
+          // Set new timer. Will fetch data 2 seconds after LAST change.
+          debounceTimer.current = setTimeout(() => {
+            console.log("Debounced fetch triggered.");
+            fetchEvaluationStatus();
+          }, 2000);
         }
       )
       .subscribe();
 
     return () => {
-      console.log("Unsubscribing from real-time evaluation updates");
+      console.log("Unsubscribing from evaluation progress channel");
+      if (debounceTimer.current) {
+        clearTimeout(debounceTimer.current);
+      }
       supabase.removeChannel(channel);
     };
   }, [eventId]);
 
   const handleRefresh = () => {
+    setIsLoading(true);
     fetchEvaluationStatus();
   };
 

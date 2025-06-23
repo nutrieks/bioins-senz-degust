@@ -17,16 +17,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    setIsLoading(true);
+    // Single source of truth: listener that activates immediately and on every change
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log(`Auth state change event: ${event}`);
+      
       if (session?.user) {
-        const { data: userData } = await supabase
+        // If session exists, fetch user data from our 'users' table
+        const { data: userData, error } = await supabase
           .from('users')
           .select('*')
           .eq('id', session.user.id)
           .single();
 
-        if (userData && userData.is_active) {
+        if (userData && userData.is_active && !error) {
           setUser({
             id: userData.id,
             username: userData.username,
@@ -36,27 +39,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             password: userData.password,
           });
         } else {
-          // Ako korisnik ne postoji u 'users' tablici, nije aktivan, ili je greška, odjavi ga
+          // If user doesn't exist in our DB or is inactive, sign them out
+          console.error("User not found or inactive in DB, signing out.", error);
           setUser(null);
           await supabase.auth.signOut();
         }
       } else {
+        // If no session, user is not logged in
         setUser(null);
       }
+      // CRITICAL: Always set loading to false after check is complete
       setIsLoading(false);
     });
 
+    // Clean up listener when component is destroyed
     return () => {
       subscription.unsubscribe();
     };
   }, []);
 
-  const login = async (identifier: string, password: string): Promise<boolean> => {
+  const login = async (identifier: String, password: string): Promise<boolean> => {
     setIsLoading(true);
     try {
       console.log('=== NEW SIMPLIFIED LOGIN ATTEMPT ===');
       
-      // 1. Kreiranje emaila za Supabase autentifikaciju na temelju unosa.
+      // 1. Create email for Supabase authentication based on input.
       let email;
       const upperIdentifier = identifier.toUpperCase();
 
@@ -65,32 +72,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } else if (!isNaN(Number(identifier)) && Number(identifier) >= 1 && Number(identifier) <= 12) {
         email = `evaluator${Number(identifier)}@bioins.local`;
       } else {
-        console.error(`Neispravan format identifikatora: '${identifier}'. Prijavite se s 'ADMIN' ili brojem ocjenjivačkog mjesta (1-12).`);
+        console.error(`Invalid identifier format: '${identifier}'. Please login with 'ADMIN' or evaluator position number (1-12).`);
         setIsLoading(false);
         return false;
       }
       
-      console.log(`Pokušaj Supabase prijave s emailom: ${email}`);
+      console.log(`Attempting Supabase login with email: ${email}`);
 
-      // 2. Prijava isključivo putem Supabase Auth servisa.
-      // Ovo je brzo jer ne radi dodatne provjere ili registracije.
+      // 2. Login exclusively through Supabase Auth service.
       const { error } = await supabase.auth.signInWithPassword({
         email: email,
         password: password,
       });
 
       if (error) {
-        console.error('Supabase signInWithPassword greška:', error.message);
+        console.error('Supabase signInWithPassword error:', error.message);
         setIsLoading(false);
         return false;
       }
 
-      // Ako je prijava uspješna, onAuthStateChange listener će automatski
-      // dohvatiti korisnički profil i postaviti stanje (uključujući isLoading).
+      // If login is successful, onAuthStateChange listener will automatically
+      // fetch user profile and set state (including isLoading).
       return true;
 
     } catch (error) {
-      console.error('Login funkcija je bacila iznimku:', error);
+      console.error('Login function threw exception:', error);
       setIsLoading(false);
       return false;
     }
@@ -98,7 +104,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = async () => {
     await supabase.auth.signOut();
-    // Navigacija će se dogoditi automatski kada onAuthStateChange postavi user na null
+    // Navigation will happen automatically when onAuthStateChange sets user to null
   };
 
   return (

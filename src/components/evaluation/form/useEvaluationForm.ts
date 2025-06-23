@@ -99,7 +99,7 @@ export function useEvaluationForm(
       console.error("Greška kod predaje ocjene:", error);
       toast({ title: "Greška", description: "Problem kod spremanja ocjene. Pokušajte ponovno.", variant: "destructive" });
     } finally {
-      // UVIJEK postavi na false na kraju - ovo je ključno za stabilnost
+      // CRITICAL: Always set to false at the end - this is key for stability
       setIsSubmitting(false);
     }
   };
