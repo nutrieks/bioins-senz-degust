@@ -11,17 +11,19 @@ interface EvaluatorLayoutProps {
 }
 
 export function EvaluatorLayout({ children }: EvaluatorLayoutProps) {
-  const { user, logout } = useAuth();
+  const { user, logout, isLoading } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (user && user.role !== UserRole.EVALUATOR) {
+    if (!isLoading && !user) {
+      navigate("/");
+    } else if (user && user.role !== UserRole.EVALUATOR) {
       navigate("/");
     }
-  }, [user, navigate]);
+  }, [user, isLoading, navigate]);
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
   };
 
   return (
