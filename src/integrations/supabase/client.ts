@@ -7,9 +7,11 @@ const SUPABASE_URL = "https://tlluqspuyjxfsrzpqked.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRsbHVxc3B1eWp4ZnNyenBxa2VkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkwNDA1NzYsImV4cCI6MjA2NDYxNjU3Nn0.L6Ho2JAeiefbs1x2k-gUGR9rWk0qjUFpDxjd1uDHM5k";
 
 // Konfiguracija klijenta sada koristi zadane, pouzdanije postavke (localStorage)
+// i ne traži ručno brisanje.
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
     autoRefreshToken: true,
-    detectSessionInUrl: true
+    persistSession: true, // Eksplicitno postavljeno na true
+    detectSessionInUrl: true,
   }
 });

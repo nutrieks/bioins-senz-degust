@@ -22,7 +22,6 @@ export function EvaluatorLayout({ children }: EvaluatorLayoutProps) {
 
   const handleLogout = () => {
     logout();
-    navigate("/");
   };
 
   return (

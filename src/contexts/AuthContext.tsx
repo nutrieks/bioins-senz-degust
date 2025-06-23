@@ -2,7 +2,6 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User, UserRole } from "../types";
-import { logout as logoutService } from '@/services/supabase/auth';
 
 interface AuthContextType {
   user: User | null;
@@ -19,19 +18,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     setIsLoading(true);
-    
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log(`Auth state changed: ${event}`, session);
-      
       if (session?.user) {
-        // Ako postoji sesija, dohvati podatke o korisniku iz naše 'users' tablice
-        const { data: userData, error } = await supabase
+        const { data: userData } = await supabase
           .from('users')
           .select('*')
           .eq('id', session.user.id)
           .single();
 
-        if (userData && !error) {
+        if (userData && userData.is_active) {
           setUser({
             id: userData.id,
             username: userData.username,
@@ -41,17 +36,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             password: userData.password,
           });
         } else {
-          // Ako korisnik ne postoji u našoj bazi ili je greška, odjavi ga
-          console.error("User data not found or error fetching, signing out.", error);
+          // Ako korisnik ne postoji u 'users' tablici, nije aktivan, ili je greška, odjavi ga
           setUser(null);
           await supabase.auth.signOut();
         }
       } else {
-        // Ako nema sesije, korisnik nije prijavljen
         setUser(null);
       }
-      
-      // Ključno: UVIJEK postavi loading na false nakon što je provjera gotova
       setIsLoading(false);
     });
 
@@ -106,9 +97,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = async () => {
-    console.log('=== LOGOUT with Supabase Auth ===');
-    await logoutService();
-    setUser(null);
+    await supabase.auth.signOut();
+    // Navigacija će se dogoditi automatski kada onAuthStateChange postavi user na null
   };
 
   return (
