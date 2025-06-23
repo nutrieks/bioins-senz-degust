@@ -1,12 +1,15 @@
-import React, { useState, useEffect } from "react";
+
+import React from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Plus, ArrowLeft } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { EventInfoCard } from "@/components/admin/event/EventInfoCard";
 import { ProductTypesTab } from "@/components/admin/event/ProductTypesTab";
 import { RandomizationTab } from "@/components/admin/event/RandomizationTab";
 import { ReportsTab } from "@/components/admin/event/ReportsTab";
+import { AdminLayout } from "@/components/layout/AdminLayout";
 import {
   getEvent,
   updateEventStatus,
@@ -23,49 +26,101 @@ export default function EventDetail() {
   const { eventId } = useParams<{ eventId: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-  const [event, setEvent] = useState<Event | null>(null);
-  const [productTypes, setProductTypes] = useState<ProductType[]>([]);
-  const [isUpdating, setIsUpdating] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [generatingRandomization, setGeneratingRandomization] = useState<{
-    [productTypeId: string]: boolean;
-  }>({});
+  const { data: event, isLoading: isLoadingEvent } = useQuery({
+    queryKey: ['event', eventId],
+    queryFn: () => getEvent(eventId!),
+    enabled: !!eventId,
+  });
 
-  useEffect(() => {
-    if (eventId) {
-      refreshEventData();
-    }
-  }, [eventId]);
+  const { data: productTypes = [], isLoading: isLoadingProductTypes } = useQuery({
+    queryKey: ['productTypes', eventId],
+    queryFn: async () => {
+      const types = await getProductTypes(eventId!);
+      // Update hasRandomization flag for each product type
+      const updatedProductTypes = await Promise.all(
+        types.map(async (pt) => {
+          const randomizationData = await getRandomization(pt.id);
+          return {
+            ...pt,
+            hasRandomization: !!randomizationData
+          };
+        })
+      );
+      return updatedProductTypes;
+    },
+    enabled: !!eventId,
+  });
 
-  const refreshEventData = async () => {
-    if (!eventId) return;
-    
-    console.log('Refreshing event data...');
-    try {
-      const eventData = await getEvent(eventId);
-      const productTypesData = await getProductTypes(eventId);
-      
-      if (eventData && productTypesData) {
-        // Update hasRandomization flag for each product type
-        const updatedProductTypes = await Promise.all(
-          productTypesData.map(async (pt) => {
-            const randomizationData = await getRandomization(pt.id);
-            return {
-              ...pt,
-              hasRandomization: !!randomizationData
-            };
-          })
-        );
-        
-        setEvent({ ...eventData, productTypes: updatedProductTypes });
-        setProductTypes(updatedProductTypes);
-        console.log('Event data refreshed successfully');
+  const updateStatusMutation = useMutation({
+    mutationFn: ({ eventId, status }: { eventId: string; status: EventStatus }) => 
+      updateEventStatus(eventId, status),
+    onSuccess: (success, { status }) => {
+      if (success) {
+        toast({
+          title: "Uspjeh",
+          description: `Status događaja promijenjen u ${getStatusLabel(status)}.`,
+        });
+        queryClient.invalidateQueries({ queryKey: ['event', eventId] });
+        queryClient.invalidateQueries({ queryKey: ['events'] });
+      } else {
+        throw new Error("Failed to update event status");
       }
-    } catch (error) {
-      console.error('Error refreshing event data:', error);
-    }
-  };
+    },
+    onError: (error) => {
+      console.error("Error updating event status:", error);
+      toast({
+        title: "Greška",
+        description: "Došlo je do pogreške prilikom ažuriranja statusa događaja.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteEventMutation = useMutation({
+    mutationFn: deleteEventAPI,
+    onSuccess: (success) => {
+      if (success) {
+        toast({
+          title: "Uspjeh",
+          description: "Događaj je uspješno obrisan.",
+        });
+        navigate("/admin/events");
+      } else {
+        throw new Error("Failed to delete event");
+      }
+    },
+    onError: (error) => {
+      console.error("Error deleting event:", error);
+      toast({
+        title: "Greška",
+        description: "Došlo je do pogreške prilikom brisanja događaja.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const generateRandomizationMutation = useMutation({
+    mutationFn: createRandomization,
+    onSuccess: () => {
+      toast({
+        title: "Uspjeh",
+        description: "Randomizacija je uspješno generirana.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['productTypes', eventId] });
+    },
+    onError: (error) => {
+      console.error('Error generating randomization:', error);
+      toast({
+        title: "Greška",
+        description: "Došlo je do pogreške prilikom generiranja randomizacije.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const isLoading = isLoadingEvent || isLoadingProductTypes;
 
   const handleUpdateStatus = async (status: EventStatus) => {
     if (!eventId) return;
@@ -85,86 +140,21 @@ export default function EventDetail() {
       }
     }
 
-    setIsUpdating(true);
-    try {
-      const success = await updateEventStatus(eventId, status);
-      if (success) {
-        toast({
-          title: "Uspjeh",
-          description: `Status događaja promijenjen u ${getStatusLabel(status)}.`,
-        });
-        await refreshEventData();
-      } else {
-        throw new Error("Failed to update event status");
-      }
-    } catch (error) {
-      console.error("Error updating event status:", error);
-      toast({
-        title: "Greška",
-        description: "Došlo je do pogreške prilikom ažuriranja statusa događaja.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsUpdating(false);
-    }
+    updateStatusMutation.mutate({ eventId, status });
   };
 
   const handleDeleteEvent = async () => {
     if (!eventId) return;
-
-    setIsDeleting(true);
-    try {
-      const success = await deleteEventAPI(eventId);
-      if (success) {
-        toast({
-          title: "Uspjeh",
-          description: "Događaj je uspješno obrisan.",
-        });
-        navigate("/admin/events");
-      } else {
-        throw new Error("Failed to delete event");
-      }
-    } catch (error) {
-      console.error("Error deleting event:", error);
-      toast({
-        title: "Greška",
-        description: "Došlo je do pogreške prilikom brisanja događaja.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsDeleting(false);
-    }
+    deleteEventMutation.mutate(eventId);
   };
 
   const handleGenerateRandomization = async (productTypeId: string) => {
-    try {
-      setGeneratingRandomization(prev => ({ ...prev, [productTypeId]: true }));
-      
-      console.log('Generating randomization for product type:', productTypeId);
-      const result = await createRandomization(productTypeId);
-      
-      if (result) {
-        console.log('Randomization generated successfully');
-        toast({
-          title: "Uspjeh",
-          description: "Randomizacija je uspješno generirana.",
-        });
-        
-        // Refresh data to update hasRandomization flags
-        await refreshEventData();
-      } else {
-        throw new Error('Failed to generate randomization');
-      }
-    } catch (error) {
-      console.error('Error generating randomization:', error);
-      toast({
-        title: "Greška",
-        description: "Došlo je do pogreške prilikom generiranja randomizacije.",
-        variant: "destructive",
-      });
-    } finally {
-      setGeneratingRandomization(prev => ({ ...prev, [productTypeId]: false }));
-    }
+    generateRandomizationMutation.mutate(productTypeId);
+  };
+
+  const refreshEventData = () => {
+    queryClient.invalidateQueries({ queryKey: ['event', eventId] });
+    queryClient.invalidateQueries({ queryKey: ['productTypes', eventId] });
   };
 
   const getStatusLabel = (status: EventStatus) => {
@@ -182,58 +172,80 @@ export default function EventDetail() {
     }
   };
 
-  if (!event) {
-    return <div>Učitavanje...</div>;
+  if (isLoading) {
+    return (
+      <AdminLayout>
+        <div className="text-center p-8">Učitavanje...</div>
+      </AdminLayout>
+    );
   }
 
+  if (!event) {
+    return (
+      <AdminLayout>
+        <div className="text-center p-8">
+          <p>Događaj nije pronađen.</p>
+          <Button onClick={() => navigate("/admin/events")} className="mt-4">
+            Povratak na listu događaja
+          </Button>
+        </div>
+      </AdminLayout>
+    );
+  }
+
+  // Create event with productTypes for compatibility
+  const eventWithProductTypes = { ...event, productTypes };
+
   return (
-    <div className="container mx-auto py-10">
-      <div className="mb-6">
-        <Button variant="ghost" onClick={() => navigate("/admin/events")}>
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Povratak na listu događaja
-        </Button>
-      </div>
+    <AdminLayout>
+      <div className="container mx-auto py-10">
+        <div className="mb-6">
+          <Button variant="ghost" onClick={() => navigate("/admin/events")}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Povratak na listu događaja
+          </Button>
+        </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <EventInfoCard
-          event={event}
-          isUpdating={isUpdating}
-          onUpdateStatus={handleUpdateStatus}
-          onDeleteEvent={handleDeleteEvent}
-          formatDate={formatDate}
-          getStatusLabel={getStatusLabel}
-        />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <EventInfoCard
+            event={eventWithProductTypes}
+            isUpdating={updateStatusMutation.isPending}
+            onUpdateStatus={handleUpdateStatus}
+            onDeleteEvent={handleDeleteEvent}
+            formatDate={formatDate}
+            getStatusLabel={getStatusLabel}
+          />
+        </div>
 
-        {/* Action card or additional info can go here */}
+        <div className="mt-12">
+          <Tabs defaultValue="productTypes" className="w-full">
+            <TabsList>
+              <TabsTrigger value="productTypes">Tipovi proizvoda</TabsTrigger>
+              <TabsTrigger value="randomization">Randomizacija</TabsTrigger>
+              <TabsTrigger value="reports">Izvještaji</TabsTrigger>
+            </TabsList>
+            <TabsContent value="productTypes">
+              <ProductTypesTab 
+                productTypes={productTypes} 
+                refreshEventData={refreshEventData}
+                eventId={eventId}
+              />
+            </TabsContent>
+            <TabsContent value="randomization">
+              <RandomizationTab
+                productTypes={productTypes}
+                generatingRandomization={generateRandomizationMutation.isPending ? 
+                  { [generateRandomizationMutation.variables || '']: true } : {}
+                }
+                onGenerateRandomization={handleGenerateRandomization}
+              />
+            </TabsContent>
+            <TabsContent value="reports">
+              <ReportsTab eventId={eventId} />
+            </TabsContent>
+          </Tabs>
+        </div>
       </div>
-
-      <div className="mt-12">
-        <Tabs defaultValue="productTypes" className="w-full">
-          <TabsList>
-            <TabsTrigger value="productTypes">Tipovi proizvoda</TabsTrigger>
-            <TabsTrigger value="randomization">Randomizacija</TabsTrigger>
-            <TabsTrigger value="reports">Izvještaji</TabsTrigger>
-          </TabsList>
-          <TabsContent value="productTypes">
-            <ProductTypesTab 
-              productTypes={event.productTypes} 
-              refreshEventData={refreshEventData}
-              eventId={eventId}
-            />
-          </TabsContent>
-          <TabsContent value="randomization">
-            <RandomizationTab
-              productTypes={productTypes}
-              generatingRandomization={generatingRandomization}
-              onGenerateRandomization={handleGenerateRandomization}
-            />
-          </TabsContent>
-          <TabsContent value="reports">
-            <ReportsTab eventId={eventId} />
-          </TabsContent>
-        </Tabs>
-      </div>
-    </div>
+    </AdminLayout>
   );
 }

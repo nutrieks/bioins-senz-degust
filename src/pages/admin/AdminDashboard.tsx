@@ -1,44 +1,52 @@
 
-import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { getEvents, deleteEvent } from "@/services/dataService";
 import { Event, EventStatus } from "@/types";
 import { EventCard } from "@/components/admin/EventCard";
-import { Calendar, PlusCircle } from "lucide-react";
+import { PlusCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 export default function AdminDashboard() {
-  const [events, setEvents] = useState<Event[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-  const fetchEvents = async () => {
-    try {
-      setIsLoading(true);
-      const eventsData = await getEvents();
-      // Sort by date descending
-      eventsData.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-      setEvents(eventsData);
-    } catch (error) {
-      console.error("Error fetching events:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const { data: events = [], isLoading } = useQuery({
+    queryKey: ['events'],
+    queryFn: getEvents,
+  });
 
-  useEffect(() => {
-    fetchEvents();
-  }, []);
+  const deleteEventMutation = useMutation({
+    mutationFn: deleteEvent,
+    onSuccess: () => {
+      toast({
+        title: "Uspješno",
+        description: "Događaj je uspješno obrisan.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+    },
+    onError: (error) => {
+      console.error('Error deleting event:', error);
+      toast({
+        title: "Greška",
+        description: "Došlo je do greške prilikom brisanja događaja.",
+        variant: "destructive",
+      });
+    },
+  });
 
-  const activeEvents = events.filter(
+  // Sort events by date descending
+  const sortedEvents = [...events].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+  const activeEvents = sortedEvents.filter(
     (event) => event.status === EventStatus.ACTIVE || event.status === EventStatus.PREPARATION
   );
   
-  const pastEvents = events.filter(
+  const pastEvents = sortedEvents.filter(
     (event) => event.status === EventStatus.COMPLETED || event.status === EventStatus.ARCHIVED
   );
 
@@ -46,33 +54,12 @@ export default function AdminDashboard() {
     navigate("/admin/events/new");
   };
 
-  // Handle event updates by refreshing the events list
   const handleEventUpdated = () => {
-    fetchEvents();
+    queryClient.invalidateQueries({ queryKey: ['events'] });
   };
 
   const handleDeleteEvent = async (eventId: string) => {
-    try {
-      console.log('AdminDashboard - Deleting event:', eventId);
-      const success = await deleteEvent(eventId);
-      
-      if (success) {
-        toast({
-          title: "Uspješno",
-          description: "Događaj je uspješno obrisan.",
-        });
-        fetchEvents(); // Refresh the events list
-      } else {
-        throw new Error('Failed to delete event');
-      }
-    } catch (error) {
-      console.error('AdminDashboard - Error deleting event:', error);
-      toast({
-        title: "Greška",
-        description: "Došlo je do greške prilikom brisanja događaja.",
-        variant: "destructive",
-      });
-    }
+    deleteEventMutation.mutate(eventId);
   };
 
   return (
