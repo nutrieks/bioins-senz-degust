@@ -10,7 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 interface RandomizationTabProps {
   productTypes: ProductType[];
   generatingRandomization: { [productTypeId: string]: boolean };
-  onGenerateRandomization: (productTypeId: string) => void;
+  onGenerateRandomization: (productTypeId: string) => Promise<void>;
 }
 
 export function RandomizationTab({
@@ -23,7 +23,7 @@ export function RandomizationTab({
   const [isLoadingRandomization, setIsLoadingRandomization] = useState(false);
   const { toast } = useToast();
 
-  const handleViewRandomization = async (productType: ProductType) => {
+  const handleViewRandomization = async (productType: ProductType): Promise<void> => {
     setIsLoadingRandomization(true);
     try {
       console.log('Fetching randomization for product type:', productType.id);

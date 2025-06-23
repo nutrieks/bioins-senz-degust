@@ -143,18 +143,18 @@ export default function EventDetail() {
     updateStatusMutation.mutate({ eventId, status });
   };
 
-  const handleDeleteEvent = async () => {
+  const handleDeleteEvent = async (): Promise<void> => {
     if (!eventId) return;
     deleteEventMutation.mutate(eventId);
   };
 
-  const handleGenerateRandomization = async (productTypeId: string) => {
+  const handleGenerateRandomization = async (productTypeId: string): Promise<void> => {
     generateRandomizationMutation.mutate(productTypeId);
   };
 
-  const refreshEventData = () => {
-    queryClient.invalidateQueries({ queryKey: ['event', eventId] });
-    queryClient.invalidateQueries({ queryKey: ['productTypes', eventId] });
+  const refreshEventData = async (): Promise<void> => {
+    await queryClient.invalidateQueries({ queryKey: ['event', eventId] });
+    await queryClient.invalidateQueries({ queryKey: ['productTypes', eventId] });
   };
 
   const getStatusLabel = (status: EventStatus) => {

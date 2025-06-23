@@ -233,7 +233,7 @@ export function ProductTypesTab({
     setShowAddProductForm(false);
   };
 
-  const handleEditProductType = async (productTypeId: string, customerCode: string, baseCode: string) => {
+  const handleEditProductType = async (productTypeId: string, customerCode: string, baseCode: string): Promise<void> => {
     // This would require implementing edit functionality in the backend
     console.log('Edit product type:', productTypeId, customerCode, baseCode);
     toast({
@@ -242,7 +242,7 @@ export function ProductTypesTab({
     });
   };
 
-  const handleDeleteProductType = async (productTypeId: string) => {
+  const handleDeleteProductType = async (productTypeId: string): Promise<void> => {
     // This would require implementing delete functionality in the backend
     console.log('Delete product type:', productTypeId);
     toast({

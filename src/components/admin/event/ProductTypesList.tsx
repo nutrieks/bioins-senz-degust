@@ -20,8 +20,8 @@ import {
 interface ProductTypesListProps {
   productTypes: ProductType[];
   onRefresh: () => Promise<void>;
-  onEditProductType?: (productTypeId: string, customerCode: string, baseCode: string) => void;
-  onDeleteProductType?: (productTypeId: string) => void;
+  onEditProductType?: (productTypeId: string, customerCode: string, baseCode: string) => Promise<void>;
+  onDeleteProductType?: (productTypeId: string) => Promise<void>;
 }
 
 export function ProductTypesList({
@@ -46,9 +46,9 @@ export function ProductTypesList({
     setEditBaseCode("");
   };
 
-  const handleSaveEdit = () => {
+  const handleSaveEdit = async () => {
     if (editingId && onEditProductType) {
-      onEditProductType(editingId, editCustomerCode, editBaseCode);
+      await onEditProductType(editingId, editCustomerCode, editBaseCode);
       setEditingId(null);
       setEditCustomerCode("");
       setEditBaseCode("");
