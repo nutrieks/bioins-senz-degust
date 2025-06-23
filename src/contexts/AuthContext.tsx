@@ -8,6 +8,7 @@ interface AuthContextType {
   login: (identifier: string, password: string) => Promise<boolean>;
   logout: () => void;
   isLoading: boolean;
+  authError: string | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -15,41 +16,55 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [authError, setAuthError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Single source of truth: listener that activates immediately and on every change
+    setAuthError(null);
+    setIsLoading(true);
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log(`Auth state change event: ${event}`);
       
-      if (session?.user) {
-        // If session exists, fetch user data from our 'users' table
-        const { data: userData, error } = await supabase
-          .from('users')
-          .select('*')
-          .eq('id', session.user.id)
-          .single();
+      try {
+        if (session?.user) {
+          // If session exists, fetch user data from our 'users' table
+          const { data: userData, error } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
 
-        if (userData && userData.is_active && !error) {
-          setUser({
-            id: userData.id,
-            username: userData.username,
-            role: userData.role as UserRole,
-            evaluatorPosition: userData.evaluator_position || undefined,
-            isActive: userData.is_active,
-            password: userData.password,
-          });
+          if (error) {
+            throw new Error("Korisnik nije pronađen u bazi podataka");
+          }
+
+          if (userData && userData.is_active) {
+            setUser({
+              id: userData.id,
+              username: userData.username,
+              role: userData.role as UserRole,
+              evaluatorPosition: userData.evaluator_position || undefined,
+              isActive: userData.is_active,
+              password: userData.password,
+            });
+          } else {
+            // If user doesn't exist in our DB or is inactive, sign them out
+            console.error("User not found or inactive in DB, signing out.");
+            setUser(null);
+            await supabase.auth.signOut();
+          }
         } else {
-          // If user doesn't exist in our DB or is inactive, sign them out
-          console.error("User not found or inactive in DB, signing out.", error);
+          // If no session, user is not logged in
           setUser(null);
-          await supabase.auth.signOut();
         }
-      } else {
-        // If no session, user is not logged in
+      } catch (error) {
+        console.error("Auth state change error:", error);
+        setAuthError(error instanceof Error ? error.message : "Nepoznata greška pri provjeri sesije");
         setUser(null);
+      } finally {
+        // CRITICAL: Always set loading to false after check is complete
+        setIsLoading(false);
       }
-      // CRITICAL: Always set loading to false after check is complete
-      setIsLoading(false);
     });
 
     // Clean up listener when component is destroyed
@@ -60,6 +75,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async (identifier: String, password: string): Promise<boolean> => {
     setIsLoading(true);
+    setAuthError(null);
+    
     try {
       console.log('=== NEW SIMPLIFIED LOGIN ATTEMPT ===');
       
@@ -73,6 +90,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         email = `evaluator${Number(identifier)}@bioins.local`;
       } else {
         console.error(`Invalid identifier format: '${identifier}'. Please login with 'ADMIN' or evaluator position number (1-12).`);
+        setAuthError("Nevažeći format identifikatora. Koristite 'ADMIN' ili broj pozicije evaluatora (1-12).");
         setIsLoading(false);
         return false;
       }
@@ -87,6 +105,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (error) {
         console.error('Supabase signInWithPassword error:', error.message);
+        setAuthError("Pogrešno korisničko ime ili lozinka");
         setIsLoading(false);
         return false;
       }
@@ -97,18 +116,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     } catch (error) {
       console.error('Login function threw exception:', error);
+      setAuthError(error instanceof Error ? error.message : "Došlo je do greške pri prijavi");
       setIsLoading(false);
       return false;
     }
   };
 
   const logout = async () => {
-    await supabase.auth.signOut();
+    setIsLoading(true);
+    try {
+      await supabase.auth.signOut();
+      setUser(null);
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      setIsLoading(false);
+    }
     // Navigation will happen automatically when onAuthStateChange sets user to null
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, isLoading }}>
+    <AuthContext.Provider value={{ user, login, logout, isLoading, authError }}>
       {children}
     </AuthContext.Provider>
   );

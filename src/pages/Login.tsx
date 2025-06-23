@@ -4,9 +4,10 @@ import { useNavigate } from "react-router-dom";
 import { LoginForm } from "@/components/login/LoginForm";
 import { useAuth } from "@/contexts/AuthContext";
 import { UserRole } from "@/types";
+import { Button } from "@/components/ui/button";
 
 export default function Login() {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, authError } = useAuth();
   const navigate = useNavigate();
   const [showTimeout, setShowTimeout] = useState(false);
 
@@ -41,24 +42,34 @@ export default function Login() {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center space-y-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="text-lg">Učitavanje...</p>
-          
-          {showTimeout && (
-            <div className="space-y-2 mt-4">
-              <p className="text-sm text-yellow-600">
-                Učitavanje traje duže nego obično...
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Molimo pričekajte ili osvježite stranicu ako se problem nastavi.
-              </p>
-              <button 
-                onClick={() => window.location.reload()} 
-                className="text-sm text-blue-600 hover:underline"
-              >
-                Osvježite stranicu
-              </button>
-            </div>
+          {authError ? (
+            <>
+              <h2 className="text-xl text-destructive">Greška pri Učitavanju</h2>
+              <p className="text-muted-foreground">{authError}</p>
+              <Button onClick={() => window.location.reload()}>Pokušaj ponovo</Button>
+            </>
+          ) : (
+            <>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+              <p className="text-lg">Učitavanje...</p>
+              
+              {showTimeout && (
+                <div className="space-y-2 mt-4">
+                  <p className="text-sm text-yellow-600">
+                    Učitavanje traje duže nego obično...
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Molimo pričekajte ili osvježite stranicu ako se problem nastavi.
+                  </p>
+                  <button 
+                    onClick={() => window.location.reload()} 
+                    className="text-sm text-blue-600 hover:underline"
+                  >
+                    Osvježite stranicu
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
