@@ -159,8 +159,8 @@ export default function EventDetail() {
     );
   }
 
-  // Handler functions using mutations
-  const handleUpdateStatus = (status: EventStatus) => {
+  // Handler functions using mutations - NOW WITH ASYNC
+  const handleUpdateStatus = async (status: EventStatus) => {
     if (!eventId) return;
 
     if (status === EventStatus.ACTIVE) {
@@ -180,12 +180,12 @@ export default function EventDetail() {
     updateStatusMutation.mutate(status);
   };
 
-  const handleDeleteEvent = (): void => {
+  const handleDeleteEvent = async (): Promise<void> => {
     if (!eventId) return;
     deleteEventMutation.mutate();
   };
 
-  const handleGenerateRandomization = (productTypeId: string): void => {
+  const handleGenerateRandomization = async (productTypeId: string): Promise<void> => {
     generateRandomizationMutation.mutate(productTypeId);
   };
 
