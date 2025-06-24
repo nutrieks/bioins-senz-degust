@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Plus, Edit, Trash2 } from "lucide-react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
@@ -18,35 +19,69 @@ import { BaseProductType } from "@/types";
 import { getAllProductTypes, deleteProductType } from "@/services/dataService";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 export default function ProductsPage() {
-  const [productTypes, setProductTypes] = useState<BaseProductType[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState<BaseProductType | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    fetchProductTypes();
-  }, []);
+  const { data: productTypes = [], isLoading, isError, error } = useQuery({
+    queryKey: ['productTypes'],
+    queryFn: getAllProductTypes,
+    staleTime: 1000 * 60 * 5,
+    retry: 3,
+    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
+  });
 
-  const fetchProductTypes = async () => {
-    try {
-      setIsLoading(true);
-      const types = await getAllProductTypes();
-      setProductTypes(types);
-    } catch (error) {
-      console.error("Error fetching product types:", error);
+  const deleteProductTypeMutation = useMutation({
+    mutationFn: deleteProductType,
+    onSuccess: () => {
+      toast({
+        title: "Uspješno",
+        description: `Tip proizvoda "${productToDelete?.productName}" je izbrisan.`,
+      });
+      queryClient.invalidateQueries({ queryKey: ['productTypes'] });
+      setProductToDelete(null);
+      setDeleteDialogOpen(false);
+    },
+    onError: (error: Error) => {
+      console.error("Error deleting product type:", error);
       toast({
         title: "Greška",
-        description: "Došlo je do pogreške prilikom dohvaćanja tipova proizvoda.",
+        description: "Došlo je do pogreške prilikom brisanja tipa proizvoda.",
         variant: "destructive",
       });
-    } finally {
-      setIsLoading(false);
-    }
-  };
+      setProductToDelete(null);
+      setDeleteDialogOpen(false);
+    },
+  });
+
+  // Error handling
+  if (isError) {
+    return (
+      <AdminLayout>
+        <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
+          <div className="text-center">
+            <h2 className="text-xl font-semibold text-red-600 mb-4">
+              Greška pri dohvaćanju tipova proizvoda
+            </h2>
+            <p className="text-muted-foreground mb-4">
+              {error?.message || 'Nepoznata greška'}
+            </p>
+            <Button 
+              onClick={() => queryClient.invalidateQueries({ queryKey: ['productTypes'] })}
+              variant="outline"
+            >
+              Pokušaj ponovno
+            </Button>
+          </div>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   const handleAddNewType = () => {
     navigate("/admin/products/new");
@@ -63,25 +98,7 @@ export default function ProductsPage() {
 
   const confirmDelete = async () => {
     if (!productToDelete) return;
-    
-    try {
-      await deleteProductType(productToDelete.id);
-      toast({
-        title: "Uspješno",
-        description: `Tip proizvoda "${productToDelete.productName}" je izbrisan.`,
-      });
-      await fetchProductTypes();
-    } catch (error) {
-      console.error("Error deleting product type:", error);
-      toast({
-        title: "Greška",
-        description: "Došlo je do pogreške prilikom brisanja tipa proizvoda.",
-        variant: "destructive",
-      });
-    } finally {
-      setProductToDelete(null);
-      setDeleteDialogOpen(false);
-    }
+    deleteProductTypeMutation.mutate(productToDelete.id);
   };
 
   const cancelDelete = () => {
@@ -112,7 +129,10 @@ export default function ProductsPage() {
           </CardHeader>
           <CardContent>
             {isLoading ? (
-              <div className="text-center p-4">Učitavanje...</div>
+              <div className="flex justify-center items-center p-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                <span className="ml-2">Učitavanje...</span>
+              </div>
             ) : productTypes.length > 0 ? (
               <Table>
                 <TableHeader>
@@ -141,6 +161,7 @@ export default function ProductsPage() {
                             variant="outline" 
                             size="sm"
                             onClick={() => handleDeleteClick(productType)}
+                            disabled={deleteProductTypeMutation.isPending}
                           >
                             <Trash2 className="h-4 w-4 mr-1" />
                             Obriši
@@ -183,9 +204,10 @@ export default function ProductsPage() {
             <AlertDialogCancel onClick={cancelDelete}>Odustani</AlertDialogCancel>
             <AlertDialogAction 
               onClick={confirmDelete}
+              disabled={deleteProductTypeMutation.isPending}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Izbriši
+              {deleteProductTypeMutation.isPending ? "Brisanje..." : "Izbriši"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

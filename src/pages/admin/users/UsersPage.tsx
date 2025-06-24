@@ -12,16 +12,16 @@ import { PublicSyncButton } from "@/components/admin/users/PublicSyncButton";
 import { getUsers } from "@/services/dataService";
 import { User, UserRole } from "@/types";
 import { Key, Users } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 export default function UsersPage() {
-  const [users, setUsers] = useState<User[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+  const queryClient = useQueryClient();
 
-  const fetchUsers = async () => {
-    try {
-      setIsLoading(true);
+  const { data: users = [], isLoading, isError, error } = useQuery({
+    queryKey: ['users'],
+    queryFn: async () => {
       const usersData = await getUsers();
       // Sort: Admin first, then evaluators by position
       usersData.sort((a, b) => {
@@ -32,17 +32,36 @@ export default function UsersPage() {
         }
         return 0;
       });
-      setUsers(usersData);
-    } catch (error) {
-      console.error("Error fetching users:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+      return usersData;
+    },
+    staleTime: 1000 * 60 * 2,
+    retry: 3,
+    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
+  });
 
-  useEffect(() => {
-    fetchUsers();
-  }, []);
+  // Error handling
+  if (isError) {
+    return (
+      <AdminLayout>
+        <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
+          <div className="text-center">
+            <h2 className="text-xl font-semibold text-red-600 mb-4">
+              Greška pri dohvaćanju korisnika
+            </h2>
+            <p className="text-muted-foreground mb-4">
+              {error?.message || 'Nepoznata greška'}
+            </p>
+            <Button 
+              onClick={() => queryClient.invalidateQueries({ queryKey: ['users'] })}
+              variant="outline"
+            >
+              Pokušaj ponovno
+            </Button>
+          </div>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   const handleChangePassword = (user: User) => {
     setSelectedUser(user);
@@ -50,11 +69,11 @@ export default function UsersPage() {
   };
 
   const handlePasswordChanged = () => {
-    fetchUsers(); // Refresh users list
+    queryClient.invalidateQueries({ queryKey: ['users'] });
   };
 
   const handleStatusChanged = () => {
-    fetchUsers(); // Refresh users list
+    queryClient.invalidateQueries({ queryKey: ['users'] });
   };
 
   const getUserDisplayName = (user: User) => {
@@ -112,7 +131,10 @@ export default function UsersPage() {
           </CardHeader>
           <CardContent>
             {isLoading ? (
-              <div className="text-center p-4">Učitavanje...</div>
+              <div className="flex justify-center items-center p-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                <span className="ml-2">Učitavanje...</span>
+              </div>
             ) : (
               <Table>
                 <TableHeader>

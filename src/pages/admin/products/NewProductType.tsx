@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AdminLayout } from "@/components/layout/AdminLayout";
@@ -17,11 +18,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft } from "lucide-react";
 import { createBaseProductType } from "@/services/dataService";
 import { JARAttribute } from "@/types";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 export default function NewProductType() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const queryClient = useQueryClient();
   const [productName, setProductName] = useState("");
   
   // Default JAR attributes with predefined values for "Just About Right" (3rd position)
@@ -59,6 +61,28 @@ export default function NewProductType() {
       scaleEN: ["", "", "Just About Right", "", ""] as [string, string, string, string, string]
     }
   ]);
+
+  const createProductTypeMutation = useMutation({
+    mutationFn: ({ productName, validAttributes }: { productName: string; validAttributes: JARAttribute[] }) => 
+      createBaseProductType(productName, validAttributes),
+    onSuccess: (result) => {
+      console.log('Created base product type:', result);
+      toast({
+        title: "Uspješno",
+        description: `Tip proizvoda "${productName}" je uspješno dodan u bazu.`,
+      });
+      queryClient.invalidateQueries({ queryKey: ['productTypes'] });
+      navigate("/admin/products");
+    },
+    onError: (error: Error) => {
+      console.error("Error creating product type:", error);
+      toast({
+        title: "Greška",
+        description: `Došlo je do pogreške prilikom spremanja tipa proizvoda: ${error.message}`,
+        variant: "destructive",
+      });
+    },
+  });
 
   const handleJARAttributeChange = (attrIndex: number, field: keyof JARAttribute, value: string) => {
     setJarAttributes(prev => {
@@ -162,29 +186,7 @@ export default function NewProductType() {
     }
 
     console.log('Submitting with valid attributes:', validAttributes.length);
-    
-    setIsSubmitting(true);
-    try {
-      // Create the product type in the database
-      const result = await createBaseProductType(productName, validAttributes);
-      console.log('Created base product type:', result);
-      
-      toast({
-        title: "Uspješno",
-        description: `Tip proizvoda "${productName}" je uspješno dodan u bazu s ${validAttributes.length} JAR atributa.`,
-      });
-      
-      navigate("/admin/products");
-    } catch (error) {
-      console.error("Error creating product type:", error);
-      toast({
-        title: "Greška",
-        description: `Došlo je do pogreške prilikom spremanja tipa proizvoda: ${error instanceof Error ? error.message : 'Nepoznata greška'}`,
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
+    createProductTypeMutation.mutate({ productName, validAttributes });
   };
 
   return (
@@ -216,7 +218,7 @@ export default function NewProductType() {
                     placeholder="npr. Buđola, Sir, Čokolada..."
                     required
                     className="max-w-md"
-                    disabled={isSubmitting}
+                    disabled={createProductTypeMutation.isPending}
                   />
                 </div>
               </div>
@@ -255,7 +257,7 @@ export default function NewProductType() {
                               onChange={(e) => handleJARAttributeChange(attrIndex, "nameHR", e.target.value)}
                               placeholder="npr. Slanoća"
                               required
-                              disabled={isSubmitting}
+                              disabled={createProductTypeMutation.isPending}
                             />
                           </div>
                           <div className="space-y-2">
@@ -266,7 +268,7 @@ export default function NewProductType() {
                               onChange={(e) => handleJARAttributeChange(attrIndex, "nameEN", e.target.value)}
                               placeholder="npr. Saltiness"
                               required
-                              disabled={isSubmitting}
+                              disabled={createProductTypeMutation.isPending}
                             />
                           </div>
                         </div>
@@ -282,7 +284,7 @@ export default function NewProductType() {
                                   onChange={(e) => handleScaleChange(attrIndex, "scaleHR", valueIndex, e.target.value)}
                                   placeholder={valueIndex === 2 ? "Baš kako treba" : ""}
                                   required
-                                  disabled={valueIndex === 2 || isSubmitting} // Disable the middle value
+                                  disabled={valueIndex === 2 || createProductTypeMutation.isPending}
                                   className={valueIndex === 2 ? "bg-muted" : ""}
                                 />
                               </div>
@@ -301,7 +303,7 @@ export default function NewProductType() {
                                   onChange={(e) => handleScaleChange(attrIndex, "scaleEN", valueIndex, e.target.value)}
                                   placeholder={valueIndex === 2 ? "Just About Right" : ""}
                                   required
-                                  disabled={valueIndex === 2 || isSubmitting} // Disable the middle value
+                                  disabled={valueIndex === 2 || createProductTypeMutation.isPending}
                                   className={valueIndex === 2 ? "bg-muted" : ""}
                                 />
                               </div>
@@ -321,15 +323,15 @@ export default function NewProductType() {
               type="button" 
               variant="outline" 
               onClick={() => navigate("/admin/products")}
-              disabled={isSubmitting}
+              disabled={createProductTypeMutation.isPending}
             >
               Odustani
             </Button>
             <Button 
               type="submit"
-              disabled={isSubmitting}
+              disabled={createProductTypeMutation.isPending}
             >
-              {isSubmitting ? "Spremanje..." : "Spremi tip proizvoda"}
+              {createProductTypeMutation.isPending ? "Spremanje..." : "Spremi tip proizvoda"}
             </Button>
           </div>
         </form>

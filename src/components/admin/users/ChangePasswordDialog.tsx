@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { updateUserPassword } from "@/services/dataService";
 import { User } from "@/types";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 interface ChangePasswordDialogProps {
   user: User | null;
@@ -18,8 +19,39 @@ interface ChangePasswordDialogProps {
 export function ChangePasswordDialog({ user, open, onOpenChange, onPasswordChanged }: ChangePasswordDialogProps) {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const changePasswordMutation = useMutation({
+    mutationFn: ({ userId, password }: { userId: string; password: string }) => 
+      updateUserPassword(userId, password),
+    onSuccess: (success) => {
+      if (success) {
+        toast({
+          title: "Uspjeh",
+          description: "Lozinka je uspješno promijenjena.",
+        });
+        queryClient.invalidateQueries({ queryKey: ['users'] });
+        onPasswordChanged();
+        onOpenChange(false);
+        setNewPassword("");
+        setConfirmPassword("");
+      } else {
+        toast({
+          title: "Greška",
+          description: "Greška pri mijenjanju lozinke.",
+          variant: "destructive",
+        });
+      }
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Greška",
+        description: "Došlo je do pogreške.",
+        variant: "destructive",
+      });
+    },
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,36 +76,7 @@ export function ChangePasswordDialog({ user, open, onOpenChange, onPasswordChang
       return;
     }
 
-    setIsLoading(true);
-    
-    try {
-      const success = await updateUserPassword(user.id, newPassword);
-      
-      if (success) {
-        toast({
-          title: "Uspjeh",
-          description: "Lozinka je uspješno promijenjena.",
-        });
-        onPasswordChanged();
-        onOpenChange(false);
-        setNewPassword("");
-        setConfirmPassword("");
-      } else {
-        toast({
-          title: "Greška",
-          description: "Greška pri mijenjanju lozinke.",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      toast({
-        title: "Greška",
-        description: "Došlo je do pogreške.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
+    changePasswordMutation.mutate({ userId: user.id, password: newPassword });
   };
 
   return (
@@ -99,6 +102,7 @@ export function ChangePasswordDialog({ user, open, onOpenChange, onPasswordChang
                 className="col-span-3"
                 required
                 minLength={6}
+                disabled={changePasswordMutation.isPending}
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
@@ -113,15 +117,24 @@ export function ChangePasswordDialog({ user, open, onOpenChange, onPasswordChang
                 className="col-span-3"
                 required
                 minLength={6}
+                disabled={changePasswordMutation.isPending}
               />
             </div>
           </div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => onOpenChange(false)}
+              disabled={changePasswordMutation.isPending}
+            >
               Otkaži
             </Button>
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? "Mijenjam..." : "Promijeni lozinku"}
+            <Button 
+              type="submit" 
+              disabled={changePasswordMutation.isPending}
+            >
+              {changePasswordMutation.isPending ? "Mijenjam..." : "Promijeni lozinku"}
             </Button>
           </DialogFooter>
         </form>

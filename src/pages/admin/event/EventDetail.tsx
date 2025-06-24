@@ -28,12 +28,12 @@ export default function EventDetail() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Robust data fetching with React Query
+  // Data fetching with useQuery
   const { data: event, isLoading: isLoadingEvent, isError: eventError, error: eventErrorMessage } = useQuery({
     queryKey: ['event', eventId],
     queryFn: () => getEvent(eventId!),
     enabled: !!eventId,
-    staleTime: 1000 * 60 * 2, // Cache for 2 minutes
+    staleTime: 1000 * 60 * 2,
     retry: 3,
     retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
@@ -42,7 +42,6 @@ export default function EventDetail() {
     queryKey: ['productTypes', eventId],
     queryFn: async () => {
       const types = await getProductTypes(eventId!);
-      // Update hasRandomization flag for each product type
       const updatedProductTypes = await Promise.all(
         types.map(async (pt) => {
           const randomizationData = await getRandomization(pt.id);
@@ -55,7 +54,7 @@ export default function EventDetail() {
       return updatedProductTypes;
     },
     enabled: !!eventId,
-    staleTime: 1000 * 60 * 1, // Cache for 1 minute (more dynamic data)
+    staleTime: 1000 * 60 * 1,
   });
 
   // Mutations for data modifications
@@ -128,7 +127,7 @@ export default function EventDetail() {
 
   const isLoading = isLoadingEvent || isLoadingProductTypes;
 
-  // Robust error handling
+  // Error handling
   if (eventError || productTypesError) {
     return (
       <AdminLayout>
@@ -164,7 +163,6 @@ export default function EventDetail() {
   const handleUpdateStatus = async (status: EventStatus) => {
     if (!eventId) return;
 
-    // Add validation for ACTIVE status
     if (status === EventStatus.ACTIVE) {
       const { allGenerated, missingProductTypes } = checkAllRandomizationsGenerated(productTypes);
       
@@ -235,7 +233,6 @@ export default function EventDetail() {
     );
   }
 
-  // Create event with productTypes for compatibility
   const eventWithProductTypes = { ...event, productTypes };
 
   return (
