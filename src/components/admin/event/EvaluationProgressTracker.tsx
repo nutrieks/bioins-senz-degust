@@ -1,5 +1,4 @@
 
-import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -7,85 +6,26 @@ import { RefreshCw, Users, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getEvaluationsStatus } from "@/services/dataService";
 import { EvaluationStatus } from "@/types";
-import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
 
 interface EvaluationProgressTrackerProps {
   eventId: string;
 }
 
 export function EvaluationProgressTracker({ eventId }: EvaluationProgressTrackerProps) {
-  const [evaluationStatus, setEvaluationStatus] = useState<EvaluationStatus[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
-  
-  // Ref for debounce timer
-  const debounceTimer = useRef<NodeJS.Timeout | null>(null);
-
-  const fetchEvaluationStatus = async () => {
-    try {
-      console.log("Fetching evaluation status for event:", eventId);
-      const status = await getEvaluationsStatus(eventId);
-      console.log("Evaluation status received:", status);
-      setEvaluationStatus(status);
-      setLastUpdated(new Date());
-    } catch (error) {
-      console.error("Error fetching evaluation status:", error);
-    } finally {
-      setIsLoading(false); // Ensure loading is always turned off
-    }
-  };
-
-  useEffect(() => {
-    if (eventId) {
-      fetchEvaluationStatus(); // Initial fetch
-    }
-  }, [eventId]);
-
-  // Set up real-time subscription with debouncing
-  useEffect(() => {
-    if (!eventId) return;
-
-    console.log("Setting up debounced real-time subscription for evaluations");
-    
-    const channel = supabase
-      .channel(`evaluation-progress-${eventId}`) // Unique channel per event
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'evaluations',
-          filter: `event_id=eq.${eventId}`
-        },
-        (payload) => {
-          console.log('Real-time update received:', payload);
-          
-          // DEBOUNCING LOGIC:
-          // Clear previous timer if it exists
-          if (debounceTimer.current) {
-            clearTimeout(debounceTimer.current);
-          }
-          // Set new timer. Will fetch data 2 seconds after LAST change.
-          debounceTimer.current = setTimeout(() => {
-            console.log("Debounced fetch triggered.");
-            fetchEvaluationStatus();
-          }, 2000);
-        }
-      )
-      .subscribe();
-
-    return () => {
-      console.log("Unsubscribing from evaluation progress channel");
-      if (debounceTimer.current) {
-        clearTimeout(debounceTimer.current);
-      }
-      supabase.removeChannel(channel);
-    };
-  }, [eventId]);
+  // Replace all manual state management with React Query
+  const { data: evaluationStatus = [], isLoading, refetch } = useQuery({
+    queryKey: ['evaluationStatus', eventId],
+    queryFn: () => getEvaluationsStatus(eventId),
+    enabled: !!eventId,
+    // Automatically refresh data every 5 seconds while window is focused
+    refetchInterval: 5000,
+    refetchIntervalInBackground: false,
+    staleTime: 1000 * 2, // Consider data stale after 2 seconds
+  });
 
   const handleRefresh = () => {
-    setIsLoading(true);
-    fetchEvaluationStatus();
+    refetch();
   };
 
   const getTotalProgress = () => {
@@ -113,7 +53,7 @@ export function EvaluationProgressTracker({ eventId }: EvaluationProgressTracker
         </CardTitle>
         <div className="flex items-center space-x-2">
           <Badge variant="outline" className="text-xs">
-            Zadnje ažuriranje: {lastUpdated.toLocaleTimeString()}
+            Automatsko osvježavanje
           </Badge>
           <Button
             variant="outline"

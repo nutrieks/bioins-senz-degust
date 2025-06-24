@@ -57,11 +57,10 @@ export default function EventDetail() {
     staleTime: 1000 * 60 * 1,
   });
 
-  // Mutations for data modifications
+  // Mutations for all data modifications
   const updateStatusMutation = useMutation({
-    mutationFn: ({ eventId, status }: { eventId: string; status: EventStatus }) => 
-      updateEventStatus(eventId, status),
-    onSuccess: (success, { status }) => {
+    mutationFn: (status: EventStatus) => updateEventStatus(eventId!, status),
+    onSuccess: (success, status) => {
       if (success) {
         toast({
           title: "Uspjeh",
@@ -84,7 +83,7 @@ export default function EventDetail() {
   });
 
   const deleteEventMutation = useMutation({
-    mutationFn: deleteEventAPI,
+    mutationFn: () => deleteEventAPI(eventId!),
     onSuccess: (success) => {
       if (success) {
         toast({
@@ -107,7 +106,7 @@ export default function EventDetail() {
   });
 
   const generateRandomizationMutation = useMutation({
-    mutationFn: createRandomization,
+    mutationFn: (productTypeId: string) => createRandomization(productTypeId),
     onSuccess: () => {
       toast({
         title: "Uspjeh",
@@ -160,7 +159,8 @@ export default function EventDetail() {
     );
   }
 
-  const handleUpdateStatus = async (status: EventStatus) => {
+  // Handler functions using mutations
+  const handleUpdateStatus = (status: EventStatus) => {
     if (!eventId) return;
 
     if (status === EventStatus.ACTIVE) {
@@ -177,21 +177,21 @@ export default function EventDetail() {
       }
     }
 
-    updateStatusMutation.mutate({ eventId, status });
+    updateStatusMutation.mutate(status);
   };
 
-  const handleDeleteEvent = async (): Promise<void> => {
+  const handleDeleteEvent = (): void => {
     if (!eventId) return;
-    deleteEventMutation.mutate(eventId);
+    deleteEventMutation.mutate();
   };
 
-  const handleGenerateRandomization = async (productTypeId: string): Promise<void> => {
+  const handleGenerateRandomization = (productTypeId: string): void => {
     generateRandomizationMutation.mutate(productTypeId);
   };
 
-  const refreshEventData = async (): Promise<void> => {
-    await queryClient.invalidateQueries({ queryKey: ['event', eventId] });
-    await queryClient.invalidateQueries({ queryKey: ['productTypes', eventId] });
+  const refreshEventData = (): void => {
+    queryClient.invalidateQueries({ queryKey: ['event', eventId] });
+    queryClient.invalidateQueries({ queryKey: ['productTypes', eventId] });
   };
 
   const getStatusLabel = (status: EventStatus) => {
