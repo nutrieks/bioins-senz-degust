@@ -28,13 +28,13 @@ export default function EventDetail() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: event, isLoading: isLoadingEvent } = useQuery({
+  const { data: event, isLoading: isLoadingEvent, isError: eventError, error: eventErrorMessage } = useQuery({
     queryKey: ['event', eventId],
     queryFn: () => getEvent(eventId!),
     enabled: !!eventId,
   });
 
-  const { data: productTypes = [], isLoading: isLoadingProductTypes } = useQuery({
+  const { data: productTypes = [], isLoading: isLoadingProductTypes, isError: productTypesError, error: productTypesErrorMessage } = useQuery({
     queryKey: ['productTypes', eventId],
     queryFn: async () => {
       const types = await getProductTypes(eventId!);
@@ -121,6 +121,23 @@ export default function EventDetail() {
   });
 
   const isLoading = isLoadingEvent || isLoadingProductTypes;
+
+  // Handle query errors
+  if (eventError) {
+    toast({
+      title: "Greška",
+      description: `Nije moguće dohvatiti događaj: ${eventErrorMessage?.message || 'Nepoznata greška'}`,
+      variant: "destructive"
+    });
+  }
+
+  if (productTypesError) {
+    toast({
+      title: "Greška",
+      description: `Nije moguće dohvatiti tipove proizvoda: ${productTypesErrorMessage?.message || 'Nepoznata greška'}`,
+      variant: "destructive"
+    });
+  }
 
   const handleUpdateStatus = async (status: EventStatus) => {
     if (!eventId) return;

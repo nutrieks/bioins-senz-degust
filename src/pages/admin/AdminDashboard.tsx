@@ -15,7 +15,7 @@ export default function AdminDashboard() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: events = [], isLoading } = useQuery({
+  const { data: events = [], isLoading, isError, error } = useQuery({
     queryKey: ['events'],
     queryFn: getEvents,
   });
@@ -29,7 +29,7 @@ export default function AdminDashboard() {
       });
       queryClient.invalidateQueries({ queryKey: ['events'] });
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       console.error('Error deleting event:', error);
       toast({
         title: "Greška",
@@ -38,6 +38,15 @@ export default function AdminDashboard() {
       });
     },
   });
+
+  // Handle query errors
+  if (isError) {
+    toast({
+      title: "Greška",
+      description: `Nije moguće dohvatiti događaje: ${error?.message || 'Nepoznata greška'}`,
+      variant: "destructive"
+    });
+  }
 
   // Sort events by date descending
   const sortedEvents = [...events].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());

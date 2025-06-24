@@ -9,15 +9,26 @@ import { Event, EventStatus } from "@/types";
 import { Calendar, ClipboardCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
 
 export default function EvaluatorDashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
 
-  const { data: allEvents = [], isLoading } = useQuery({
+  const { data: allEvents = [], isLoading, isError, error } = useQuery({
     queryKey: ['events'],
     queryFn: getEvents,
   });
+
+  // Handle query errors
+  if (isError) {
+    toast({
+      title: "Greška",
+      description: `Nije moguće dohvatiti događaje: ${error?.message || 'Nepoznata greška'}`,
+      variant: "destructive"
+    });
+  }
 
   // Filter only active events
   const activeEvents = allEvents.filter((event) => event.status === EventStatus.ACTIVE);
