@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -187,6 +186,29 @@ export default function EventDetail() {
 
   const handleGenerateRandomization = async (productTypeId: string): Promise<void> => {
     generateRandomizationMutation.mutate(productTypeId);
+  };
+
+  const handleAddProductType = async () => {
+    // This function will be called from ProductTypesTab
+    console.log('Add product type called');
+  };
+
+  const handleEditProductType = async (productTypeId: string, customerCode: string, baseCode: string): Promise<void> => {
+    // This would require implementing edit functionality in the backend
+    console.log('Edit product type:', productTypeId, customerCode, baseCode);
+    toast({
+      title: "Informacija",
+      description: "Funkcionalnost uređivanja će biti implementirana u sljedećoj verziji.",
+    });
+  };
+
+  const handleDeleteProductType = async (productTypeId: string): Promise<void> => {
+    // This would require implementing delete functionality in the backend
+    console.log('Delete product type:', productTypeId);
+    toast({
+      title: "Informacija",
+      description: "Funkcionalnost brisanja će biti implementirana u sljedećoj verziji.",
+    });
   };
 
   const refreshEventData = (): void => {
