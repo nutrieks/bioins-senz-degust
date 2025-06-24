@@ -28,10 +28,14 @@ export default function EventDetail() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Robust data fetching with React Query
   const { data: event, isLoading: isLoadingEvent, isError: eventError, error: eventErrorMessage } = useQuery({
     queryKey: ['event', eventId],
     queryFn: () => getEvent(eventId!),
     enabled: !!eventId,
+    staleTime: 1000 * 60 * 2, // Cache for 2 minutes
+    retry: 3,
+    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
   const { data: productTypes = [], isLoading: isLoadingProductTypes, isError: productTypesError, error: productTypesErrorMessage } = useQuery({
@@ -51,8 +55,10 @@ export default function EventDetail() {
       return updatedProductTypes;
     },
     enabled: !!eventId,
+    staleTime: 1000 * 60 * 1, // Cache for 1 minute (more dynamic data)
   });
 
+  // Mutations for data modifications
   const updateStatusMutation = useMutation({
     mutationFn: ({ eventId, status }: { eventId: string; status: EventStatus }) => 
       updateEventStatus(eventId, status),
@@ -122,21 +128,37 @@ export default function EventDetail() {
 
   const isLoading = isLoadingEvent || isLoadingProductTypes;
 
-  // Handle query errors
-  if (eventError) {
-    toast({
-      title: "Greška",
-      description: `Nije moguće dohvatiti događaj: ${eventErrorMessage?.message || 'Nepoznata greška'}`,
-      variant: "destructive"
-    });
-  }
-
-  if (productTypesError) {
-    toast({
-      title: "Greška",
-      description: `Nije moguće dohvatiti tipove proizvoda: ${productTypesErrorMessage?.message || 'Nepoznata greška'}`,
-      variant: "destructive"
-    });
+  // Robust error handling
+  if (eventError || productTypesError) {
+    return (
+      <AdminLayout>
+        <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
+          <div className="text-center">
+            <h2 className="text-xl font-semibold text-red-600 mb-4">
+              Greška pri dohvaćanju podataka
+            </h2>
+            <p className="text-muted-foreground mb-4">
+              {eventError ? `Događaj: ${eventErrorMessage?.message || 'Nepoznata greška'}` : ''}
+              {productTypesError ? `Tipovi proizvoda: ${productTypesErrorMessage?.message || 'Nepoznata greška'}` : ''}
+            </p>
+            <div className="space-x-2">
+              <Button 
+                onClick={() => {
+                  queryClient.invalidateQueries({ queryKey: ['event', eventId] });
+                  queryClient.invalidateQueries({ queryKey: ['productTypes', eventId] });
+                }}
+                variant="outline"
+              >
+                Pokušaj ponovno
+              </Button>
+              <Button onClick={() => navigate("/admin/events")}>
+                Povratak na listu događaja
+              </Button>
+            </div>
+          </div>
+        </div>
+      </AdminLayout>
+    );
   }
 
   const handleUpdateStatus = async (status: EventStatus) => {
@@ -192,7 +214,10 @@ export default function EventDetail() {
   if (isLoading) {
     return (
       <AdminLayout>
-        <div className="text-center p-8">Učitavanje...</div>
+        <div className="flex justify-center items-center min-h-[400px]">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          <span className="ml-4 text-lg">Učitavanje podataka o događaju...</span>
+        </div>
       </AdminLayout>
     );
   }

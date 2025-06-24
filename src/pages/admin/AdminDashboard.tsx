@@ -18,6 +18,9 @@ export default function AdminDashboard() {
   const { data: events = [], isLoading, isError, error } = useQuery({
     queryKey: ['events'],
     queryFn: getEvents,
+    staleTime: 1000 * 60 * 5, // Cache for 5 minutes to reduce API calls
+    retry: 3, // Retry failed requests 3 times
+    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
   const deleteEventMutation = useMutation({
@@ -39,13 +42,28 @@ export default function AdminDashboard() {
     },
   });
 
-  // Handle query errors
+  // Robust error handling
   if (isError) {
-    toast({
-      title: "Greška",
-      description: `Nije moguće dohvatiti događaje: ${error?.message || 'Nepoznata greška'}`,
-      variant: "destructive"
-    });
+    return (
+      <AdminLayout>
+        <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
+          <div className="text-center">
+            <h2 className="text-xl font-semibold text-red-600 mb-4">
+              Greška pri dohvaćanju događaja
+            </h2>
+            <p className="text-muted-foreground mb-4">
+              {error?.message || 'Nepoznata greška'}
+            </p>
+            <Button 
+              onClick={() => queryClient.invalidateQueries({ queryKey: ['events'] })}
+              variant="outline"
+            >
+              Pokušaj ponovno
+            </Button>
+          </div>
+        </div>
+      </AdminLayout>
+    );
   }
 
   // Sort events by date descending
@@ -92,7 +110,10 @@ export default function AdminDashboard() {
             </CardHeader>
             <CardContent>
               {isLoading ? (
-                <div className="text-center p-4">Učitavanje...</div>
+                <div className="flex justify-center items-center p-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                  <span className="ml-2">Učitavanje...</span>
+                </div>
               ) : activeEvents.length > 0 ? (
                 <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
                   {activeEvents.map((event) => (
@@ -121,7 +142,10 @@ export default function AdminDashboard() {
             </CardHeader>
             <CardContent>
               {isLoading ? (
-                <div className="text-center p-4">Učitavanje...</div>
+                <div className="flex justify-center items-center p-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                  <span className="ml-2">Učitavanje...</span>
+                </div>
               ) : pastEvents.length > 0 ? (
                 <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
                   {pastEvents.map((event) => (

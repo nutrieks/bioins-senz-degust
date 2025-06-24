@@ -8,26 +8,45 @@ import { getEvents } from "@/services/dataService";
 import { Event, EventStatus } from "@/types";
 import { Calendar, ClipboardCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 
 export default function EvaluatorDashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: allEvents = [], isLoading, isError, error } = useQuery({
     queryKey: ['events'],
     queryFn: getEvents,
+    staleTime: 1000 * 60 * 2, // Cache for 2 minutes for evaluators
+    retry: 3,
+    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
-  // Handle query errors
+  // Robust error handling
   if (isError) {
-    toast({
-      title: "Greška",
-      description: `Nije moguće dohvatiti događaje: ${error?.message || 'Nepoznata greška'}`,
-      variant: "destructive"
-    });
+    return (
+      <EvaluatorLayout>
+        <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
+          <div className="text-center">
+            <h2 className="text-xl font-semibold text-red-600 mb-4">
+              Greška pri dohvaćanju događaja
+            </h2>
+            <p className="text-muted-foreground mb-4">
+              {error?.message || 'Nepoznata greška'}
+            </p>
+            <Button 
+              onClick={() => queryClient.invalidateQueries({ queryKey: ['events'] })}
+              variant="outline"
+            >
+              Pokušaj ponovno
+            </Button>
+          </div>
+        </div>
+      </EvaluatorLayout>
+    );
   }
 
   // Filter only active events
@@ -76,7 +95,10 @@ export default function EvaluatorDashboard() {
           </CardHeader>
           <CardContent>
             {isLoading ? (
-              <div className="text-center p-4">Učitavanje...</div>
+              <div className="flex justify-center items-center p-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                <span className="ml-2">Učitavanje...</span>
+              </div>
             ) : activeEvents.length > 0 ? (
               <div className="space-y-4">
                 {activeEvents.map((event) => {
