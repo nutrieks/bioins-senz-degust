@@ -18,8 +18,8 @@ export default function AdminDashboard() {
   const { data: events = [], isLoading, isError, error } = useQuery({
     queryKey: ['events'],
     queryFn: getEvents,
-    staleTime: 1000 * 60 * 5, // Cache for 5 minutes to reduce API calls
-    retry: 3, // Retry failed requests 3 times
+    staleTime: 1000 * 60 * 5,
+    retry: 3,
     retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
@@ -42,7 +42,6 @@ export default function AdminDashboard() {
     },
   });
 
-  // Robust error handling
   if (isError) {
     return (
       <AdminLayout>
@@ -66,7 +65,6 @@ export default function AdminDashboard() {
     );
   }
 
-  // Sort events by date descending
   const sortedEvents = [...events].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   const activeEvents = sortedEvents.filter(

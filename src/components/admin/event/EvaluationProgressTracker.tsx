@@ -13,15 +13,13 @@ interface EvaluationProgressTrackerProps {
 }
 
 export function EvaluationProgressTracker({ eventId }: EvaluationProgressTrackerProps) {
-  // Replace all manual state management with React Query
   const { data: evaluationStatus = [], isLoading, refetch } = useQuery({
     queryKey: ['evaluationStatus', eventId],
     queryFn: () => getEvaluationsStatus(eventId),
     enabled: !!eventId,
-    // Automatically refresh data every 5 seconds while window is focused
     refetchInterval: 5000,
     refetchIntervalInBackground: false,
-    staleTime: 1000 * 2, // Consider data stale after 2 seconds
+    staleTime: 1000 * 2,
   });
 
   const handleRefresh = () => {
@@ -74,7 +72,6 @@ export function EvaluationProgressTracker({ eventId }: EvaluationProgressTracker
           </div>
         ) : (
           <div className="space-y-6">
-            {/* Overall Progress */}
             <div className="border-b pb-4">
               <div className="flex items-center justify-between mb-2">
                 <h3 className="font-medium">Ukupan napredak</h3>
@@ -92,7 +89,6 @@ export function EvaluationProgressTracker({ eventId }: EvaluationProgressTracker
               </p>
             </div>
 
-            {/* Individual User Progress */}
             <div className="space-y-4">
               <h3 className="font-medium">Napredak po evaluatoru</h3>
               <div className="grid gap-4">
@@ -131,7 +127,6 @@ export function EvaluationProgressTracker({ eventId }: EvaluationProgressTracker
                           )}
                         </div>
 
-                        {/* Sample breakdown by product type */}
                         <div className="mt-3 space-y-1">
                           {user.completedSamples.map((productType, index) => (
                             <div key={index} className="text-xs">

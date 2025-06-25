@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,7 +23,6 @@ export default function UsersPage() {
     queryKey: ['users'],
     queryFn: async () => {
       const usersData = await getUsers();
-      // Sort: Admin first, then evaluators by position
       usersData.sort((a, b) => {
         if (a.role === UserRole.ADMIN && b.role !== UserRole.ADMIN) return -1;
         if (a.role !== UserRole.ADMIN && b.role === UserRole.ADMIN) return 1;
@@ -39,7 +38,6 @@ export default function UsersPage() {
     retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
-  // Error handling
   if (isError) {
     return (
       <AdminLayout>

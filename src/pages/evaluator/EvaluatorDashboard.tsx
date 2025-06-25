@@ -20,12 +20,11 @@ export default function EvaluatorDashboard() {
   const { data: allEvents = [], isLoading, isError, error } = useQuery({
     queryKey: ['events'],
     queryFn: getEvents,
-    staleTime: 1000 * 60 * 2, // Cache for 2 minutes for evaluators
+    staleTime: 1000 * 60 * 2,
     retry: 3,
     retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
-  // Robust error handling
   if (isError) {
     return (
       <EvaluatorLayout>
@@ -49,7 +48,6 @@ export default function EvaluatorDashboard() {
     );
   }
 
-  // Filter only active events
   const activeEvents = allEvents.filter((event) => event.status === EventStatus.ACTIVE);
 
   const handleStartEvaluation = (eventId: string) => {

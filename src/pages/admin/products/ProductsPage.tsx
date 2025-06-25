@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Plus, Edit, Trash2 } from "lucide-react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
@@ -59,7 +59,6 @@ export default function ProductsPage() {
     },
   });
 
-  // Error handling
   if (isError) {
     return (
       <AdminLayout>

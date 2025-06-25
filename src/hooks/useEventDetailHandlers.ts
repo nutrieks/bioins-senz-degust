@@ -110,26 +110,6 @@ export function useEventDetailHandlers(eventId: string | undefined) {
     generateRandomizationMutation.mutate(productTypeId);
   };
 
-  const handleAddProductType = async () => {
-    console.log('Add product type called');
-  };
-
-  const handleEditProductType = async (productTypeId: string, customerCode: string, baseCode: string): Promise<void> => {
-    console.log('Edit product type:', productTypeId, customerCode, baseCode);
-    toast({
-      title: "Informacija",
-      description: "Funkcionalnost uređivanja će biti implementirana u sljedećoj verziji.",
-    });
-  };
-
-  const handleDeleteProductType = async (productTypeId: string): Promise<void> => {
-    console.log('Delete product type:', productTypeId);
-    toast({
-      title: "Informacija",
-      description: "Funkcionalnost brisanja će biti implementirana u sljedećoj verziji.",
-    });
-  };
-
   const refreshEventData = async (): Promise<void> => {
     await queryClient.invalidateQueries({ queryKey: ['event', eventId] });
     await queryClient.invalidateQueries({ queryKey: ['productTypes', eventId] });
@@ -157,9 +137,6 @@ export function useEventDetailHandlers(eventId: string | undefined) {
     handleUpdateStatus,
     handleDeleteEvent,
     handleGenerateRandomization,
-    handleAddProductType,
-    handleEditProductType,
-    handleDeleteProductType,
     refreshEventData,
     getStatusLabel,
   };
