@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { Sample, JARAttribute, ProductType } from "../types";
 import { getNextSample, getJARAttributes } from "../services/dataService";
@@ -19,7 +20,11 @@ interface EvaluationContextType {
   setShowSampleReveal: (show: boolean) => void;
   updateCompletedSamples: (sampleIds: string[]) => void;
   isLoading: boolean;
+  isFetchingEventData: boolean;
+  isFetchingNextSample: boolean;
+  isSubmittingEvaluation: boolean;
   loadingMessage: string;
+  evaluationError: string | null;
 }
 
 const EvaluationContext = createContext<EvaluationContextType | undefined>(undefined);
@@ -39,8 +44,16 @@ export const EvaluationProvider: React.FC<{
   const [remainingProductTypes, setRemainingProductTypes] = useState<ProductType[]>([]);
   const [allProductTypes, setAllProductTypes] = useState<ProductType[]>([]);
   const [processedProductTypes, setProcessedProductTypes] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  
+  // Detailed loading states
+  const [isFetchingEventData, setIsFetchingEventData] = useState<boolean>(false);
+  const [isFetchingNextSample, setIsFetchingNextSample] = useState<boolean>(false);
+  const [isSubmittingEvaluation, setIsSubmittingEvaluation] = useState<boolean>(false);
   const [loadingMessage, setLoadingMessage] = useState<string>("");
+  const [evaluationError, setEvaluationError] = useState<string | null>(null);
+
+  // Combined loading state
+  const isLoading = isFetchingEventData || isFetchingNextSample || isSubmittingEvaluation;
 
   // Cache for event data to avoid repeated fetches
   const [eventDataCache, setEventDataCache] = useState<any>(null);
@@ -59,7 +72,7 @@ export const EvaluationProvider: React.FC<{
         return;
       }
 
-      console.log('=== OPTIMIZED: UPDATING JAR ATTRIBUTES ===');
+      console.log('=== UPDATING JAR ATTRIBUTES ===');
       setLoadingMessage("Učitavam JAR atribute...");
       
       try {
@@ -72,6 +85,7 @@ export const EvaluationProvider: React.FC<{
           if (cachedAttributes.length > 0) {
             console.log("Using cached JAR attributes:", cachedAttributes.length);
             setCurrentJARAttributes(cachedAttributes);
+            setEvaluationError(null);
             return;
           }
         }
@@ -80,9 +94,11 @@ export const EvaluationProvider: React.FC<{
         const attributes = await getJARAttributes(currentSample.productTypeId);
         console.log("Fetched JAR attributes:", attributes.length);
         setCurrentJARAttributes(attributes);
+        setEvaluationError(null);
       } catch (error) {
         console.error("Error updating JAR attributes:", error);
         setCurrentJARAttributes([]);
+        setEvaluationError("Greška pri dohvaćanju JAR atributa");
       } finally {
         setLoadingMessage("");
       }
@@ -94,31 +110,33 @@ export const EvaluationProvider: React.FC<{
   const loadNextSample = async (eventId: string, productTypeId?: string, forcedCompletedSampleIds?: string[]) => {
     if (!user || !user.id) {
       console.log("No user available for loading next sample");
+      setEvaluationError("Korisnik nije prijavljen");
       return;
     }
 
     try {
-      console.log("=== OPTIMIZED: CONTEXT LOADING NEXT SAMPLE ===");
-      setIsLoading(true);
+      console.log("=== CONTEXT LOADING NEXT SAMPLE ===");
+      setIsFetchingNextSample(true);
+      setEvaluationError(null);
       setLoadingMessage("Dohvaćam podatke o događaju...");
 
-      // Load event data with all related data in parallel if not cached
+      // Load event data with all related data if not cached
       if (!eventDataCache) {
+        setIsFetchingEventData(true);
         const eventData = await getEventWithAllData(eventId);
         if (!eventData) {
-          console.error("Could not load event data");
-          setIsLoading(false);
-          return;
+          throw new Error("Nije moguće dohvatiti podatke o događaju");
         }
         setEventDataCache(eventData);
         setAllProductTypes(eventData.productTypes);
+        setIsFetchingEventData(false);
       }
 
       setLoadingMessage("Dohvaćam završene ocjene...");
       
       // Use forced completed sample IDs if provided, otherwise fetch fresh data
       const completedSampleIds = forcedCompletedSampleIds ?? await getCompletedEvaluationsOptimized(eventId, user.id);
-      console.log("Using completed sample IDs:", completedSampleIds);
+      console.log("Using completed sample IDs:", completedSampleIds.length);
       setCompletedSamples(completedSampleIds);
 
       setLoadingMessage("Tražim sljedeći uzorak...");
@@ -184,29 +202,27 @@ export const EvaluationProvider: React.FC<{
           setIsComplete(true);
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error loading next sample:", error);
-      setLoadingMessage("Greška prilikom učitavanja uzorka");
-      
-      // Reset loading state after error
-      setTimeout(() => {
-        setIsLoading(false);
-        setLoadingMessage("");
-      }, 2000);
-      
-      return;
+      setEvaluationError(error.message || "Greška prilikom učitavanja uzorka");
+      setLoadingMessage("");
     } finally {
-      setIsLoading(false);
+      setIsFetchingNextSample(false);
+      setIsFetchingEventData(false);
       setLoadingMessage("");
     }
   };
 
   const loadNextProductType = async (eventId: string): Promise<boolean> => {
-    if (!user || !user.id) return false;
+    if (!user || !user.id) {
+      setEvaluationError("Korisnik nije prijavljen");
+      return false;
+    }
 
     try {
-      console.log("=== OPTIMIZED: LOADING NEXT PRODUCT TYPE ===");
-      setIsLoading(true);
+      console.log("=== LOADING NEXT PRODUCT TYPE ===");
+      setIsFetchingNextSample(true);
+      setEvaluationError(null);
       setLoadingMessage("Učitavam sljedeći tip proizvoda...");
       
       // Use cached product types if available
@@ -237,17 +253,18 @@ export const EvaluationProvider: React.FC<{
       console.log("No more product types available, evaluation complete");
       setIsComplete(true);
       return false;
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error loading next product type:", error);
+      setEvaluationError(error.message || "Greška prilikom učitavanja sljedećeg tipa proizvoda");
       return false;
     } finally {
-      setIsLoading(false);
+      setIsFetchingNextSample(false);
       setLoadingMessage("");
     }
   };
 
   const resetEvaluation = () => {
-    console.log("=== OPTIMIZED: RESETTING EVALUATION ===");
+    console.log("=== RESETTING EVALUATION ===");
     setCurrentSample(null);
     setCurrentRound(0);
     setIsComplete(false);
@@ -259,8 +276,11 @@ export const EvaluationProvider: React.FC<{
     setAllProductTypes([]);
     setProcessedProductTypes([]);
     setEventDataCache(null);
-    setIsLoading(false);
+    setIsFetchingEventData(false);
+    setIsFetchingNextSample(false);
+    setIsSubmittingEvaluation(false);
     setLoadingMessage("");
+    setEvaluationError(null);
   };
 
   return (
@@ -280,7 +300,11 @@ export const EvaluationProvider: React.FC<{
         setShowSampleReveal,
         updateCompletedSamples,
         isLoading,
-        loadingMessage
+        isFetchingEventData,
+        isFetchingNextSample,
+        isSubmittingEvaluation,
+        loadingMessage,
+        evaluationError
       }}
     >
       {children}
