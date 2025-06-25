@@ -59,7 +59,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       } catch (error) {
         console.error("Auth state change error:", error);
-        setAuthError(error instanceof Error ? error.message : "Nepoznata greška pri provjeri sesije");
+        setAuthError("Došlo je do greške pri provjeri sesije. Molimo osvježite stranicu.");
         setUser(null);
       } finally {
         // CRITICAL: Always set loading to false after check is complete
