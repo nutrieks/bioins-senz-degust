@@ -205,7 +205,6 @@ export const EvaluationProvider: React.FC<{
     } catch (error: any) {
       console.error("Error loading next sample:", error);
       setEvaluationError(error.message || "Greška prilikom učitavanja uzorka");
-      setLoadingMessage("");
     } finally {
       setIsFetchingNextSample(false);
       setIsFetchingEventData(false);
