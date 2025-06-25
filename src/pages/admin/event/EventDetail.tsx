@@ -1,3 +1,4 @@
+
 import React from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -211,9 +212,9 @@ export default function EventDetail() {
     });
   };
 
-  const refreshEventData = (): void => {
-    queryClient.invalidateQueries({ queryKey: ['event', eventId] });
-    queryClient.invalidateQueries({ queryKey: ['productTypes', eventId] });
+  const refreshEventData = async (): Promise<void> => {
+    await queryClient.invalidateQueries({ queryKey: ['event', eventId] });
+    await queryClient.invalidateQueries({ queryKey: ['productTypes', eventId] });
   };
 
   const getStatusLabel = (status: EventStatus) => {
