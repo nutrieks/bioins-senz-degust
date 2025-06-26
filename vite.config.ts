@@ -11,6 +11,12 @@ export default defineConfig(({ mode }) => ({
     host: "::",
     port: 8080,
   },
+  preview: {
+    host: "::",
+    port: 8080,
+    // Enable history API fallback for preview mode
+    historyApiFallback: true,
+  },
   plugins: [
     react(),
     mode === 'development' &&

@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { Calendar as CalendarIcon } from "lucide-react";
@@ -16,8 +15,17 @@ import { useToast } from "@/hooks/use-toast";
 export default function NewEvent() {
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(false);
+  const [createdEventId, setCreatedEventId] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  // useEffect hook for navigation after event creation
+  useEffect(() => {
+    if (createdEventId) {
+      console.log("Navigating to created event:", createdEventId);
+      navigate(`/admin/events/${createdEventId}`);
+    }
+  }, [createdEventId, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,10 +46,11 @@ export default function NewEvent() {
       
       toast({
         title: "Uspješno",
-        description: "Događaj je uspješno kreiran.",
+        description: "Događaj je uspješno kreiran. Preusmjeravam...",
       });
       
-      navigate(`/admin/event/${event.id}`);
+      // Set the created event ID to trigger navigation via useEffect
+      setCreatedEventId(event.id);
     } catch (error) {
       console.error("Error creating event:", error);
       toast({
@@ -49,9 +58,9 @@ export default function NewEvent() {
         description: "Došlo je do pogreške prilikom kreiranja događaja.",
         variant: "destructive",
       });
-    } finally {
       setIsLoading(false);
     }
+    // Note: we don't set isLoading to false on success as we want to keep the loading state until navigation
   };
 
   return (
