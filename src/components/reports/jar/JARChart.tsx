@@ -59,94 +59,95 @@ export function JARChart({ data, attrData, productName }: JARChartProps) {
       </div>
       
       {/* Chart container for export and display */}
-      <div 
-        ref={chartRef}
-        className="bg-white p-6 rounded-lg shadow mx-auto" 
-        style={{ width: '100%', maxWidth: 900 }}
-      >
-        {/* Title and description */}
-        <div className="mb-4 text-center">
-          <h4 className="font-bold text-lg mb-1">Consumer's reaction to specific attribute</h4>
-          <p className="text-sm">Method: JAR scale</p>
-          <p className="text-sm">Sample: {productName}</p>
-          <p className="text-sm mb-1">Attribute: {attrData.nameEN}</p>
-        </div>
-        
-        {/* Chart */}
-        <div className="w-full">
-          <ResponsiveContainer width="100%" height={500}>
-            <BarChart
-              data={data}
-              margin={{
-                top: 30,
-                right: 30,
-                left: 60,
-                bottom: 60
-              }}
-              barCategoryGap="25%"
-              barGap={3}
-            >
-              <XAxis 
-                dataKey="name"
-                angle={-45}
-                textAnchor="end"
-                height={60}
-                tick={{ fontSize: 11 }}
-                interval={0}
-              />
-              <YAxis 
-                domain={[0, 12]}
-                ticks={[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]}
-                tick={{ fontSize: 11 }}
-                label={{ value: 'No. of votes', angle: -90, position: 'insideLeft', fontSize: 13 }}
-              />
-              <Tooltip 
-                contentStyle={{ 
-                  color: 'black', 
-                  backgroundColor: 'white',
-                  border: '1px solid #ccc',
-                  borderRadius: '4px',
-                  fontSize: '12px'
-                }} 
-                formatter={(value: number, name: string) => [value, name]}
-                labelFormatter={(label) => `Brand: ${label}`}
-              />
-              {JAR_LABELS.map((label, index) => (
-                <Bar
-                  key={label}
-                  dataKey={label}
-                  name={label}
-                  fill={JAR_COLORS[index]}
-                >
-                  <LabelList 
-                    dataKey={label} 
-                    position="top"
-                    style={{ fill: 'black', fontSize: 10, fontWeight: 'bold' }} 
-                    formatter={(value: number) => value > 0 ? value : ''}
-                  />
-                </Bar>
-              ))}
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-        
-        {/* Custom Legend */}
-        <div className="flex flex-wrap justify-center items-center gap-3 mt-4" style={{ fontSize: 15 }}>
-          {JAR_LABELS.map((label, index) => (
-            <span className="flex items-center gap-2" key={label}>
-              <span
-                className="inline-block rounded-[3px]"
-                style={{
-                  width: 22,
-                  height: 17,
-                  backgroundColor: JAR_COLORS[index],
-                  border: "1px solid #aaa",
-                  display: "inline-block"
+      <div ref={chartRef} className="bg-white p-6">
+        <div 
+          className="rounded-lg shadow mx-auto" 
+          style={{ width: '100%', maxWidth: 900 }}
+        >
+          {/* Title and description */}
+          <div className="mb-4 text-center">
+            <h4 className="font-bold text-lg mb-1">Consumer's reaction to specific attribute</h4>
+            <p className="text-sm">Method: JAR scale</p>
+            <p className="text-sm">Sample: {productName}</p>
+            <p className="text-sm mb-1">Attribute: {attrData.nameEN}</p>
+          </div>
+          
+          {/* Chart */}
+          <div className="w-full">
+            <ResponsiveContainer width="100%" height={500}>
+              <BarChart
+                data={data}
+                margin={{
+                  top: 30,
+                  right: 30,
+                  left: 60,
+                  bottom: 60
                 }}
-              />
-              <span style={{ color: "#111", fontWeight: 500 }}>{label}</span>
-            </span>
-          ))}
+                barCategoryGap="25%"
+                barGap={3}
+              >
+                <XAxis 
+                  dataKey="name"
+                  angle={-45}
+                  textAnchor="end"
+                  height={60}
+                  tick={{ fontSize: 11 }}
+                  interval={0}
+                />
+                <YAxis 
+                  domain={[0, 12]}
+                  ticks={[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]}
+                  tick={{ fontSize: 11 }}
+                  label={{ value: 'No. of votes', angle: -90, position: 'insideLeft', fontSize: 13 }}
+                />
+                <Tooltip 
+                  contentStyle={{ 
+                    color: 'black', 
+                    backgroundColor: 'white',
+                    border: '1px solid #ccc',
+                    borderRadius: '4px',
+                    fontSize: '12px'
+                  }} 
+                  formatter={(value: number, name: string) => [value, name]}
+                  labelFormatter={(label) => `Brand: ${label}`}
+                />
+                {JAR_LABELS.map((label, index) => (
+                  <Bar
+                    key={label}
+                    dataKey={label}
+                    name={label}
+                    fill={JAR_COLORS[index]}
+                  >
+                    <LabelList 
+                      dataKey={label} 
+                      position="top"
+                      style={{ fill: 'black', fontSize: 10, fontWeight: 'bold' }} 
+                      formatter={(value: number) => value > 0 ? value : ''}
+                    />
+                  </Bar>
+                ))}
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          
+          {/* Custom Legend */}
+          <div className="flex flex-wrap justify-center items-center gap-3 mt-4" style={{ fontSize: 15 }}>
+            {JAR_LABELS.map((label, index) => (
+              <span className="flex items-center gap-2" key={label}>
+                <span
+                  className="inline-block rounded-[3px]"
+                  style={{
+                    width: 22,
+                    height: 17,
+                    backgroundColor: JAR_COLORS[index],
+                    border: "1px solid #aaa",
+                    display: "inline-block"
+                  }}
+                />
+                <span style={{ color: "#111", fontWeight: 500 }}>{label}</span>
+              </span>
+            ))}
+          </div>
         </div>
       </div>
     </div>

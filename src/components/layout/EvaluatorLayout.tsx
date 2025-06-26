@@ -48,7 +48,7 @@ export function EvaluatorLayout({ children }: EvaluatorLayoutProps) {
         </div>
       </header>
 
-      <main className="container mx-auto py-4 px-4 md:px-0">
+      <main className="py-4 px-4 md:px-0">
         {children}
       </main>
 
