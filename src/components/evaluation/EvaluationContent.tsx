@@ -2,10 +2,10 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEvaluation } from "@/contexts/EvaluationContext";
+import { useCompletedEvaluations } from "@/hooks/useEvaluations";
 import { EvaluationForm } from "./EvaluationForm";
 import { CompletionMessage } from "./CompletionMessage";
 import { SampleRevealScreen } from "./SampleRevealScreen";
-import { LoadingState } from "./LoadingState";
 import { ProductType } from "@/types";
 import { useNavigate } from "react-router-dom";
 
@@ -39,7 +39,14 @@ export function EvaluationContent({
   
   const [error, setError] = useState<string | null>(null);
 
-  console.log('=== OPTIMIZED EVALUATION CONTENT RENDER ===');
+  // Use React Query to get completed evaluations
+  const { 
+    data: completedEvaluationsData, 
+    isLoading: isLoadingEvaluations, 
+    error: evaluationsError 
+  } = useCompletedEvaluations(eventId, user?.id);
+
+  console.log('=== EVALUATION CONTENT RENDER ===');
   console.log('Props:', { eventId, eventName, eventDate, productTypesCount: productTypes.length });
   console.log('User:', user ? { id: user.id, username: user.username, role: user.role } : 'No user');
   console.log('Current sample:', currentSample);
@@ -50,7 +57,7 @@ export function EvaluationContent({
 
   // Initial load - optimized to run only once
   useEffect(() => {
-    console.log('=== OPTIMIZED EVALUATION CONTENT INITIAL EFFECT ===');
+    console.log('=== EVALUATION CONTENT INITIAL EFFECT ===');
     
     const initialLoad = async () => {
       if (!user?.id || !eventId) {
@@ -60,25 +67,25 @@ export function EvaluationContent({
 
       try {
         setError(null);
-        console.log('Starting optimized initial load of samples...');
+        console.log('Starting initial load of samples...');
         
         // Load the first sample (context will handle optimization)
         await loadNextSample(eventId);
         
       } catch (error) {
-        console.error('Error in optimized initial load:', error);
+        console.error('Error in initial load:', error);
         setError(error instanceof Error ? error.message : 'Neočekivana greška');
       }
     };
 
     // Only load initially if we don't have a current sample and we're not complete
-    if (!currentSample && !isComplete && !isLoading) {
-      console.log('No current sample and not completed - starting optimized initial load');
+    if (!currentSample && !isComplete && !isLoading && !isLoadingEvaluations) {
+      console.log('No current sample and not completed - starting initial load');
       initialLoad();
     } else {
       console.log('Current sample exists, evaluation completed, or already loading - not loading initially');
     }
-  }, [user?.id, eventId]); // Removed other dependencies to prevent unnecessary re-runs
+  }, [user?.id, eventId, currentSample, isComplete, isLoading, isLoadingEvaluations, loadNextSample]);
 
   const handleSampleSubmitted = () => {
     console.log('=== SAMPLE SUBMITTED ===');
@@ -104,8 +111,8 @@ export function EvaluationContent({
     navigate('/evaluator');
   };
 
-  // Show enhanced loading state with specific messages
-  if (isLoading) {
+  // Show loading if evaluations are being fetched or main loading is active
+  if (isLoading || isLoadingEvaluations) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
@@ -115,13 +122,15 @@ export function EvaluationContent({
     );
   }
 
-  if (error) {
+  if (error || evaluationsError) {
     return (
       <div className="text-center p-6">
         <h2 className="text-xl font-semibold text-red-600 mb-4">
           Greška prilikom učitavanja
         </h2>
-        <p className="text-muted-foreground mb-4">{error}</p>
+        <p className="text-muted-foreground mb-4">
+          {error || (evaluationsError instanceof Error ? evaluationsError.message : 'Nepoznata greška')}
+        </p>
         <button 
           onClick={() => {
             setError(null);

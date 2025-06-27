@@ -4,7 +4,8 @@ import { useToast } from '@/hooks/use-toast';
 import { 
   getCompletedEvaluations,
   submitEvaluation as submitEvaluationAPI,
-  getEvaluationsStatus
+  getEvaluationsStatus,
+  getNextSample
 } from '@/services/dataService';
 import { EvaluationSubmission } from '@/types';
 
@@ -12,7 +13,7 @@ export function useCompletedEvaluations(eventId: string, userId?: string) {
   return useQuery({
     queryKey: ['evaluations', eventId, userId],
     queryFn: () => getCompletedEvaluations(eventId, userId),
-    enabled: !!eventId,
+    enabled: !!eventId && !!userId,
     staleTime: 1000 * 30, // 30 seconds - evaluations change frequently
   });
 }
@@ -24,6 +25,16 @@ export function useEvaluationsStatus(eventId: string) {
     enabled: !!eventId,
     staleTime: 1000 * 60, // 1 minute
     refetchInterval: 1000 * 30, // Auto-refresh every 30 seconds
+  });
+}
+
+export function useNextSample(userId: string, eventId: string, productTypeId?: string, completedSampleIds?: string[]) {
+  return useQuery({
+    queryKey: ['nextSample', userId, eventId, productTypeId, completedSampleIds?.length],
+    queryFn: () => getNextSample(userId, eventId, productTypeId, completedSampleIds),
+    enabled: !!userId && !!eventId,
+    staleTime: 0, // Always fresh
+    refetchOnMount: true,
   });
 }
 
@@ -39,12 +50,16 @@ export function useSubmitEvaluation() {
           title: "Ocjena spremljena",
           description: "Uspješno ste ocijenili uzorak.",
         });
-        // Invalidate relevant queries
+        
+        // Invalidate all relevant queries
         queryClient.invalidateQueries({ 
           queryKey: ['evaluations', evaluation.eventId, evaluation.userId] 
         });
         queryClient.invalidateQueries({ 
           queryKey: ['evaluationsStatus', evaluation.eventId] 
+        });
+        queryClient.invalidateQueries({ 
+          queryKey: ['nextSample', evaluation.userId, evaluation.eventId] 
         });
       }
     },

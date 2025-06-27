@@ -20,6 +20,8 @@ export function useEvaluationForm(eventId: string) {
 
   const [formKey, setFormKey] = useState<number>(Date.now());
   const scrollRef = useRef<HTMLDivElement>(null);
+  
+  // Use React Query mutation hook
   const submitEvaluationMutation = useSubmitEvaluation();
 
   const form = useForm<FormData>({
@@ -66,7 +68,7 @@ export function useEvaluationForm(eventId: string) {
     });
 
     try {
-      // Submit evaluation using the mutation
+      // Submit evaluation using React Query mutation
       await submitEvaluationMutation.mutateAsync({
         userId: user.id,
         sampleId: currentSample.id,
