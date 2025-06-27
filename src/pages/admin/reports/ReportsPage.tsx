@@ -1,43 +1,42 @@
 
-import { useEffect, useState } from "react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { getEvents } from "@/services/dataService";
 import { Event as AppEvent, EventStatus } from "@/types";
-import { useToast } from "@/hooks/use-toast";
 import { RandomizationTab } from "./components/RandomizationTab";
 import { ComingSoonTab } from "./components/ComingSoonTab";
+import { useEvents } from "@/hooks/useEvents";
+import { Button } from "@/components/ui/button";
 
 export default function ReportsPage() {
-  const [events, setEvents] = useState<AppEvent[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const { toast } = useToast();
+  const { data: allEvents = [], isLoading, isError, error } = useEvents();
 
-  // Fetch all events
-  const fetchEvents = async () => {
-    try {
-      setIsLoading(true);
-      const fetchedEvents = await getEvents();
-      // Filter only completed or archived events
-      const filteredEvents = fetchedEvents.filter(
-        event => event.status === EventStatus.COMPLETED || event.status === EventStatus.ARCHIVED
-      );
-      setEvents(filteredEvents);
-    } catch (error) {
-      console.error("Error fetching events:", error);
-      toast({
-        title: "Greška",
-        description: "Došlo je do pogreške prilikom dohvaćanja podataka o događajima.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  if (isError) {
+    return (
+      <AdminLayout>
+        <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
+          <div className="text-center">
+            <h2 className="text-xl font-semibold text-red-600 mb-4">
+              Greška pri dohvaćanju događaja
+            </h2>
+            <p className="text-muted-foreground mb-4">
+              {error?.message || 'Nepoznata greška'}
+            </p>
+            <Button 
+              onClick={() => window.location.reload()}
+              variant="outline"
+            >
+              Pokušaj ponovno
+            </Button>
+          </div>
+        </div>
+      </AdminLayout>
+    );
+  }
 
-  useEffect(() => {
-    fetchEvents();
-  }, []);
+  // Filter only completed or archived events
+  const events = allEvents.filter(
+    event => event.status === EventStatus.COMPLETED || event.status === EventStatus.ARCHIVED
+  );
 
   return (
     <AdminLayout>

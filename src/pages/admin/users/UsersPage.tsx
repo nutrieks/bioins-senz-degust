@@ -9,34 +9,14 @@ import { ChangePasswordDialog } from "@/components/admin/users/ChangePasswordDia
 import { UserStatusToggle } from "@/components/admin/users/UserStatusToggle";
 import { UserSyncButton } from "@/components/admin/users/UserSyncButton";
 import { PublicSyncButton } from "@/components/admin/users/PublicSyncButton";
-import { getUsers } from "@/services/dataService";
 import { User, UserRole } from "@/types";
 import { Key, Users } from "lucide-react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useUsers } from "@/hooks/useUsers";
 
 export default function UsersPage() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
-  const queryClient = useQueryClient();
-
-  const { data: users = [], isLoading, isError, error } = useQuery({
-    queryKey: ['users'],
-    queryFn: async () => {
-      const usersData = await getUsers();
-      usersData.sort((a, b) => {
-        if (a.role === UserRole.ADMIN && b.role !== UserRole.ADMIN) return -1;
-        if (a.role !== UserRole.ADMIN && b.role === UserRole.ADMIN) return 1;
-        if (a.role === UserRole.EVALUATOR && b.role === UserRole.EVALUATOR) {
-          return (a.evaluatorPosition || 0) - (b.evaluatorPosition || 0);
-        }
-        return 0;
-      });
-      return usersData;
-    },
-    staleTime: 1000 * 60 * 2,
-    retry: 3,
-    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
-  });
+  const { data: users = [], isLoading, isError, error } = useUsers();
 
   if (isError) {
     return (
@@ -50,7 +30,7 @@ export default function UsersPage() {
               {error?.message || 'Nepoznata greška'}
             </p>
             <Button 
-              onClick={() => queryClient.invalidateQueries({ queryKey: ['users'] })}
+              onClick={() => window.location.reload()}
               variant="outline"
             >
               Pokušaj ponovno
@@ -67,11 +47,11 @@ export default function UsersPage() {
   };
 
   const handlePasswordChanged = () => {
-    queryClient.invalidateQueries({ queryKey: ['users'] });
+    // React Query handles cache invalidation automatically
   };
 
   const handleStatusChanged = () => {
-    queryClient.invalidateQueries({ queryKey: ['users'] });
+    // React Query handles cache invalidation automatically
   };
 
   const getUserDisplayName = (user: User) => {

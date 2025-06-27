@@ -1,46 +1,17 @@
 
 import { useNavigate } from "react-router-dom";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { getEvents, deleteEvent } from "@/services/dataService";
 import { Event, EventStatus } from "@/types";
 import { EventCard } from "@/components/admin/EventCard";
 import { PlusCircle } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { useEvents, useDeleteEvent } from "@/hooks/useEvents";
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-
-  const { data: events = [], isLoading, isError, error } = useQuery({
-    queryKey: ['events'],
-    queryFn: getEvents,
-    staleTime: 1000 * 60 * 5,
-    retry: 3,
-    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
-  });
-
-  const deleteEventMutation = useMutation({
-    mutationFn: deleteEvent,
-    onSuccess: () => {
-      toast({
-        title: "Uspješno",
-        description: "Događaj je uspješno obrisan.",
-      });
-      queryClient.invalidateQueries({ queryKey: ['events'] });
-    },
-    onError: (error: Error) => {
-      console.error('Error deleting event:', error);
-      toast({
-        title: "Greška",
-        description: "Došlo je do greške prilikom brisanja događaja.",
-        variant: "destructive",
-      });
-    },
-  });
+  const { data: events = [], isLoading, isError, error } = useEvents();
+  const deleteEventMutation = useDeleteEvent();
 
   if (isError) {
     return (
@@ -54,7 +25,7 @@ export default function AdminDashboard() {
               {error?.message || 'Nepoznata greška'}
             </p>
             <Button 
-              onClick={() => queryClient.invalidateQueries({ queryKey: ['events'] })}
+              onClick={() => window.location.reload()}
               variant="outline"
             >
               Pokušaj ponovno
@@ -80,7 +51,7 @@ export default function AdminDashboard() {
   };
 
   const handleEventUpdated = () => {
-    queryClient.invalidateQueries({ queryKey: ['events'] });
+    // React Query will handle this automatically through cache invalidation
   };
 
   const handleDeleteEvent = async (eventId: string) => {

@@ -1,19 +1,15 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
-import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEvaluation } from "@/contexts/EvaluationContext";
 import { JARAttribute, Sample, HedonicScale, JARRating } from "@/types";
 import { FormData } from "./types";
 import { validateEvaluationForm } from "./validation/formValidation";
-import { submitEvaluation as submitEvaluationAPI } from "@/services/dataService";
+import { useSubmitEvaluation } from "@/hooks/useEvaluations";
 
-export function useEvaluationForm(
-  eventId: string
-) {
+export function useEvaluationForm(eventId: string) {
   const { user } = useAuth();
-  const { toast } = useToast();
   const {
     currentSample,
     currentJARAttributes,
@@ -22,9 +18,9 @@ export function useEvaluationForm(
     currentProductType,
   } = useEvaluation();
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formKey, setFormKey] = useState<number>(Date.now());
   const scrollRef = useRef<HTMLDivElement>(null);
+  const submitEvaluationMutation = useSubmitEvaluation();
 
   const form = useForm<FormData>({
     defaultValues: {
@@ -48,34 +44,30 @@ export function useEvaluationForm(
 
   const onSubmit = async (data: FormData) => {
     if (!user || !currentSample) {
-      toast({ title: "Greška", description: "Korisnik ili uzorak nisu dostupni.", variant: "destructive" });
       return;
     }
 
     const { isValid, errorFields } = validateEvaluationForm(data, form, currentJARAttributes);
     if (!isValid) {
-      toast({ title: "Nepotpuna ocjena", description: `Molimo ispunite sva polja. Nedostaju: ${errorFields}`, variant: "destructive" });
       return;
     }
 
-    setIsSubmitting(true);
+    const hedonicRatings: HedonicScale = {
+      appearance: parseInt(data.hedonic.appearance),
+      odor: parseInt(data.hedonic.odor),
+      texture: parseInt(data.hedonic.texture),
+      flavor: parseInt(data.hedonic.flavor),
+      overallLiking: parseInt(data.hedonic.overallLiking),
+    };
+
+    const jarRatings: JARRating = {};
+    Object.entries(data.jar).forEach(([attrId, value]) => {
+      if (value !== undefined && value !== '') jarRatings[attrId] = parseInt(value.toString());
+    });
 
     try {
-      const hedonicRatings: HedonicScale = {
-        appearance: parseInt(data.hedonic.appearance),
-        odor: parseInt(data.hedonic.odor),
-        texture: parseInt(data.hedonic.texture),
-        flavor: parseInt(data.hedonic.flavor),
-        overallLiking: parseInt(data.hedonic.overallLiking),
-      };
-
-      const jarRatings: JARRating = {};
-      Object.entries(data.jar).forEach(([attrId, value]) => {
-        if (value !== undefined && value !== '') jarRatings[attrId] = parseInt(value.toString());
-      });
-
-      // 1. Save evaluation to database
-      await submitEvaluationAPI({
+      // Submit evaluation using the mutation
+      await submitEvaluationMutation.mutateAsync({
         userId: user.id,
         sampleId: currentSample.id,
         productTypeId: currentSample.productTypeId,
@@ -84,30 +76,22 @@ export function useEvaluationForm(
         jarRatings,
       });
 
-      toast({
-        title: "Ocjena spremljena",
-        description: `Uspješno ste ocijenili uzorak ${currentSample.blindCode}.`,
-      });
-
-      // 2. **OPTIMISTIC UPDATE**: Update local state IMMEDIATELY
+      // Optimistic update: Update local state IMMEDIATELY
       const newCompletedIds = [...completedSamples, currentSample.id];
 
-      // 3. Load next sample WITH UPDATED DATA
+      // Load next sample WITH UPDATED DATA
       await loadNextSample(eventId, currentProductType?.id, newCompletedIds);
 
     } catch (error) {
       console.error("Greška kod predaje ocjene:", error);
-      toast({ title: "Greška", description: "Problem kod spremanja ocjene. Pokušajte ponovno.", variant: "destructive" });
-    } finally {
-      // CRITICAL: Always set to false at the end - this is key for stability
-      setIsSubmitting(false);
+      // Error handling is done in the mutation
     }
   };
 
   return {
     form,
     formKey,
-    isSubmitting,
+    isSubmitting: submitEvaluationMutation.isPending,
     scrollRef,
     onSubmit,
   };

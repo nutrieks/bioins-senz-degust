@@ -4,26 +4,15 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/contexts/AuthContext";
-import { getEvents } from "@/services/dataService";
-import { Event, EventStatus } from "@/types";
+import { EventStatus } from "@/types";
 import { Calendar, ClipboardCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useToast } from "@/hooks/use-toast";
+import { useEvents } from "@/hooks/useEvents";
 
 export default function EvaluatorDashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-
-  const { data: allEvents = [], isLoading, isError, error } = useQuery({
-    queryKey: ['events'],
-    queryFn: getEvents,
-    staleTime: 1000 * 60 * 2,
-    retry: 3,
-    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
-  });
+  const { data: allEvents = [], isLoading, isError, error } = useEvents();
 
   if (isError) {
     return (
@@ -37,7 +26,7 @@ export default function EvaluatorDashboard() {
               {error?.message || 'Nepoznata greška'}
             </p>
             <Button 
-              onClick={() => queryClient.invalidateQueries({ queryKey: ['events'] })}
+              onClick={() => window.location.reload()}
               variant="outline"
             >
               Pokušaj ponovno

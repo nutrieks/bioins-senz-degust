@@ -20,11 +20,19 @@ export function useEventDetailQueries(eventId: string | undefined) {
       const types = await getProductTypes(eventId!);
       const updatedProductTypes = await Promise.all(
         types.map(async (pt) => {
-          const randomizationData = await getRandomization(pt.id);
-          return {
-            ...pt,
-            hasRandomization: !!randomizationData
-          };
+          try {
+            const randomizationData = await getRandomization(pt.id);
+            return {
+              ...pt,
+              hasRandomization: !!randomizationData
+            };
+          } catch (error) {
+            console.error('Error checking randomization for product type:', pt.id, error);
+            return {
+              ...pt,
+              hasRandomization: false
+            };
+          }
         })
       );
       return updatedProductTypes;

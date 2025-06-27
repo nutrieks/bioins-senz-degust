@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
@@ -11,47 +11,22 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
-import { getEvents, deleteEvent } from "@/services/dataService";
 import { Event, EventStatus } from "@/types";
 import { EventCard } from "@/components/admin/EventCard";
 import { PlusCircle, Search } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { useEvents, useDeleteEvent } from "@/hooks/useEvents";
 
 export default function EventsPage() {
-  const [events, setEvents] = useState<Event[]>([]);
   const [filteredEvents, setFilteredEvents] = useState<Event[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const navigate = useNavigate();
-  const { toast } = useToast();
-
-  const fetchEvents = async () => {
-    try {
-      setIsLoading(true);
-      const eventsData = await getEvents();
-      // Sort by date descending
-      eventsData.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-      setEvents(eventsData);
-      setFilteredEvents(eventsData);
-    } catch (error) {
-      console.error("Error fetching events:", error);
-      toast({
-        title: "Greška",
-        description: "Došlo je do greške prilikom dohvaćanja događaja.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  
+  const { data: events = [], isLoading, isError, error } = useEvents();
+  const deleteEventMutation = useDeleteEvent();
 
   useEffect(() => {
-    fetchEvents();
-  }, []);
-
-  useEffect(() => {
-    let result = events;
+    let result = [...events].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     
     // Apply status filter
     if (statusFilter !== "all") {
@@ -82,36 +57,39 @@ export default function EventsPage() {
     setFilteredEvents(result);
   }, [events, statusFilter, searchTerm]);
 
+  if (isError) {
+    return (
+      <AdminLayout>
+        <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
+          <div className="text-center">
+            <h2 className="text-xl font-semibold text-red-600 mb-4">
+              Greška pri dohvaćanju događaja
+            </h2>
+            <p className="text-muted-foreground mb-4">
+              {error?.message || 'Nepoznata greška'}
+            </p>
+            <Button 
+              onClick={() => window.location.reload()}
+              variant="outline"
+            >
+              Pokušaj ponovno
+            </Button>
+          </div>
+        </div>
+      </AdminLayout>
+    );
+  }
+
   const handleCreateEvent = () => {
     navigate("/admin/events/new");
   };
 
   const handleEventUpdated = () => {
-    fetchEvents();
+    // React Query handles this automatically
   };
 
   const handleDeleteEvent = async (eventId: string) => {
-    try {
-      console.log('Deleting event:', eventId);
-      const success = await deleteEvent(eventId);
-      
-      if (success) {
-        toast({
-          title: "Uspjeh",
-          description: "Događaj je uspješno obrisan.",
-        });
-        fetchEvents(); // Refresh the events list
-      } else {
-        throw new Error('Failed to delete event');
-      }
-    } catch (error) {
-      console.error('Error deleting event:', error);
-      toast({
-        title: "Greška",
-        description: "Došlo je do greške prilikom brisanja događaja.",
-        variant: "destructive",
-      });
-    }
+    deleteEventMutation.mutate(eventId);
   };
 
   return (

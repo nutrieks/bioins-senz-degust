@@ -16,48 +16,16 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { BaseProductType } from "@/types";
-import { getAllProductTypes, deleteProductType } from "@/services/dataService";
-import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAllProductTypes, useDeleteProductType } from "@/hooks/useProductTypes";
 
 export default function ProductsPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState<BaseProductType | null>(null);
-  const { toast } = useToast();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
-
-  const { data: productTypes = [], isLoading, isError, error } = useQuery({
-    queryKey: ['productTypes'],
-    queryFn: getAllProductTypes,
-    staleTime: 1000 * 60 * 5,
-    retry: 3,
-    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
-  });
-
-  const deleteProductTypeMutation = useMutation({
-    mutationFn: deleteProductType,
-    onSuccess: () => {
-      toast({
-        title: "Uspješno",
-        description: `Tip proizvoda "${productToDelete?.productName}" je izbrisan.`,
-      });
-      queryClient.invalidateQueries({ queryKey: ['productTypes'] });
-      setProductToDelete(null);
-      setDeleteDialogOpen(false);
-    },
-    onError: (error: Error) => {
-      console.error("Error deleting product type:", error);
-      toast({
-        title: "Greška",
-        description: "Došlo je do pogreške prilikom brisanja tipa proizvoda.",
-        variant: "destructive",
-      });
-      setProductToDelete(null);
-      setDeleteDialogOpen(false);
-    },
-  });
+  
+  const { data: productTypes = [], isLoading, isError, error } = useAllProductTypes();
+  const deleteProductTypeMutation = useDeleteProductType();
 
   if (isError) {
     return (
@@ -71,7 +39,7 @@ export default function ProductsPage() {
               {error?.message || 'Nepoznata greška'}
             </p>
             <Button 
-              onClick={() => queryClient.invalidateQueries({ queryKey: ['productTypes'] })}
+              onClick={() => window.location.reload()}
               variant="outline"
             >
               Pokušaj ponovno
@@ -98,6 +66,8 @@ export default function ProductsPage() {
   const confirmDelete = async () => {
     if (!productToDelete) return;
     deleteProductTypeMutation.mutate(productToDelete.id);
+    setProductToDelete(null);
+    setDeleteDialogOpen(false);
   };
 
   const cancelDelete = () => {
