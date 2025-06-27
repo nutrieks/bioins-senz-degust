@@ -207,7 +207,7 @@ export function EventCard({ event, onEventUpdated, onEventDeleted }: EventCardPr
         </CardDescription>
       </CardContent>
       <CardFooter className="flex justify-between items-center p-4">
-        <Link to={`/admin/event/${event.id}`} className="text-blue-500 hover:underline flex items-center">
+        <Link to={`/admin/events/${event.id}`} className="text-blue-500 hover:underline flex items-center">
           <Settings className="mr-2 h-4 w-4" />
           Upravljanje
         </Link>
