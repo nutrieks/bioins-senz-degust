@@ -1,7 +1,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
-import { getUsers } from '@/services/dataService';
+import { getUsers, updateUserPassword, updateUserStatus } from '@/services/dataService';
 import { User, UserRole } from '@/types';
 
 export function useUsers() {
@@ -32,9 +32,7 @@ export function useUserMutations() {
 
   const changePasswordMutation = useMutation({
     mutationFn: async ({ userId, newPassword }: { userId: string; newPassword: string }) => {
-      // Import the function dynamically to avoid circular dependencies
-      const { changePassword } = await import('@/services/dataService');
-      return changePassword(userId, newPassword);
+      return updateUserPassword(userId, newPassword);
     },
     onSuccess: () => {
       toast({
@@ -55,8 +53,7 @@ export function useUserMutations() {
 
   const toggleUserStatusMutation = useMutation({
     mutationFn: async ({ userId, isActive }: { userId: string; isActive: boolean }) => {
-      const { toggleUserStatus } = await import('@/services/dataService');
-      return toggleUserStatus(userId, isActive);
+      return updateUserStatus(userId, isActive);
     },
     onSuccess: () => {
       toast({

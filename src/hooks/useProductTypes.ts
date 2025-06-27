@@ -54,7 +54,19 @@ export function useCreateProductType() {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: createProductTypeAPI,
+    mutationFn: (params: {
+      eventId: string;
+      customerCode: string;
+      baseProductTypeId: string;
+      baseCode: string;
+      displayOrder: number;
+    }) => createProductTypeAPI(
+      params.eventId,
+      params.customerCode,
+      params.baseProductTypeId,
+      params.baseCode,
+      params.displayOrder
+    ),
     onSuccess: () => {
       toast({
         title: "Uspješno",

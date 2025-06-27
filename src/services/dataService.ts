@@ -42,8 +42,8 @@ export {
 
 export { 
   getUsers, 
-  updateUserPassword, 
-  updateUserStatus 
+  updateUserPassword as updateUserPassword, 
+  updateUserStatus as updateUserStatus 
 } from './users';
 
 export { 
