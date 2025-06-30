@@ -83,7 +83,7 @@ export function EventDataFetcher({ jarAttributes, onProductTypesChange }: EventD
 
   return (
     <div className="container">
-      <EvaluationProvider jarAttributes={jarAttributes}>
+      <EvaluationProvider jarAttributes={jarAttributes} eventId={eventId}>
         <EvaluationContent 
           eventId={eventId || ""} 
           eventName={eventName}
