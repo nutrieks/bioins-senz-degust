@@ -1,103 +1,26 @@
 
-import { useState, useEffect } from "react";
-import { ProductType, HedonicReport, JARReport } from "@/types";
-import { generateHedonicReport, generateJARReport, getProductTypes, getEvent } from "@/services/dataService";
-import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
+import { useReportsManager } from "@/hooks/useReportsManager";
 
 export function useReportsData(eventId: string) {
-  const [productTypes, setProductTypes] = useState<ProductType[]>([]);
   const [selectedProductType, setSelectedProductType] = useState<string | null>(null);
-  const [hedonicReport, setHedonicReport] = useState<HedonicReport | null>(null);
-  const [jarReport, setJARReport] = useState<JARReport | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [eventDate, setEventDate] = useState<string>("");
-  const { toast } = useToast();
+  
+  // Use React Query hook for all data management
+  const {
+    productTypes,
+    hedonicReport,
+    jarReport,
+    eventDate,
+    productType,
+    isLoading,
+  } = useReportsManager(eventId, selectedProductType || undefined);
 
-  // Fetch event data
-  useEffect(() => {
-    const fetchEventData = async () => {
-      try {
-        console.log('=== useReportsData fetchEventData ===');
-        console.log('Event ID:', eventId);
-        
-        const eventData = await getEvent(eventId);
-        if (eventData) {
-          setEventDate(eventData.date);
-          console.log('Event date set:', eventData.date);
-        }
-      } catch (error) {
-        console.error("Error fetching event data:", error);
-      }
-    };
-
-    fetchEventData();
-  }, [eventId]);
-
-  // Fetch product types
-  useEffect(() => {
-    const fetchProductTypes = async () => {
-      try {
-        console.log('=== useReportsData fetchProductTypes ===');
-        console.log('Event ID:', eventId);
-        
-        const types = await getProductTypes(eventId);
-        console.log('Product types fetched:', types.length);
-        
-        setProductTypes(types);
-        if (types.length > 0) {
-          setSelectedProductType(types[0].id);
-          console.log('Selected first product type:', types[0].id);
-        }
-      } catch (error) {
-        console.error("Error fetching product types:", error);
-        toast({
-          title: "Greška",
-          description: "Došlo je do pogreške prilikom dohvaćanja tipova proizvoda.",
-          variant: "destructive",
-        });
-      }
-    };
-
-    fetchProductTypes();
-  }, [eventId, toast]);
-
-  // Generate reports when product type is selected
-  useEffect(() => {
-    const generateReports = async () => {
-      if (!selectedProductType) {
-        console.log('No product type selected, skipping report generation');
-        return;
-      }
-      
-      console.log('=== useReportsData generateReports ===');
-      console.log('Selected Product Type:', selectedProductType);
-      
-      setIsLoading(true);
-      try {
-        const [hedonicData, jarData] = await Promise.all([
-          generateHedonicReport(selectedProductType),
-          generateJARReport(selectedProductType)
-        ]);
-        
-        console.log('Hedonic report generated:', Object.keys(hedonicData).length, 'samples');
-        console.log('JAR report generated:', Object.keys(jarData).length, 'attributes');
-        
-        setHedonicReport(hedonicData);
-        setJARReport(jarData);
-      } catch (error) {
-        console.error("Error generating reports:", error);
-        toast({
-          title: "Greška",
-          description: "Došlo je do pogreške prilikom generiranja izvještaja.",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    generateReports();
-  }, [selectedProductType, eventId, toast]);
+  // Initialize selected product type when product types load
+  useState(() => {
+    if (productTypes.length > 0 && !selectedProductType) {
+      setSelectedProductType(productTypes[0].id);
+    }
+  });
 
   const handleProductTypeChange = (value: string) => {
     console.log('=== useReportsData handleProductTypeChange ===');
@@ -113,6 +36,6 @@ export function useReportsData(eventId: string) {
     isLoading,
     eventDate,
     handleProductTypeChange,
-    productType: productTypes.find(pt => pt.id === selectedProductType)
+    productType
   };
 }

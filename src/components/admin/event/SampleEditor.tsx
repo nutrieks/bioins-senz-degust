@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Sample, RetailerCode } from "@/types";
 import { Plus, Trash2, Save, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { createSample, updateSampleImages } from "@/services/dataService";
+import { useProductTypeManager } from "@/hooks/useProductTypeManager";
 
 interface SampleEditorProps {
   productTypeId: string;
@@ -17,10 +17,11 @@ interface SampleEditorProps {
 
 export function SampleEditor({ productTypeId, samples, onSamplesUpdate }: SampleEditorProps) {
   const { toast } = useToast();
+  const { createSample, isCreatingSample } = useProductTypeManager(productTypeId);
+  
   const [isAdding, setIsAdding] = useState(false);
   const [newBrand, setNewBrand] = useState("");
   const [newRetailerCode, setNewRetailerCode] = useState<RetailerCode>(RetailerCode.LI);
-  const [isLoading, setIsLoading] = useState(false);
 
   const retailerOptions = [
     { value: RetailerCode.LI, label: "Lidl (LI)" },
@@ -42,28 +43,19 @@ export function SampleEditor({ productTypeId, samples, onSamplesUpdate }: Sample
       return;
     }
 
-    setIsLoading(true);
     try {
-      await createSample(productTypeId, newBrand.trim(), newRetailerCode);
-      
-      toast({
-        title: "Uspješno",
-        description: "Uzorak je uspješno dodan.",
+      await createSample({
+        productTypeId,
+        brand: newBrand.trim(),
+        retailerCode: newRetailerCode,
       });
-
+      
       setNewBrand("");
       setNewRetailerCode(RetailerCode.LI);
       setIsAdding(false);
       onSamplesUpdate();
     } catch (error) {
-      console.error("Error adding sample:", error);
-      toast({
-        title: "Greška",
-        description: "Došlo je do pogreške prilikom dodavanja uzorka.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
+      // Error is already handled by the hook
     }
   };
 
@@ -135,7 +127,7 @@ export function SampleEditor({ productTypeId, samples, onSamplesUpdate }: Sample
                 variant="outline"
                 size="sm"
                 onClick={handleCancelAdd}
-                disabled={isLoading}
+                disabled={isCreatingSample}
               >
                 <X className="mr-1 h-4 w-4" />
                 Odustani
@@ -143,10 +135,10 @@ export function SampleEditor({ productTypeId, samples, onSamplesUpdate }: Sample
               <Button
                 size="sm"
                 onClick={handleAddSample}
-                disabled={isLoading}
+                disabled={isCreatingSample}
               >
                 <Save className="mr-1 h-4 w-4" />
-                {isLoading ? "Dodavanje..." : "Dodaj"}
+                {isCreatingSample ? "Dodavanje..." : "Dodaj"}
               </Button>
             </div>
           </div>

@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+
+import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
@@ -15,70 +16,59 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft } from "lucide-react";
-import { getBaseProductType, updateBaseProductType, getSamples } from "@/services/dataService";
-import { JARAttribute, ProductType, Sample } from "@/types";
+import { JARAttribute, RetailerCode } from "@/types";
 import { SampleEditor } from "@/components/admin/event/SampleEditor";
+import { useProductTypeManager } from "@/hooks/useProductTypeManager";
 
 export default function EditProductType() {
   const { productTypeId } = useParams<{ productTypeId: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // React Query hook for all data management
+  const {
+    productType,
+    samples,
+    isLoading,
+    hasError,
+    isUpdating,
+    updateProductType,
+    refetchSamples,
+  } = useProductTypeManager(productTypeId);
+
+  const [activeTab, setActiveTab] = useState("basic");
   const [productName, setProductName] = useState("");
   const [jarAttributes, setJarAttributes] = useState<JARAttribute[]>([]);
-  const [samples, setSamples] = useState<Sample[]>([]);
-  const [activeTab, setActiveTab] = useState("basic");
 
-  useEffect(() => {
-    if (productTypeId) {
-      fetchProductType(productTypeId);
+  // Initialize form data when product type loads
+  useState(() => {
+    if (productType) {
+      setProductName(productType.productName);
+      setJarAttributes(productType.jarAttributes);
     }
-  }, [productTypeId]);
+  });
 
-  const fetchProductType = async (id: string) => {
-    try {
-      setIsLoading(true);
-      const productType = await getBaseProductType(id);
-      
-      if (productType) {
-        setProductName(productType.productName);
-        setJarAttributes(productType.jarAttributes);
-        console.log("Loaded product type with JAR attributes:", productType.jarAttributes);
-        
-        // Load samples if this is actually a product type within an event
-        try {
-          const productSamples = await getSamples(id);
-          setSamples(productSamples);
-        } catch (error) {
-          // It's okay if samples don't exist for base product types
-          console.log("No samples found for this product type (this is normal for base product types)");
-        }
-      } else {
-        toast({
-          title: "Greška",
-          description: "Tip proizvoda nije pronađen.",
-          variant: "destructive",
-        });
-        navigate("/admin/products");
-      }
-    } catch (error) {
-      console.error("Error fetching product type:", error);
-      toast({
-        title: "Greška",
-        description: "Došlo je do pogreške prilikom dohvaćanja tipa proizvoda.",
-        variant: "destructive",
-      });
-      navigate("/admin/products");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // Handle loading and error states
+  if (isLoading) {
+    return (
+      <AdminLayout>
+        <div className="text-center p-8">Učitavanje...</div>
+      </AdminLayout>
+    );
+  }
+
+  if (hasError || !productType) {
+    toast({
+      title: "Greška",
+      description: "Tip proizvoda nije pronađen.",
+      variant: "destructive",
+    });
+    navigate("/admin/products");
+    return null;
+  }
 
   const handleSamplesUpdate = () => {
-    if (productTypeId) {
-      fetchProductType(productTypeId);
-    }
+    refetchSamples();
   };
 
   const handleJARAttributeChange = (attrIndex: number, field: keyof JARAttribute, value: string) => {
@@ -154,36 +144,18 @@ export default function EditProductType() {
       }
     }
     
-    setIsSubmitting(true);
     try {
-      // Update the product type in the database
-      await updateBaseProductType(productTypeId, productName, jarAttributes);
-      
-      toast({
-        title: "Uspješno",
-        description: `Tip proizvoda "${productName}" je uspješno ažuriran.`,
+      await updateProductType({
+        productTypeId,
+        productName,
+        jarAttributes,
       });
       
       navigate("/admin/products");
     } catch (error) {
-      console.error("Error updating product type:", error);
-      toast({
-        title: "Greška",
-        description: "Došlo je do pogreške prilikom ažuriranja tipa proizvoda.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
+      // Error is already handled by the mutation
     }
   };
-
-  if (isLoading) {
-    return (
-      <AdminLayout>
-        <div className="text-center p-8">Učitavanje...</div>
-      </AdminLayout>
-    );
-  }
 
   return (
     <AdminLayout>
@@ -223,7 +195,7 @@ export default function EditProductType() {
                       placeholder="npr. Buđola, Sir, Čokolada..."
                       required
                       className="max-w-md"
-                      disabled={isSubmitting}
+                      disabled={isUpdating}
                     />
                   </div>
                 </div>
@@ -265,7 +237,7 @@ export default function EditProductType() {
                                 onChange={(e) => handleJARAttributeChange(attrIndex, "nameHR", e.target.value)}
                                 placeholder="npr. Slanoća"
                                 required
-                                disabled={isSubmitting}
+                                disabled={isUpdating}
                               />
                             </div>
                             <div className="space-y-2">
@@ -276,7 +248,7 @@ export default function EditProductType() {
                                 onChange={(e) => handleJARAttributeChange(attrIndex, "nameEN", e.target.value)}
                                 placeholder="npr. Saltiness"
                                 required
-                                disabled={isSubmitting}
+                                disabled={isUpdating}
                               />
                             </div>
                           </div>
@@ -292,7 +264,7 @@ export default function EditProductType() {
                                     onChange={(e) => handleScaleChange(attrIndex, "scaleHR", valueIndex, e.target.value)}
                                     placeholder={valueIndex === 2 ? "Baš kako treba" : ""}
                                     required
-                                    disabled={valueIndex === 2 || isSubmitting}
+                                    disabled={valueIndex === 2 || isUpdating}
                                     className={valueIndex === 2 ? "bg-muted" : ""}
                                   />
                                 </div>
@@ -311,7 +283,7 @@ export default function EditProductType() {
                                     onChange={(e) => handleScaleChange(attrIndex, "scaleEN", valueIndex, e.target.value)}
                                     placeholder={valueIndex === 2 ? "Just About Right" : ""}
                                     required
-                                    disabled={valueIndex === 2 || isSubmitting}
+                                    disabled={valueIndex === 2 || isUpdating}
                                     className={valueIndex === 2 ? "bg-muted" : ""}
                                   />
                                 </div>
@@ -343,15 +315,15 @@ export default function EditProductType() {
             type="button" 
             variant="outline" 
             onClick={() => navigate("/admin/products")}
-            disabled={isSubmitting}
+            disabled={isUpdating}
           >
             Odustani
           </Button>
           <Button 
             onClick={handleSubmit}
-            disabled={isSubmitting}
+            disabled={isUpdating}
           >
-            {isSubmitting ? "Spremanje..." : "Spremi promjene"}
+            {isUpdating ? "Spremanje..." : "Spremi promjene"}
           </Button>
         </div>
       </div>
