@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useState, useCallback } from "react";
 import { Sample, JARAttribute, ProductType } from "../types";
-import { getNextSample, getCompletedEvaluations, getProductTypes, submitEvaluation } from "../services/dataService";
+import { getNextSample, getCompletedEvaluations, getProductTypes, submitEvaluation, getJARAttributes } from "../services/dataService";
 import { useAuth } from "./AuthContext";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -69,6 +69,15 @@ export const EvaluationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       if (nextSampleResult && nextSampleResult.sample) {
         console.log('Found next sample:', nextSampleResult.sample.blindCode);
         setCurrentSample(nextSampleResult.sample);
+        
+        // Fetch JAR attributes for the new sample
+        try {
+          const jarAttributes = await getJARAttributes(nextSampleResult.sample.productTypeId);
+          setCurrentJARAttributes(jarAttributes);
+        } catch (error) {
+          console.error('Error fetching JAR attributes:', error);
+          setCurrentJARAttributes([]);
+        }
       } else {
         console.log('No more samples for current product type - showing reveal');
         // No more samples in current product type
@@ -76,6 +85,7 @@ export const EvaluationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         setCompletedSamplesForProductType(samplesForReveal);
         setShowSampleReveal(true);
         setCurrentSample(null);
+        setCurrentJARAttributes([]);
       }
     } catch (error) {
       console.error('Error loading next sample:', error);
@@ -130,6 +140,15 @@ export const EvaluationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       if (nextSampleResult && nextSampleResult.sample) {
         console.log('First sample loaded:', nextSampleResult.sample.blindCode);
         setCurrentSample(nextSampleResult.sample);
+        
+        // Fetch JAR attributes for the first sample
+        try {
+          const jarAttributes = await getJARAttributes(nextSampleResult.sample.productTypeId);
+          setCurrentJARAttributes(jarAttributes);
+        } catch (error) {
+          console.error('Error fetching JAR attributes:', error);
+          setCurrentJARAttributes([]);
+        }
       } else {
         console.log('No samples available - evaluation finished');
         setIsEvaluationFinished(true);

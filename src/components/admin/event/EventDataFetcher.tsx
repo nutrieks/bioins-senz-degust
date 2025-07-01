@@ -4,16 +4,16 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { getEvent, getProductTypes } from "@/services/dataService";
 import { EvaluationProvider } from "@/contexts/EvaluationContext";
-import { JARAttribute, ProductType } from "@/types";
+import { ProductType } from "@/types";
 import { EvaluationContent } from "@/components/evaluation/EvaluationContent";
 import { LoadingState } from "@/components/evaluation/LoadingState";
 
 interface EventDataFetcherProps {
-  jarAttributes: JARAttribute[];
+  jarAttributes?: any[];
   onProductTypesChange?: (productTypes: ProductType[]) => void;
 }
 
-export function EventDataFetcher({ jarAttributes, onProductTypesChange }: EventDataFetcherProps) {
+export function EventDataFetcher({ onProductTypesChange }: EventDataFetcherProps) {
   const { eventId } = useParams<{ eventId: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -83,13 +83,8 @@ export function EventDataFetcher({ jarAttributes, onProductTypesChange }: EventD
 
   return (
     <div className="container">
-      <EvaluationProvider jarAttributes={jarAttributes} eventId={eventId}>
-        <EvaluationContent 
-          eventId={eventId || ""} 
-          eventName={eventName}
-          eventDate={eventDate}
-          productTypes={productTypes}
-        />
+      <EvaluationProvider>
+        <EvaluationContent eventId={eventId || ""} />
       </EvaluationProvider>
     </div>
   );

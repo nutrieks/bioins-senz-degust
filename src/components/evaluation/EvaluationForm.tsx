@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { Form } from "@/components/ui/form";
@@ -5,7 +6,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useEvaluation } from "@/contexts/EvaluationContext";
-import { getEvent } from "@/services/dataService";
+import { getEvent, getJARAttributes } from "@/services/dataService";
 import { CompletionScreen } from "./form/CompletionScreen";
 import { SampleHeader } from "./form/SampleHeader";
 import { HedonicScaleSection } from "./form/HedonicScaleSection";
@@ -13,6 +14,7 @@ import { JARScaleSection } from "./form/JARScaleSection";
 import { SubmitButton } from "./form/SubmitButton";
 import { useEvaluationForm } from "./form/useEvaluationForm";
 import { useAuth } from "@/contexts/AuthContext";
+import { JARAttribute } from "@/types";
 
 interface EvaluationFormProps {
   eventId: string;
@@ -24,12 +26,12 @@ export function EvaluationForm({ eventId, productTypeId, onComplete }: Evaluatio
   const { user } = useAuth();
   const { 
     currentSample, 
-    currentJARAttributes, 
-    isComplete,
+    isEvaluationFinished,
     currentProductType
   } = useEvaluation();
   
   const [eventDate, setEventDate] = useState<string>("");
+  const [currentJARAttributes, setCurrentJARAttributes] = useState<JARAttribute[]>([]);
   
   // Use our custom hook for form management - simplified call
   const {
@@ -58,13 +60,25 @@ export function EvaluationForm({ eventId, productTypeId, onComplete }: Evaluatio
     fetchEventDate();
   }, [eventId]);
 
-  // Log currentJARAttributes whenever they change
+  // Fetch JAR attributes when current sample changes
   useEffect(() => {
-    console.log("Current JAR Attributes in form:", currentJARAttributes);
-  }, [currentJARAttributes]);
+    const fetchJARAttributes = async () => {
+      if (currentSample?.productTypeId) {
+        try {
+          const attributes = await getJARAttributes(currentSample.productTypeId);
+          setCurrentJARAttributes(attributes);
+          console.log("Current JAR Attributes in form:", attributes);
+        } catch (error) {
+          console.error("Error fetching JAR attributes:", error);
+        }
+      }
+    };
+
+    fetchJARAttributes();
+  }, [currentSample]);
   
   // Ako je ocjenjivanje završeno, prikazujemo poruku
-  if (isComplete) {
+  if (isEvaluationFinished) {
     return <CompletionScreen onContinue={onComplete} />;
   }
   
