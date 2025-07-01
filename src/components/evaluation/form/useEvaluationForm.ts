@@ -56,11 +56,11 @@ export function useEvaluationForm() {
 
     try {
       const hedonicRatings = {
-        hedonic_appearance: parseInt(data.hedonic.appearance),
-        hedonic_odor: parseInt(data.hedonic.odor),
-        hedonic_texture: parseInt(data.hedonic.texture),
-        hedonic_flavor: parseInt(data.hedonic.flavor),
-        hedonic_overall_liking: parseInt(data.hedonic.overallLiking),
+        appearance: parseInt(data.hedonic.appearance),
+        odor: parseInt(data.hedonic.odor),
+        texture: parseInt(data.hedonic.texture),
+        flavor: parseInt(data.hedonic.flavor),
+        overallLiking: parseInt(data.hedonic.overallLiking),
       };
 
       const jarRatings: JARRating = {};
@@ -73,8 +73,8 @@ export function useEvaluationForm() {
       console.log('Submitting evaluation with ratings:', { hedonicRatings, jarRatings });
 
       await submitAndLoadNext({
-        ...hedonicRatings,
-        jar_ratings: jarRatings,
+        hedonic: hedonicRatings,
+        jar: jarRatings,
       });
 
       console.log('Evaluation submitted successfully');
