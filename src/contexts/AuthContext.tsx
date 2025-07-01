@@ -20,68 +20,120 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     console.log('=== AuthProvider: Setting up auth state listener ===');
-    setIsLoading(true);
-    setAuthError(null);
+    
+    let mounted = true; // Flag to prevent state updates if component unmounts
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log(`Auth state change event: ${event}`, session?.user?.id || 'no user');
-      
+    const initializeAuth = async () => {
       try {
-        if (event === 'SIGNED_IN' && session?.user) {
-          console.log('Processing SIGNED_IN event for user:', session.user.id);
-          
-          // Fetch user data from our users table
-          const { data: userData, error } = await supabase
-            .from('users')
-            .select('*')
-            .eq('id', session.user.id)
-            .eq('is_active', true)
-            .single();
+        setIsLoading(true);
+        setAuthError(null);
 
-          if (error || !userData) {
-            console.error("User not found in users table or inactive:", error);
-            throw new Error("Korisnik nije pronađen u bazi podataka ili je neaktivan.");
+        // First, check for existing session
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) {
+          console.error("Session check error:", sessionError);
+          throw sessionError;
+        }
+
+        if (session?.user && mounted) {
+          console.log('Found existing session for user:', session.user.id);
+          await processUserSession(session.user.id);
+        } else {
+          console.log('No existing session found');
+          if (mounted) {
+            setUser(null);
+            setAuthError(null);
           }
+        }
+      } catch (error: any) {
+        console.error("Auth initialization error:", error);
+        if (mounted) {
+          setAuthError(error.message || "Greška pri provjeri statusa prijave.");
+          setUser(null);
+        }
+      } finally {
+        if (mounted) {
+          setIsLoading(false);
+        }
+      }
+    };
 
-          // Set user data
-          const mappedUser: User = {
-            id: userData.id,
-            username: userData.username,
-            role: userData.role as UserRole,
-            evaluatorPosition: userData.evaluator_position || undefined,
-            isActive: userData.is_active,
-            password: userData.password,
-          };
+    const processUserSession = async (userId: string) => {
+      try {
+        const { data: userData, error } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', userId)
+          .eq('is_active', true)
+          .single();
 
+        if (error || !userData) {
+          console.error("User not found in users table or inactive:", error);
+          throw new Error("Korisnik nije pronađen u bazi podataka ili je neaktivan.");
+        }
+
+        const mappedUser: User = {
+          id: userData.id,
+          username: userData.username,
+          role: userData.role as UserRole,
+          evaluatorPosition: userData.evaluator_position || undefined,
+          isActive: userData.is_active,
+          password: userData.password,
+        };
+
+        if (mounted) {
           console.log('Setting user data:', mappedUser.username, mappedUser.role);
           setUser(mappedUser);
           setAuthError(null);
-
-        } else if (event === 'SIGNED_OUT' || !session) {
-          console.log('Processing SIGNED_OUT event or no session');
-          setUser(null);
-          setAuthError(null);
         }
       } catch (error: any) {
-        console.error("Auth state change error:", error);
-        setAuthError(error.message || "Greška pri provjeri statusa prijave. Molimo osvježite stranicu.");
-        setUser(null);
-        
-        // Ensure signout in case of error to prevent inconsistent state
+        console.error("User data processing error:", error);
+        if (mounted) {
+          setAuthError(error.message || "Greška pri dohvaćanju korisničkih podataka.");
+          setUser(null);
+        }
+        // Sign out on user data error
         try {
           await supabase.auth.signOut();
         } catch (signOutError) {
           console.error("Error during signout cleanup:", signOutError);
         }
-      } finally {
-        // CRITICAL: Always set loading to false after processing
-        console.log('Auth state change processing complete, setting isLoading to false');
-        setIsLoading(false);
+      }
+    };
+
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log(`Auth state change event: ${event}`, session?.user?.id || 'no user');
+      
+      if (!mounted) return;
+
+      try {
+        if (event === 'SIGNED_IN' && session?.user) {
+          console.log('Processing SIGNED_IN event for user:', session.user.id);
+          await processUserSession(session.user.id);
+        } else if (event === 'SIGNED_OUT' || !session) {
+          console.log('Processing SIGNED_OUT event or no session');
+          if (mounted) {
+            setUser(null);
+            setAuthError(null);
+          }
+        }
+      } catch (error: any) {
+        console.error("Auth state change error:", error);
+        if (mounted) {
+          setAuthError(error.message || "Greška pri provjeri statusa prijave.");
+          setUser(null);
+        }
       }
     });
 
-    // Clean up listener when component is destroyed
+    // Initialize auth state
+    initializeAuth();
+
+    // Cleanup function
     return () => {
+      mounted = false;
       console.log('AuthProvider: Cleaning up auth state listener');
       subscription.unsubscribe();
     };
@@ -93,7 +145,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setAuthError(null);
     
     try {
-      // 1. Create email for Supabase authentication based on input
+      // Create email for Supabase authentication based on input
       let email;
       const upperIdentifier = identifier.toUpperCase();
 
@@ -110,7 +162,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       console.log(`Attempting Supabase login with email: ${email}`);
 
-      // 2. Login through Supabase Auth service
       const { error } = await supabase.auth.signInWithPassword({
         email: email,
         password: password,
@@ -125,7 +176,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       console.log('Supabase login successful, waiting for onAuthStateChange...');
       // onAuthStateChange listener will handle the rest automatically
-      // isLoading will be set to false there
       return true;
 
     } catch (error) {

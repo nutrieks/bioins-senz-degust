@@ -1,8 +1,6 @@
 
-import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { UserRole } from "@/types";
 import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
 
@@ -11,16 +9,8 @@ interface EvaluatorLayoutProps {
 }
 
 export function EvaluatorLayout({ children }: EvaluatorLayoutProps) {
-  const { user, logout, isLoading } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    if (!isLoading && !user) {
-      navigate("/");
-    } else if (user && user.role !== UserRole.EVALUATOR) {
-      navigate("/");
-    }
-  }, [user, isLoading, navigate]);
 
   const handleLogout = async () => {
     await logout();

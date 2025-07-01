@@ -2,45 +2,50 @@
 import { Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { UserRole } from "@/types";
+import { LoadingState } from "@/components/evaluation/LoadingState";
 
-// Ova komponenta će biti "čuvar" za sve rute koje zahtijevaju prijavu.
-const AuthGuard = ({ role }: { role: UserRole }) => {
+interface AuthGuardProps {
+  role: UserRole;
+}
+
+const AuthGuard = ({ role }: AuthGuardProps) => {
   const { user, isLoading, authError } = useAuth();
 
-  // 1. Ako se stanje prijave još uvijek provjerava, prikaži globalni spinner.
-  // Ovo je JEDINI spinner koji korisnik treba vidjeti prilikom prvog učitavanja.
+  // Show loading state during authentication check
   if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      </div>
-    );
+    return <LoadingState message="Provjera prijave..." />;
   }
 
-  // 2. Ako je došlo do greške pri autentifikaciji, prikaži poruku.
+  // Show error state if authentication failed
   if (authError) {
     return (
-      <div className="flex min-h-screen items-center justify-center text-center">
-        <div>
-          <h2 className="text-xl text-destructive">Greška pri prijavi</h2>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <h2 className="text-xl font-semibold text-destructive">Greška pri prijavi</h2>
           <p className="text-muted-foreground">{authError}</p>
+          <button 
+            onClick={() => window.location.href = '/login'}
+            className="px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90"
+          >
+            Idite na prijavu
+          </button>
         </div>
       </div>
     );
   }
 
-  // 3. Ako provjera završi i nema korisnika, preusmjeri na login.
+  // Redirect to login if not authenticated
   if (!user) {
     return <Navigate to="/login" replace />;
   }
   
-  // 4. Ako korisnik postoji, ali njegova uloga ne odgovara ulozi potrebnoj za rutu, preusmjeri ga.
+  // Redirect to appropriate dashboard if user has wrong role
   if (user.role !== role) {
-    // Ako admin pokuša pristupiti evaluatorskoj ruti, ili obrnuto.
-    return <Navigate to={user.role === UserRole.ADMIN ? "/admin" : "/evaluator"} replace />;
+    const redirectPath = user.role === UserRole.ADMIN ? "/admin" : "/evaluator";
+    return <Navigate to={redirectPath} replace />;
   }
 
-  // 5. Ako je sve u redu (provjera gotova, korisnik postoji i ima ispravnu ulogu), prikaži stranicu.
+  // Render protected content if everything is ok
   return <Outlet />;
 };
 

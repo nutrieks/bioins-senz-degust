@@ -1,8 +1,7 @@
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { UserRole } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Calendar, ClipboardList, Home, LogOut, Menu, Users, PlusCircle } from "lucide-react";
 
@@ -11,18 +10,10 @@ interface AdminLayoutProps {
 }
 
 export function AdminLayout({ children }: AdminLayoutProps) {
-  const { user, logout, isLoading } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
-  useEffect(() => {
-    if (!isLoading && !user) {
-      navigate("/");
-    } else if (user && user.role !== UserRole.ADMIN) {
-      navigate("/");
-    }
-  }, [user, isLoading, navigate]);
 
   const handleLogout = async () => {
     await logout();
