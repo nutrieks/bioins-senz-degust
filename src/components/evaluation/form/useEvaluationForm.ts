@@ -6,10 +6,10 @@ import { JARRating } from "@/types";
 import { FormData } from "./types";
 import { validateEvaluationForm } from "./validation/formValidation";
 
-export function useEvaluationForm(eventId: string) {
+export function useEvaluationForm() {
   const {
     currentSample,
-    currentJARAttributes,
+    jarAttributes,
     submitAndLoadNext,
   } = useEvaluation();
 
@@ -46,7 +46,7 @@ export function useEvaluationForm(eventId: string) {
     console.log('=== FORM SUBMISSION ===');
     console.log('Form data:', data);
 
-    const { isValid } = validateEvaluationForm(data, form, currentJARAttributes);
+    const { isValid } = validateEvaluationForm(data, form, jarAttributes);
     if (!isValid) {
       console.log('Form validation failed');
       return;
@@ -56,11 +56,11 @@ export function useEvaluationForm(eventId: string) {
 
     try {
       const hedonicRatings = {
-        appearance: parseInt(data.hedonic.appearance),
-        odor: parseInt(data.hedonic.odor),
-        texture: parseInt(data.hedonic.texture),
-        flavor: parseInt(data.hedonic.flavor),
-        overallLiking: parseInt(data.hedonic.overallLiking),
+        hedonic_appearance: parseInt(data.hedonic.appearance),
+        hedonic_odor: parseInt(data.hedonic.odor),
+        hedonic_texture: parseInt(data.hedonic.texture),
+        hedonic_flavor: parseInt(data.hedonic.flavor),
+        hedonic_overall_liking: parseInt(data.hedonic.overallLiking),
       };
 
       const jarRatings: JARRating = {};
@@ -73,8 +73,8 @@ export function useEvaluationForm(eventId: string) {
       console.log('Submitting evaluation with ratings:', { hedonicRatings, jarRatings });
 
       await submitAndLoadNext({
-        hedonicRatings,
-        jarRatings,
+        ...hedonicRatings,
+        jar_ratings: jarRatings,
       });
 
       console.log('Evaluation submitted successfully');

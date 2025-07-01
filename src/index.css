@@ -194,3 +194,13 @@
 .image-caption {
   @apply text-sm text-muted-foreground mt-1 text-center;
 }
+
+/* Datoteka: src/index.css */
+
+.jar-item-label, .hedonic-item-label {
+  @apply flex items-center space-x-3 cursor-pointer;
+}
+
+.jar-item-label .text-sm, .hedonic-item-label .text-sm {
+  @apply text-left;
+}

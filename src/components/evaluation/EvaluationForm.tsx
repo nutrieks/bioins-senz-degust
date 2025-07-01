@@ -6,7 +6,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useEvaluation } from "@/contexts/EvaluationContext";
-import { getEvent, getJARAttributes } from "@/services/dataService";
+import { getEvent } from "@/services/dataService";
 import { CompletionScreen } from "./form/CompletionScreen";
 import { SampleHeader } from "./form/SampleHeader";
 import { HedonicScaleSection } from "./form/HedonicScaleSection";
@@ -14,40 +14,40 @@ import { JARScaleSection } from "./form/JARScaleSection";
 import { SubmitButton } from "./form/SubmitButton";
 import { useEvaluationForm } from "./form/useEvaluationForm";
 import { useAuth } from "@/contexts/AuthContext";
-import { JARAttribute } from "@/types";
 
 interface EvaluationFormProps {
-  eventId: string;
+  eventId?: string;
   productTypeId?: string;
   onComplete: () => void;
 }
 
-export function EvaluationForm({ eventId, productTypeId, onComplete }: EvaluationFormProps) {
+export function EvaluationForm({ onComplete }: EvaluationFormProps) {
   const { user } = useAuth();
   const { 
     currentSample, 
     isEvaluationFinished,
-    currentProductType
+    currentProductType,
+    jarAttributes
   } = useEvaluation();
   
   const [eventDate, setEventDate] = useState<string>("");
-  const [currentJARAttributes, setCurrentJARAttributes] = useState<JARAttribute[]>([]);
   
-  // Use our custom hook for form management - simplified call
+  // Use our custom hook for form management
   const {
     form,
     formKey,
     isSubmitting,
     scrollRef,
     onSubmit
-  } = useEvaluationForm(eventId);
+  } = useEvaluationForm();
   
   // Dohvati datum događaja
   useEffect(() => {
     const fetchEventDate = async () => {
-      if (eventId) {
+      if (currentSample?.productTypeId) {
         try {
-          const event = await getEvent(eventId);
+          // Get event info through sample
+          const event = await getEvent(currentSample.productTypeId);
           if (event) {
             setEventDate(format(new Date(event.date), "dd.MM.yyyy."));
           }
@@ -58,23 +58,6 @@ export function EvaluationForm({ eventId, productTypeId, onComplete }: Evaluatio
     };
 
     fetchEventDate();
-  }, [eventId]);
-
-  // Fetch JAR attributes when current sample changes
-  useEffect(() => {
-    const fetchJARAttributes = async () => {
-      if (currentSample?.productTypeId) {
-        try {
-          const attributes = await getJARAttributes(currentSample.productTypeId);
-          setCurrentJARAttributes(attributes);
-          console.log("Current JAR Attributes in form:", attributes);
-        } catch (error) {
-          console.error("Error fetching JAR attributes:", error);
-        }
-      }
-    };
-
-    fetchJARAttributes();
   }, [currentSample]);
   
   // Ako je ocjenjivanje završeno, prikazujemo poruku
@@ -116,9 +99,9 @@ export function EvaluationForm({ eventId, productTypeId, onComplete }: Evaluatio
               />
 
               {/* JAR skala - only show if attributes exist */}
-              {currentJARAttributes && currentJARAttributes.length > 0 && (
+              {jarAttributes && jarAttributes.length > 0 && (
                 <JARScaleSection 
-                  attributes={currentJARAttributes}
+                  attributes={jarAttributes}
                   control={form.control}
                   formKey={formKey}
                   errors={form.formState.errors}
