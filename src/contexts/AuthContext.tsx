@@ -21,44 +21,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     console.log('=== AuthProvider: Setting up auth state listener ===');
     
-    let mounted = true; // Flag to prevent state updates if component unmounts
-
-    const initializeAuth = async () => {
-      try {
-        setIsLoading(true);
-        setAuthError(null);
-
-        // First, check for existing session
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        
-        if (sessionError) {
-          console.error("Session check error:", sessionError);
-          throw sessionError;
-        }
-
-        if (session?.user && mounted) {
-          console.log('Found existing session for user:', session.user.id);
-          await processUserSession(session.user.id);
-        } else {
-          console.log('No existing session found');
-          if (mounted) {
-            setUser(null);
-            setAuthError(null);
-          }
-        }
-      } catch (error: any) {
-        console.error("Auth initialization error:", error);
-        if (mounted) {
-          setAuthError(error.message || "Greška pri provjeri statusa prijave.");
-          setUser(null);
-        }
-      } finally {
-        if (mounted) {
-          setIsLoading(false);
-        }
-      }
-    };
-
     const processUserSession = async (userId: string) => {
       try {
         const { data: userData, error } = await supabase
@@ -82,18 +44,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           password: userData.password,
         };
 
-        if (mounted) {
-          console.log('Setting user data:', mappedUser.username, mappedUser.role);
-          setUser(mappedUser);
-          setAuthError(null);
-        }
+        console.log('Setting user data:', mappedUser.username, mappedUser.role);
+        setUser(mappedUser);
+        setAuthError(null);
       } catch (error: any) {
         console.error("User data processing error:", error);
-        if (mounted) {
-          setAuthError(error.message || "Greška pri dohvaćanju korisničkih podataka.");
-          setUser(null);
-        }
-        // Sign out on user data error
+        setAuthError(error.message || "Greška pri dohvaćanju korisničkih podataka.");
+        setUser(null);
         try {
           await supabase.auth.signOut();
         } catch (signOutError) {
@@ -106,34 +63,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log(`Auth state change event: ${event}`, session?.user?.id || 'no user');
       
-      if (!mounted) return;
-
       try {
         if (event === 'SIGNED_IN' && session?.user) {
           console.log('Processing SIGNED_IN event for user:', session.user.id);
           await processUserSession(session.user.id);
         } else if (event === 'SIGNED_OUT' || !session) {
           console.log('Processing SIGNED_OUT event or no session');
-          if (mounted) {
-            setUser(null);
-            setAuthError(null);
-          }
+          setUser(null);
+          setAuthError(null);
         }
       } catch (error: any) {
         console.error("Auth state change error:", error);
-        if (mounted) {
-          setAuthError(error.message || "Greška pri provjeri statusa prijave.");
-          setUser(null);
-        }
+        setAuthError(error.message || "Greška pri provjeri statusa prijave.");
+        setUser(null);
+      } finally {
+        setIsLoading(false);
       }
     });
 
-    // Initialize auth state
-    initializeAuth();
+    // Check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        console.log('Found existing session for user:', session.user.id);
+        processUserSession(session.user.id).finally(() => setIsLoading(false));
+      } else {
+        console.log('No existing session found');
+        setUser(null);
+        setAuthError(null);
+        setIsLoading(false);
+      }
+    });
 
     // Cleanup function
     return () => {
-      mounted = false;
       console.log('AuthProvider: Cleaning up auth state listener');
       subscription.unsubscribe();
     };
