@@ -103,7 +103,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async (identifier: string, password: string): Promise<boolean> => {
     console.log('=== Starting login process ===');
-    setIsLoading(true);
     setAuthError(null);
     
     try {
@@ -118,7 +117,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } else {
         console.error(`Invalid identifier format: '${identifier}'`);
         setAuthError("Nevažeći format identifikatora. Koristite 'ADMIN' ili broj pozicije evaluatora (1-12).");
-        setIsLoading(false);
         return false;
       }
       
@@ -132,7 +130,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (error) {
         console.error('Supabase signInWithPassword error:', error.message);
         setAuthError("Pogrešno korisničko ime ili lozinka");
-        setIsLoading(false);
         return false;
       }
 
@@ -143,23 +140,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (error) {
       console.error('Login function threw exception:', error);
       setAuthError(error instanceof Error ? error.message : "Došlo je do greške pri prijavi");
-      setIsLoading(false);
       return false;
     }
   };
 
   const logout = async () => {
     console.log('=== Starting logout process ===');
-    setIsLoading(true);
     try {
       await supabase.auth.signOut();
-      setUser(null);
-      setAuthError(null);
+      // Don't manually set user/error here - let onAuthStateChange handle it
     } catch (error) {
       console.error('Logout error:', error);
       setAuthError("Greška pri odjavi");
-    } finally {
-      setIsLoading(false);
     }
   };
 

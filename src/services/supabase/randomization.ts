@@ -415,7 +415,7 @@ export async function getNextSample(
             productType: nextSample.productTypeName
           });
           
-          return nextSample;
+          return { sample: nextSample, isComplete: false };
         }
       }
 
@@ -424,7 +424,7 @@ export async function getNextSample(
 
     console.log('=== NO MORE SAMPLES AVAILABLE ===');
     console.log('All product types checked, no uncompleted samples found');
-    return null;
+    return { sample: null, isComplete: true };
   } catch (error) {
     console.error('=== ERROR GETTING NEXT SAMPLE ===');
     console.error('Error details:', error);

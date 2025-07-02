@@ -77,12 +77,9 @@ export const EvaluationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     
     if (!eventId) return;
     
-    // Try to load next sample in current product type or next product type
-    const hasNext = await loadNextProductType(eventId);
-    if (!hasNext) {
-      console.log('No more samples available, evaluation finished');
-    }
-  }, [eventId, loadNextProductType, setShowSampleReveal]);
+    // Load next sample
+    await loadNextSample(eventId);
+  }, [eventId, loadNextSample, setShowSampleReveal]);
 
   const submitAndLoadNext = useCallback(async (evaluationData: Omit<Evaluation, "id" | "userId" | "sampleId" | "productTypeId" | "eventId" | "timestamp">) => {
     if (!user || !currentSample || !eventId || !currentProductType) {
