@@ -1,10 +1,9 @@
-
-import React, { createContext, useContext, useState, useCallback } from "react";
+import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
 import { Sample, JARAttribute, ProductType, Evaluation } from "../types";
-import { getNextSample, getCompletedEvaluations, getProductTypes, submitEvaluation, getJARAttributes } from "../services/dataService";
 import { useAuth } from "./AuthContext";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import { useEvaluationManager } from "@/hooks/useEvaluationManager";
+import { useSubmitEvaluation } from "@/hooks/useEvaluations";
 
 interface EvaluationContextType {
   // Stanja
@@ -27,126 +26,100 @@ const EvaluationContext = createContext<EvaluationContextType | undefined>(undef
 export const EvaluationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const queryClient = useQueryClient();
-
-  const [isLoading, setIsLoading] = useState(true);
   const [eventId, setEventId] = useState<string | null>(null);
+  
+  // Use the centralized evaluation manager
+  const {
+    currentSample,
+    currentJARAttributes,
+    isComplete,
+    currentProductType,
+    showSampleReveal,
+    isLoading,
+    loadNextSample,
+    loadNextProductType,
+    resetEvaluation,
+    setShowSampleReveal,
+    markProductTypeComplete,
+  } = useEvaluationManager(eventId || undefined);
 
-  const [allProductTypes, setAllProductTypes] = useState<ProductType[]>([]);
-  const [completedSampleIds, setCompletedSampleIds] = useState<string[]>([]);
+  const submitMutation = useSubmitEvaluation();
 
-  const [currentProductType, setCurrentProductType] = useState<ProductType | null>(null);
-  const [currentSample, setCurrentSample] = useState<Sample | null>(null);
-  const [jarAttributes, setJarAttributes] = useState<JARAttribute[]>([]);
-
-  const [showSampleReveal, setShowSampleReveal] = useState(false);
   const [completedSamplesForReveal, setCompletedSamplesForReveal] = useState<Sample[]>([]);
-  const [isEvaluationFinished, setIsEvaluationFinished] = useState(false);
-
-  const findNextTask = useCallback(() => {
-    for (const pt of allProductTypes) {
-        for (const sample of pt.samples) {
-            if (!completedSampleIds.includes(sample.id)) {
-                return { nextProductType: pt, nextSample: sample };
-            }
-        }
-    }
-    return { nextProductType: null, nextSample: null };
-  }, [allProductTypes, completedSampleIds]);
 
   const startEvaluation = useCallback(async (eventIdToStart: string) => {
+    console.log('=== STARTING EVALUATION ===', eventIdToStart);
     setEventId(eventIdToStart);
-    setIsLoading(true);
-    if (!user) return;
+    resetEvaluation();
+    
+    if (!user) {
+      console.error('No user found for evaluation');
+      return;
+    }
 
     try {
-        const productTypes = await getProductTypes(eventIdToStart);
-        const evals = await getCompletedEvaluations(eventIdToStart, user.id);
-        const initialCompletedIds = evals.map(e => e.sampleId);
-
-        setAllProductTypes(productTypes);
-        setCompletedSampleIds(initialCompletedIds);
-
-        // Odmah pronađi prvi zadatak
-        let nextTaskProductType = null;
-        let nextTaskSample = null;
-        for (const pt of productTypes) {
-            const sample = pt.samples.find(s => !initialCompletedIds.includes(s.id));
-            if (sample) {
-                nextTaskProductType = pt;
-                nextTaskSample = sample;
-                break;
-            }
-        }
-
-        if (nextTaskSample && nextTaskProductType) {
-            setCurrentSample(nextTaskSample);
-            setCurrentProductType(nextTaskProductType);
-            const attributes = await getJARAttributes(nextTaskProductType.id);
-            setJarAttributes(attributes);
-        } else {
-            setIsEvaluationFinished(true);
-        }
+      // Load first sample automatically
+      await loadNextSample(eventIdToStart);
     } catch (error) {
-        console.error("Initialization Error:", error);
-        toast({ title: "Greška", description: "Nije moguće pokrenuti evaluaciju.", variant: "destructive" });
-    } finally {
-        setIsLoading(false);
+      console.error("Error starting evaluation:", error);
+      toast({ 
+        title: "Greška", 
+        description: "Nije moguće pokrenuti evaluaciju.", 
+        variant: "destructive" 
+      });
     }
-  }, [user, toast]);
+  }, [user, toast, resetEvaluation, loadNextSample]);
 
   const proceedToNextStep = useCallback(async () => {
+    console.log('=== PROCEEDING TO NEXT STEP ===');
     setShowSampleReveal(false);
-    setIsLoading(true);
-
-    const { nextProductType, nextSample } = findNextTask();
-
-    if (nextSample && nextProductType) {
-        setCurrentSample(nextSample);
-        if (currentProductType?.id !== nextProductType.id) {
-            setCurrentProductType(nextProductType);
-            const attributes = await getJARAttributes(nextProductType.id);
-            setJarAttributes(attributes);
-        }
-    } else {
-        setIsEvaluationFinished(true);
+    setCompletedSamplesForReveal([]);
+    
+    if (!eventId) return;
+    
+    // Try to load next sample in current product type or next product type
+    const hasNext = await loadNextProductType(eventId);
+    if (!hasNext) {
+      console.log('No more samples available, evaluation finished');
     }
-    setIsLoading(false);
-  }, [findNextTask, currentProductType]);
+  }, [eventId, loadNextProductType, setShowSampleReveal]);
 
-  const submitMutation = useMutation({
-    mutationFn: (data: any) => submitEvaluation(data),
-    onSuccess: (data, variables) => {
-        // Optimistic update
-        setCompletedSampleIds(prev => [...prev, variables.sampleId]);
-        queryClient.invalidateQueries({ queryKey: ['evaluationStatus', eventId] });
-    },
-    onError: (err: Error) => {
-        toast({ title: "Greška", description: `Spremanje nije uspjelo: ${err.message}`, variant: "destructive" });
+  const submitAndLoadNext = useCallback(async (evaluationData: Omit<Evaluation, "id" | "userId" | "sampleId" | "productTypeId" | "eventId" | "timestamp">) => {
+    if (!user || !currentSample || !eventId || !currentProductType) {
+      console.error('Missing required data for submission');
+      return;
     }
-  });
 
-  const submitAndLoadNext = async (evaluationData: Omit<Evaluation, "id" | "userId" | "sampleId" | "productTypeId" | "eventId" | "timestamp">) => {
-    if (!user || !currentSample || !eventId) return;
+    console.log('=== SUBMITTING EVALUATION ===');
+    console.log('Sample:', currentSample.id);
+    console.log('Product Type:', currentProductType.id);
 
-    await submitMutation.mutateAsync({
-        ...evaluationData,
+    try {
+      // Submit evaluation with correct property names
+      await submitMutation.mutateAsync({
         userId: user.id,
         sampleId: currentSample.id,
-        productTypeId: currentProductType!.id,
+        productTypeId: currentProductType.id,
         eventId: eventId,
-    });
+        hedonicRatings: evaluationData.hedonic,
+        jarRatings: evaluationData.jar,
+      });
 
-    // Provjera je li trenutni tip proizvoda gotov
-    const isProductTypeFinished = currentProductType?.samples.every(s => [...completedSampleIds, currentSample.id].includes(s.id));
-
-    if (isProductTypeFinished) {
-        setCompletedSamplesForReveal(currentProductType!.samples);
-        setShowSampleReveal(true);
-    } else {
-        await proceedToNextStep();
+      // Check if current product type is finished
+      // For now, we'll show reveal after each sample submission
+      // This can be optimized later to check if all samples in product type are done
+      setCompletedSamplesForReveal([currentSample]);
+      setShowSampleReveal(true);
+      
+    } catch (error) {
+      console.error("Error submitting evaluation:", error);
+      toast({ 
+        title: "Greška", 
+        description: "Problem kod spremanja ocjene. Pokušajte ponovno.", 
+        variant: "destructive" 
+      });
     }
-  };
+  }, [user, currentSample, currentProductType, eventId, submitMutation, toast]);
 
   return (
     <EvaluationContext.Provider
@@ -154,10 +127,10 @@ export const EvaluationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         isLoading,
         currentSample,
         currentProductType,
-        jarAttributes,
+        jarAttributes: currentJARAttributes,
         completedSamplesForReveal,
         showSampleReveal,
-        isEvaluationFinished,
+        isEvaluationFinished: isComplete,
         startEvaluation,
         submitAndLoadNext,
         proceedToNextStep,
@@ -169,7 +142,9 @@ export const EvaluationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 };
 
 export const useEvaluation = () => {
-    const context = useContext(EvaluationContext);
-    if (context === undefined) throw new Error("useEvaluation must be used within an EvaluationProvider");
-    return context;
+  const context = useContext(EvaluationContext);
+  if (context === undefined) {
+    throw new Error("useEvaluation must be used within an EvaluationProvider");
+  }
+  return context;
 };

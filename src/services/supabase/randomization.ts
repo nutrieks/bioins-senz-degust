@@ -177,12 +177,8 @@ export async function getNextSample(
   completedSampleIds?: string[]
 ): Promise<any> {
   try {
-    console.log('=== GETTING NEXT SAMPLE - ENHANCED DEBUGGING ===');
-    console.log('Input parameters:');
-    console.log('- User ID:', userId);
-    console.log('- Event ID:', eventId);
-    console.log('- Product Type ID:', productTypeId);
-    console.log('- Completed Sample IDs:', completedSampleIds);
+    console.log('=== GETTING NEXT SAMPLE ===');
+    console.log('Parameters:', { userId, eventId, productTypeId, completedSampleIdsCount: completedSampleIds?.length });
 
     // Get user's evaluator position s dodatnim debug info i retry logikom
     let user = null;
