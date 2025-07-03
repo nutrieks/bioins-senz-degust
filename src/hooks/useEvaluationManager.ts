@@ -42,9 +42,17 @@ export function useEvaluationManager(eventId?: string) {
     forcedCompletedSampleIds || completedSamples
   );
 
+  console.log('useEvaluationManager - nextSampleData:', nextSampleData);
+
   // Derive current sample from next sample data
   const currentSample = nextSampleData?.sample || null;
   const isComplete = nextSampleData?.isComplete || false;
+
+  console.log('useEvaluationManager - current sample and completion:', {
+    sample: currentSample?.blindCode,
+    productType: currentSample?.productTypeName,
+    isComplete
+  });
 
   // Find current product type
   const currentProductType = productTypes.find(pt => pt.id === currentSample?.productTypeId) || null;
@@ -55,6 +63,12 @@ export function useEvaluationManager(eventId?: string) {
     queryFn: () => getJARAttributes(currentSample!.productTypeId),
     enabled: !!currentSample?.productTypeId,
     staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+
+  console.log('useEvaluationManager - JAR attributes:', {
+    productTypeId: currentSample?.productTypeId,
+    jarAttributes: currentJARAttributes,
+    count: currentJARAttributes?.length || 0
   });
 
   // Calculate remaining product types

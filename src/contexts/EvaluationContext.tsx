@@ -77,7 +77,7 @@ export const EvaluationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     
     if (!eventId) return;
     
-    // Load next sample
+    // Force refetch of next sample without specific product type to allow cross-product navigation
     await loadNextSample(eventId);
   }, [eventId, loadNextSample, setShowSampleReveal]);
 

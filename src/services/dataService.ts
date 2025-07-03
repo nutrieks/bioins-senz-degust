@@ -187,20 +187,22 @@ export async function getNextSample(
   console.log('Parameters:', { userId, eventId, productTypeId, completedSampleIds });
 
   try {
-    // Call the Supabase service
-    const sample = await getNextSampleSupabase(userId, eventId, productTypeId, completedSampleIds);
+    // Call the Supabase service - this now returns { sample, isComplete }
+    const result = await getNextSampleSupabase(userId, eventId, productTypeId, completedSampleIds);
     
-    console.log('Sample from Supabase service:', sample);
+    console.log('Result from Supabase service:', result);
     
-    if (!sample) {
+    if (!result || result.isComplete || !result.sample) {
       // No more samples available
-      console.log('No sample returned - evaluation complete');
+      console.log('No sample returned or evaluation complete');
       return {
         sample: null,
         round: 0,
         isComplete: true
       };
     }
+
+    const sample = result.sample;
 
     // Calculate the round based on completed samples for this product type
     let round = 1;

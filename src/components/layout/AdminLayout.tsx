@@ -16,7 +16,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
 
   const handleLogout = async () => {
     await logout();
-    navigate("/login");
+    // Don't navigate manually - AuthContext handles redirect
   };
 
   const navigation = [

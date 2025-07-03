@@ -23,10 +23,16 @@ export function JARScaleSection({
   errors
 }: JARScaleSectionProps) {
   console.log('=== JAR SCALE SECTION RENDER ===');
-  console.log('Attributes received:', attributes?.length || 0, attributes);
+  console.log('Attributes received:', attributes?.length || 0);
+  console.log('Attributes details:', attributes);
+  console.log('FormKey:', formKey);
+  console.log('Control:', !!control);
   
   if (!attributes || attributes.length === 0) {
     console.log('No JAR attributes available, not rendering JAR section');
+    console.log('Attributes is null:', attributes === null);
+    console.log('Attributes is undefined:', attributes === undefined);
+    console.log('Attributes length is 0:', attributes?.length === 0);
     return null;
   }
   
