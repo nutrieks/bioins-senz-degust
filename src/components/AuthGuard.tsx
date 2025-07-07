@@ -9,29 +9,11 @@ interface AuthGuardProps {
 }
 
 const AuthGuard = ({ role }: AuthGuardProps) => {
-  const { user, isLoading, authError } = useAuth();
+  const { user, loading } = useAuth();
 
   // Show loading state during authentication check
-  if (isLoading) {
+  if (loading) {
     return <LoadingState message="Provjera prijave..." />;
-  }
-
-  // Show error state if authentication failed
-  if (authError) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <h2 className="text-xl font-semibold text-destructive">Greška pri prijavi</h2>
-          <p className="text-muted-foreground">{authError}</p>
-          <button 
-            onClick={() => window.location.href = '/login'}
-            className="px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90"
-          >
-            Idite na prijavu
-          </button>
-        </div>
-      </div>
-    );
   }
 
   // Redirect to login if not authenticated

@@ -6,20 +6,20 @@ import { useAuth } from "@/contexts/AuthContext";
 import { UserRole } from "@/types";
 
 export default function Login() {
-  const { user, isLoading } = useAuth();
+  const { user, loading } = useAuth();
   const navigate = useNavigate();
 
   // Ovaj useEffect ostaje kako bi preusmjerio korisnika ako je već prijavljen
   // i pokuša pristupiti /login stranici.
   useEffect(() => {
-    if (!isLoading && user) {
+    if (!loading && user) {
       if (user.role === UserRole.ADMIN) {
         navigate("/admin");
       } else if (user.role === UserRole.EVALUATOR) {
         navigate("/evaluator");
       }
     }
-  }, [user, isLoading, navigate]);
+  }, [user, loading, navigate]);
 
   // Nema više potrebe za prikazivanjem spinnera ovdje. AuthGuard to radi.
   // Ako je `isLoading` true, AuthGuard će prikazati spinner prije nego što se ova komponenta i iscrta.

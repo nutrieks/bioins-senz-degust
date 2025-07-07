@@ -24,9 +24,9 @@ export function LoginForm() {
       
       // Pass the raw identifier to the login function. 
       // The auth context will handle the logic.
-      const success = await login(identifier, password);
+      const { error: loginError } = await login(identifier, password);
       
-      if (!success) {
+      if (loginError) {
         setError("Neispravno korisničko ime ili lozinka");
         toast({
           title: "Greška prilikom prijave",
