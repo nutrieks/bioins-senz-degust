@@ -18,9 +18,9 @@ export function EvaluationContent({ eventId }: EvaluationContentProps) {
     isEvaluationFinished,
     showSampleReveal,
     currentProductType,
-    completedSamplesForReveal,
+    samplesForReveal,
     startEvaluation,
-    proceedToNextStep,
+    loadNextTask,
   } = useEvaluation();
 
   useEffect(() => {
@@ -41,7 +41,7 @@ export function EvaluationContent({ eventId }: EvaluationContentProps) {
         eventId={eventId}
         productTypeId={currentProductType.id}
         productName={currentProductType.productName}
-        onContinue={proceedToNextStep}
+        onContinue={loadNextTask}
       />
     );
   }

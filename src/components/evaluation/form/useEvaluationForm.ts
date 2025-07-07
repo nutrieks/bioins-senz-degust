@@ -1,32 +1,28 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
+import { useToast } from "@/hooks/use-toast";
 import { useEvaluation } from "@/contexts/EvaluationContext";
-import { JARRating } from "@/types";
+import { JARRating, HedonicScale } from "@/types";
 import { FormData } from "./types";
 import { validateEvaluationForm } from "./validation/formValidation";
 
 export function useEvaluationForm() {
-  const {
-    currentSample,
-    jarAttributes,
-    submitAndLoadNext,
-  } = useEvaluation();
-
+  const { toast } = useToast();
+  const { submitEvaluation, currentSample, jarAttributes } = useEvaluation();
   const [formKey, setFormKey] = useState<number>(Date.now());
   const [isSubmitting, setIsSubmitting] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const form = useForm<FormData>({
+  const form = useForm<FormData>({ 
     defaultValues: {
       hedonic: { appearance: "", odor: "", texture: "", flavor: "", overallLiking: "" },
       jar: {},
     },
-    mode: "onSubmit",
+    mode: "onSubmit" 
   });
 
   useEffect(() => {
-    console.log('FORM HOOK: Resetting form for new sample:', currentSample?.blindCode);
     form.reset({
       hedonic: { appearance: "", odor: "", texture: "", flavor: "", overallLiking: "" },
       jar: {},
@@ -38,59 +34,40 @@ export function useEvaluationForm() {
   }, [currentSample, form]);
 
   const onSubmit = async (data: FormData) => {
-    if (!currentSample) {
-      console.log('No current sample to submit');
-      return;
-    }
+    if (!currentSample) return;
 
-    console.log('=== FORM SUBMISSION ===');
-    console.log('Form data:', data);
-
-    const { isValid } = validateEvaluationForm(data, form, jarAttributes);
+    const { isValid, errorFields } = validateEvaluationForm(data, form, jarAttributes);
     if (!isValid) {
-      console.log('Form validation failed');
+      toast({ title: "Nepotpuna ocjena", description: `Molimo ispunite sva polja. Nedostaju: ${errorFields}`, variant: "destructive" });
       return;
     }
 
     setIsSubmitting(true);
-
     try {
-      const hedonicRatings = {
+      const hedonic: HedonicScale = {
         appearance: parseInt(data.hedonic.appearance),
         odor: parseInt(data.hedonic.odor),
         texture: parseInt(data.hedonic.texture),
         flavor: parseInt(data.hedonic.flavor),
         overallLiking: parseInt(data.hedonic.overallLiking),
       };
-
-      const jarRatings: JARRating = {};
+      const jar: JARRating = {};
       Object.entries(data.jar).forEach(([attrId, value]) => {
-        if (value !== undefined && value !== '') {
-          jarRatings[attrId] = parseInt(value.toString());
-        }
+        if (value !== undefined && value !== '') jar[attrId] = parseInt(value.toString());
       });
 
-      console.log('Submitting evaluation with ratings:', { hedonicRatings, jarRatings });
+      await submitEvaluation({ hedonic, jar });
 
-      await submitAndLoadNext({
-        hedonic: hedonicRatings,
-        jar: jarRatings,
-      });
-
-      console.log('Evaluation submitted successfully');
+      toast({ title: "Ocjena spremljena", description: `Uspješno ste ocijenili uzorak ${currentSample.blindCode}.` });
 
     } catch (error) {
-      console.error("Error submitting evaluation:", error);
+      console.error("Greška kod predaje ocjene:", error);
+      toast({ title: "Greška", description: "Problem kod spremanja ocjene. Molimo pokušajte ponovno.", variant: "destructive" });
     } finally {
+      // GARANTIRANO se izvršava, sprječavajući zamrzavanje ekrana
       setIsSubmitting(false);
     }
   };
 
-  return {
-    form,
-    formKey,
-    isSubmitting,
-    scrollRef,
-    onSubmit,
-  };
+  return { form, formKey, isSubmitting, scrollRef, onSubmit };
 }
