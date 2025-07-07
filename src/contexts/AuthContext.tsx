@@ -2,11 +2,11 @@
 // Datoteka: src/contexts/AuthContext.tsx
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { User, UserRole } from "../types";
+import { User } from "../types";
 
 interface AuthContextType {
   user: User | null;
-  loading: boolean; // Samo jedno stanje za učitavanje
+  loading: boolean;
   login: (identifier: string, password: string) => Promise<{ error: any | null }>;
   logout: () => Promise<void>;
 }
@@ -26,7 +26,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const mappedUser: User = {
             id: userData.id,
             username: userData.username,
-            role: userData.role as UserRole,
+            role: userData.role as any,
             evaluatorPosition: userData.evaluator_position || undefined,
             isActive: userData.is_active,
             password: userData.password
