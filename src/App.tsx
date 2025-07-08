@@ -54,6 +54,7 @@ const App = () => (
             {/* ZAŠTIĆENE RUTE - SVAKA JE OMOTANA U PROTECTEDROUTE */}
             <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
             <Route path="/admin/events" element={<ProtectedRoute><EventsPage /></ProtectedRoute>} />
+            <Route path="/admin/events/new" element={<ProtectedRoute><NewEvent /></ProtectedRoute>} />
             <Route path="/admin/events/:eventId" element={<ProtectedRoute><EventDetail /></ProtectedRoute>} />
             <Route path="/admin/products" element={<ProtectedRoute><ProductsPage /></ProtectedRoute>} />
             <Route path="/admin/products/new" element={<ProtectedRoute><NewProductType /></ProtectedRoute>} />
