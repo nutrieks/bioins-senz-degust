@@ -38,14 +38,19 @@ export function useCreateEvent() {
   return useMutation({
     mutationFn: (date: string) => createEventAPI(date),
     onSuccess: (newEvent) => {
+      console.log('useCreateEvent: Event created successfully:', newEvent);
+      
       toast({
         title: "Uspješno",
         description: "Događaj je uspješno kreiran.",
       });
+      
+      // Set the new event in cache immediately
+      queryClient.setQueryData(['event', newEvent.id], newEvent);
+      console.log('useCreateEvent: Event cached with key:', ['event', newEvent.id]);
+      
       // Invalidate and refetch events list
       queryClient.invalidateQueries({ queryKey: ['events'] });
-      // Set the new event in cache
-      queryClient.setQueryData(['event', newEvent.id], newEvent);
     },
     onError: (error) => {
       console.error("Error creating event:", error);

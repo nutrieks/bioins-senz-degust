@@ -1,13 +1,18 @@
 
 import { useQuery } from "@tanstack/react-query";
-import { getEvent } from "@/services/supabase/events";
+import { getEvent } from "@/services/events";
 import { getProductTypes } from "@/services/supabase/productTypes";
 import { getRandomization } from "@/services/supabase/randomization";
 
 export function useEventDetailQueries(eventId: string | undefined) {
   const { data: event, isLoading: isLoadingEvent, isError: eventError, error: eventErrorMessage } = useQuery({
     queryKey: ['event', eventId],
-    queryFn: () => getEvent(eventId!),
+    queryFn: async () => {
+      console.log('useEventDetailQueries: Fetching event with ID:', eventId);
+      const result = await getEvent(eventId!);
+      console.log('useEventDetailQueries: Event result:', result);
+      return result;
+    },
     enabled: !!eventId,
     staleTime: 1000 * 60 * 2,
     retry: 3,

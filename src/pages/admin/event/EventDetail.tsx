@@ -54,8 +54,9 @@ export default function EventDetail() {
     return <EventDetailLoading />;
   }
 
-  // Event not found
-  if (!event) {
+  // Event not found - add retry mechanism
+  if (!event && !isLoading) {
+    console.log('Event not found, showing EventNotFound component. EventId:', eventId);
     return <EventNotFound />;
   }
 

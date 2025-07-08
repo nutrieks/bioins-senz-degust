@@ -19,8 +19,13 @@ export default function NewEvent() {
   // Handle navigation after successful creation
   useEffect(() => {
     if (createEventMutation.isSuccess && createEventMutation.data) {
-      console.log("Navigating to created event:", createEventMutation.data.id);
-      navigate(`/admin/events/${createEventMutation.data.id}`);
+      console.log("Event created successfully:", createEventMutation.data);
+      
+      // Add a small delay to ensure cache is updated
+      setTimeout(() => {
+        console.log("Navigating to created event:", createEventMutation.data.id);
+        navigate(`/admin/events/${createEventMutation.data.id}`);
+      }, 100);
     }
   }, [createEventMutation.isSuccess, createEventMutation.data, navigate]);
 
