@@ -46,14 +46,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const login = async (identifier: string, password: string) => {
-    let email;
-    if (identifier.toUpperCase() === 'ADMIN') {
-      email = 'admin@bioins.local';
-    } else {
-      email = `evaluator${identifier}@bioins.local`;
+    try {
+      let email;
+      if (identifier.toUpperCase() === 'ADMIN') {
+        email = 'admin@bioins.local';
+      } else {
+        email = `evaluator${identifier}@bioins.local`;
+      }
+      
+      const result = await supabase.auth.signInWithPassword({ email, password });
+      return result;
+    } catch (error) {
+      console.error('Login error:', error);
+      return { error };
     }
-    setLoading(true); // Postavi loading na true PRIJE prijave
-    return supabase.auth.signInWithPassword({ email, password });
   };
 
   const logout = async () => {

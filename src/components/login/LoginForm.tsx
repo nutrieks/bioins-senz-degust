@@ -9,21 +9,17 @@ import { useToast } from "@/hooks/use-toast";
 export function LoginForm() {
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const { login } = useAuth();
+  const { login, loading } = useAuth();
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
     setError("");
     
     try {
       console.log('Form submitting with identifier:', identifier);
       
-      // Pass the raw identifier to the login function. 
-      // The auth context will handle the logic.
       const { error: loginError } = await login(identifier, password);
       
       if (loginError) {
@@ -47,8 +43,6 @@ export function LoginForm() {
         description: "Došlo je do neočekivane greške",
         variant: "destructive",
       });
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -78,7 +72,7 @@ export function LoginForm() {
               autoFocus
               className="w-full"
               placeholder="Unesite ADMIN ili broj mjesta (1-12)"
-              disabled={isLoading}
+              disabled={loading}
             />
           </div>
           <div className="space-y-2">
@@ -93,11 +87,11 @@ export function LoginForm() {
               required
               className="w-full"
               placeholder="Unesite lozinku"
-              disabled={isLoading}
+              disabled={loading}
             />
           </div>
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? "Prijava u tijeku..." : "Prijava"}
+          <Button type="submit" className="w-full" disabled={loading}>
+            {loading ? "Prijava u tijeku..." : "Prijava"}
           </Button>
         </form>
       </CardContent>
