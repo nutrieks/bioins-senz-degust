@@ -2,11 +2,13 @@
 // Datoteka: src/App.tsx
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as SonnerToaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
-import { ProtectedRoute } from "@/components/auth/ProtectedRoute"; // <-- KLJUČAN IMPORT
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { centralizedEventService } from "@/services/centralizedEventService";
 
 // Stranice
 import Login from "./pages/Login";
@@ -22,7 +24,18 @@ import UsersPage from "./pages/admin/users/UsersPage";
 import Evaluation from "./pages/evaluator/Evaluation";
 import NotFound from "./pages/NotFound";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      retry: 2,
+      retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
+    },
+  },
+});
+
+// Initialize centralized event service with query client
+centralizedEventService.setQueryClient(queryClient);
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -30,6 +43,8 @@ const App = () => (
       <AuthProvider>
         <Toaster />
         <SonnerToaster />
+        {/* React Query DevTools - only shows in development */}
+        {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} />}
         <BrowserRouter>
           <Routes>
             {/* JAVNE RUTE */}

@@ -1,10 +1,18 @@
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getEvent } from "@/services/events";
+import { centralizedEventService } from "@/services/centralizedEventService";
 import { getProductTypes } from "@/services/supabase/productTypes";
 import { getRandomization } from "@/services/supabase/randomization";
 
 export function useEventDetailQueries(eventId: string | undefined) {
+  const queryClient = useQueryClient();
+
+  // Ensure centralized service has access to query client
+  if (eventId) {
+    centralizedEventService.setQueryClient(queryClient);
+  }
+
   const { data: event, isLoading: isLoadingEvent, isError: eventError, error: eventErrorMessage } = useQuery({
     queryKey: ['event', eventId],
     queryFn: async () => {

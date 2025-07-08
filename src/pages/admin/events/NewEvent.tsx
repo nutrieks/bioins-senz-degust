@@ -16,16 +16,39 @@ export default function NewEvent() {
   const navigate = useNavigate();
   const createEventMutation = useCreateEvent();
 
-  // Handle navigation after successful creation
+  // Handle navigation after successful creation with proper cache validation
   useEffect(() => {
     if (createEventMutation.isSuccess && createEventMutation.data) {
       console.log("Event created successfully:", createEventMutation.data);
       
-      // Add a small delay to ensure cache is updated
-      setTimeout(() => {
-        console.log("Navigating to created event:", createEventMutation.data.id);
-        navigate(`/admin/events/${createEventMutation.data.id}`);
-      }, 100);
+      // Wait for event to be properly cached before navigation
+      const waitForEventAndNavigate = async () => {
+        try {
+          // Import here to avoid circular dependencies
+          const { centralizedEventService } = await import("@/services/centralizedEventService");
+          
+          // Wait for the event to be available in cache
+          const cachedEvent = await centralizedEventService.waitForEventInCache(
+            createEventMutation.data.id, 
+            3000 // Wait up to 3 seconds
+          );
+          
+          if (cachedEvent) {
+            console.log("Event confirmed in cache, navigating:", cachedEvent.id);
+            navigate(`/admin/events/${cachedEvent.id}`);
+          } else {
+            console.log("Event not found in cache, navigating anyway with fallback");
+            // Navigate anyway - the EventDetail component will handle the fallback
+            navigate(`/admin/events/${createEventMutation.data.id}`);
+          }
+        } catch (error) {
+          console.error("Error waiting for event cache:", error);
+          // Fallback navigation
+          navigate(`/admin/events/${createEventMutation.data.id}`);
+        }
+      };
+      
+      waitForEventAndNavigate();
     }
   }, [createEventMutation.isSuccess, createEventMutation.data, navigate]);
 

@@ -7,7 +7,8 @@ import {
   createEvent as createEventAPI,
   updateEventStatus as updateEventStatusAPI,
   deleteEvent as deleteEventAPI 
-} from '@/services/dataService';
+} from '@/services/events';
+import { centralizedEventService } from '@/services/centralizedEventService';
 import { Event, EventStatus } from '@/types';
 
 export function useEvents() {
@@ -35,6 +36,9 @@ export function useCreateEvent() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
+  // Ensure centralized service has access to query client
+  centralizedEventService.setQueryClient(queryClient);
+
   return useMutation({
     mutationFn: (date: string) => createEventAPI(date),
     onSuccess: (newEvent) => {
@@ -45,12 +49,8 @@ export function useCreateEvent() {
         description: "Događaj je uspješno kreiran.",
       });
       
-      // Set the new event in cache immediately
-      queryClient.setQueryData(['event', newEvent.id], newEvent);
-      console.log('useCreateEvent: Event cached with key:', ['event', newEvent.id]);
-      
-      // Invalidate and refetch events list
-      queryClient.invalidateQueries({ queryKey: ['events'] });
+      // The centralized service already handles cache updates
+      console.log('useCreateEvent: Cache updates handled by centralized service');
     },
     onError: (error) => {
       console.error("Error creating event:", error);

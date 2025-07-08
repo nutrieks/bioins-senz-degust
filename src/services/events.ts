@@ -1,29 +1,24 @@
 
-import { 
-  createEvent as createEventSupabase, 
-  getEvents as getEventsSupabase, 
-  getEvent as getEventSupabase,
-  updateEventStatus as updateEventStatusSupabase,
-  deleteEvent as deleteEventSupabase
-} from './supabase/events';
+import { centralizedEventService } from './centralizedEventService';
 import { Event, EventStatus } from '@/types';
 
+// All event operations now go through the centralized service
 export async function createEvent(date: string): Promise<Event> {
-  return await createEventSupabase(date);
+  return await centralizedEventService.createEvent(date);
 }
 
 export async function getEvent(eventId: string): Promise<Event | null> {
-  return await getEventSupabase(eventId);
+  return await centralizedEventService.getEvent(eventId);
 }
 
 export async function getEvents(): Promise<Event[]> {
-  return await getEventsSupabase();
+  return await centralizedEventService.getEvents();
 }
 
 export async function updateEventStatus(eventId: string, status: EventStatus): Promise<boolean> {
-  return await updateEventStatusSupabase(eventId, status);
+  return await centralizedEventService.updateEventStatus(eventId, status);
 }
 
 export async function deleteEvent(eventId: string): Promise<boolean> {
-  return await deleteEventSupabase(eventId);
+  return await centralizedEventService.deleteEvent(eventId);
 }

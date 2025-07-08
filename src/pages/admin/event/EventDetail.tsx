@@ -54,9 +54,30 @@ export default function EventDetail() {
     return <EventDetailLoading />;
   }
 
-  // Event not found - add retry mechanism
+  // Event not found - add retry mechanism with fallback
   if (!event && !isLoading) {
-    console.log('Event not found, showing EventNotFound component. EventId:', eventId);
+    console.log('Event not found, checking cache and attempting fallback. EventId:', eventId);
+    
+    // Try to get event from centralized service cache as last resort
+    const tryFallback = async () => {
+      if (eventId) {
+        try {
+          const { centralizedEventService } = await import("@/services/centralizedEventService");
+          const fallbackEvent = await centralizedEventService.getEvent(eventId);
+          if (fallbackEvent) {
+            console.log('Event found via fallback service:', fallbackEvent);
+            // This will cause a re-render with the event data
+            return;
+          }
+        } catch (error) {
+          console.error('Fallback event fetch failed:', error);
+        }
+      }
+    };
+    
+    // Attempt fallback on first render
+    tryFallback();
+    
     return <EventNotFound />;
   }
 
