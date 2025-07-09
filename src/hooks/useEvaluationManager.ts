@@ -1,14 +1,17 @@
 
 import { useState, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useNextSample, useCompletedEvaluations } from "@/hooks/useEvaluations";
+import { useNextSample, useCompletedEvaluations, useSubmitEvaluation } from "@/hooks/useEvaluations";
 import { useEventDetailQueries } from "@/hooks/useEventDetailQueries";
 import { getJARAttributes } from "@/services/dataService";
-import { useQuery } from "@tanstack/react-query";
-import { Sample, JARAttribute, ProductType } from "@/types";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Sample, JARAttribute, ProductType, HedonicScale, JARRating } from "@/types";
+import { useToast } from "@/hooks/use-toast";
 
 export function useEvaluationManager(eventId?: string) {
   const { user } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   
   // Local UI state only (not server state)
   const [currentRound, setCurrentRound] = useState(0);
@@ -16,6 +19,8 @@ export function useEvaluationManager(eventId?: string) {
   const [processedProductTypes, setProcessedProductTypes] = useState<string[]>([]);
   const [currentProductTypeId, setCurrentProductTypeId] = useState<string>();
   const [forcedCompletedSampleIds, setForcedCompletedSampleIds] = useState<string[]>();
+  const [isEvaluationFinished, setIsEvaluationFinished] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // React Query for event data
   const { 
@@ -27,7 +32,8 @@ export function useEvaluationManager(eventId?: string) {
   // React Query for completed evaluations
   const { 
     data: completedSamples = [], 
-    isLoading: isLoadingCompleted 
+    isLoading: isLoadingCompleted,
+    refetch: refetchCompleted
   } = useCompletedEvaluations(eventId || "", user?.id);
 
   // React Query for next sample
@@ -47,6 +53,12 @@ export function useEvaluationManager(eventId?: string) {
   // Derive current sample from next sample data
   const currentSample = nextSampleData?.sample || null;
   const isComplete = nextSampleData?.isComplete || false;
+  
+  // Update evaluation finished state based on completion
+  const actuallyFinished = isComplete && !currentSample;
+  if (actuallyFinished !== isEvaluationFinished) {
+    setIsEvaluationFinished(actuallyFinished);
+  }
 
   console.log('useEvaluationManager - current sample and completion:', {
     sample: currentSample?.blindCode,
@@ -143,19 +155,105 @@ export function useEvaluationManager(eventId?: string) {
     }
   }, [processedProductTypes]);
 
+  // Initialize evaluation
+  const startEvaluation = useCallback(async (eventId: string) => {
+    console.log("=== STARTING EVALUATION ===", { eventId });
+    if (!user) return;
+    
+    // Reset local state
+    setCurrentRound(0);
+    setShowSampleReveal(false);
+    setProcessedProductTypes([]);
+    setCurrentProductTypeId(undefined);
+    setForcedCompletedSampleIds(undefined);
+    setIsEvaluationFinished(false);
+    
+    // Trigger data fetching
+    await Promise.all([
+      refetchCompleted(),
+      refetchNextSample()
+    ]);
+  }, [user, refetchCompleted, refetchNextSample]);
+
+  // Submit evaluation mutation
+  const submitEvaluationMutation = useSubmitEvaluation();
+
+  // Submit evaluation function
+  const submitEvaluation = useCallback(async (data: {
+    hedonic: HedonicScale;
+    jar: JARRating;
+  }) => {
+    if (!user || !currentSample || !eventId || !currentProductType) {
+      throw new Error("Nedostaju podaci za predaju ocjene.");
+    }
+
+    console.log("=== SUBMITTING EVALUATION ===", {
+      sampleId: currentSample.id,
+      blindCode: currentSample.blindCode,
+      productType: currentProductType.productName
+    });
+
+    setIsSubmitting(true);
+    try {
+      // Submit through mutation
+      await submitEvaluationMutation.mutateAsync({
+        userId: user.id,
+        sampleId: currentSample.id,
+        productTypeId: currentProductType.id,
+        eventId: eventId,
+        hedonicRatings: data.hedonic,
+        jarRatings: data.jar,
+      });
+
+      // Update local completed samples state optimistically
+      const newCompletedIds = [...(forcedCompletedSampleIds || completedSamples), currentSample.id];
+      setForcedCompletedSampleIds(newCompletedIds);
+
+      // Force refresh next sample to get updated state
+      await refetchNextSample();
+
+      toast({
+        title: "Ocjena spremljena",
+        description: `Uspješno ste ocijenili uzorak ${currentSample.blindCode}.`
+      });
+
+    } catch (error) {
+      console.error("Error submitting evaluation:", error);
+      toast({
+        title: "Greška",
+        description: "Problem kod spremanja ocjene. Molimo pokušajte ponovno.",
+        variant: "destructive"
+      });
+      throw error;
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [user, currentSample, eventId, currentProductType, forcedCompletedSampleIds, completedSamples, submitEvaluationMutation, refetchNextSample, toast]);
+
+  // Load next task (after evaluation or sample reveal)
+  const loadNextTask = useCallback(async () => {
+    console.log("=== LOADING NEXT TASK ===");
+    setShowSampleReveal(false);
+    await refetchNextSample();
+  }, [refetchNextSample]);
+
   return {
     // Current state
     currentSample,
     currentRound,
-    currentJARAttributes,
+    currentJARAttributes: currentJARAttributes,
+    jarAttributes: currentJARAttributes, // Alias for compatibility
     isComplete,
+    isEvaluationFinished,
     completedSamples,
     currentProductType,
     showSampleReveal,
     remainingProductTypes,
+    samplesForReveal: [], // For compatibility, not used in new flow
     
     // Loading states
     isLoading,
+    isSubmitting,
     loadingMessage,
     evaluationError: null, // React Query handles errors internally
     
@@ -167,5 +265,8 @@ export function useEvaluationManager(eventId?: string) {
     updateCompletedSamples,
     markProductTypeComplete,
     setCurrentRound,
+    startEvaluation,
+    submitEvaluation,
+    loadNextTask,
   };
 }

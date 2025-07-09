@@ -5,7 +5,7 @@ import { Form } from "@/components/ui/form";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useEvaluation } from "@/contexts/EvaluationContext";
+import { useEvaluationManager } from "@/hooks/useEvaluationManager";
 import { getEvent } from "@/services/dataService";
 import { CompletionScreen } from "./form/CompletionScreen";
 import { SampleHeader } from "./form/SampleHeader";
@@ -16,30 +16,66 @@ import { useEvaluationForm } from "./form/useEvaluationForm";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface EvaluationFormProps {
-  eventId?: string;
+  eventId: string;
   productTypeId?: string;
   onComplete: () => void;
 }
 
-export function EvaluationForm({ onComplete }: EvaluationFormProps) {
+export function EvaluationForm({ eventId, onComplete }: EvaluationFormProps) {
   const { user } = useAuth();
   const { 
     currentSample, 
     isEvaluationFinished,
     currentProductType,
-    jarAttributes
-  } = useEvaluation();
+    jarAttributes,
+    submitEvaluation,
+    isSubmitting: managerIsSubmitting
+  } = useEvaluationManager(eventId);
   
   const [eventDate, setEventDate] = useState<string>("");
   
-  // Use our custom hook for form management
+  // Use our custom hook for form management but override submit
   const {
     form,
     formKey,
-    isSubmitting,
     scrollRef,
-    onSubmit
-  } = useEvaluationForm();
+    onSubmit: originalOnSubmit
+  } = useEvaluationForm(currentSample, jarAttributes);
+  
+  // Use manager's submission state
+  const isSubmitting = managerIsSubmitting;
+  
+  // Override submit to use our unified submit function with validation
+  const onSubmit = async (data: any) => {
+    if (!currentSample) return;
+    
+    // Import validation function locally
+    const { validateEvaluationForm } = await import("./form/validation/formValidation");
+    const { isValid, errorFields } = validateEvaluationForm(data, form, jarAttributes || []);
+    
+    if (!isValid) {
+      // Toast is handled by useEvaluationForm validation, but we can add additional validation here
+      return;
+    }
+    
+    try {
+      await submitEvaluation({
+        hedonic: {
+          appearance: parseInt(data.hedonic.appearance),
+          odor: parseInt(data.hedonic.odor),
+          texture: parseInt(data.hedonic.texture),
+          flavor: parseInt(data.hedonic.flavor),
+          overallLiking: parseInt(data.hedonic.overallLiking),
+        },
+        jar: Object.fromEntries(
+          Object.entries(data.jar || {}).map(([key, value]) => [key, parseInt(value as string)])
+        )
+      });
+    } catch (error) {
+      console.error("Form submission error:", error);
+      // Error handling is done in submitEvaluation
+    }
+  };
   
   // Dohvati datum događaja
   useEffect(() => {

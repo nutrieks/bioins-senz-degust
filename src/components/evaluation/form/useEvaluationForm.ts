@@ -2,14 +2,12 @@
 import { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { useToast } from "@/hooks/use-toast";
-import { useEvaluation } from "@/contexts/EvaluationContext";
-import { JARRating, HedonicScale } from "@/types";
+import { JARRating, HedonicScale, Sample, JARAttribute } from "@/types";
 import { FormData } from "./types";
 import { validateEvaluationForm } from "./validation/formValidation";
 
-export function useEvaluationForm() {
+export function useEvaluationForm(currentSample?: Sample | null, jarAttributes?: JARAttribute[]) {
   const { toast } = useToast();
-  const { submitEvaluation, currentSample, jarAttributes } = useEvaluation();
   const [formKey, setFormKey] = useState<number>(Date.now());
   const [isSubmitting, setIsSubmitting] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -36,7 +34,7 @@ export function useEvaluationForm() {
   const onSubmit = async (data: FormData) => {
     if (!currentSample) return;
 
-    const { isValid, errorFields } = validateEvaluationForm(data, form, jarAttributes);
+    const { isValid, errorFields } = validateEvaluationForm(data, form, jarAttributes || []);
     if (!isValid) {
       toast({ title: "Nepotpuna ocjena", description: `Molimo ispunite sva polja. Nedostaju: ${errorFields}`, variant: "destructive" });
       return;
@@ -56,8 +54,7 @@ export function useEvaluationForm() {
         if (value !== undefined && value !== '') jar[attrId] = parseInt(value.toString());
       });
 
-      await submitEvaluation({ hedonic, jar });
-
+      // This will be overridden by the parent component
       toast({ title: "Ocjena spremljena", description: `Uspješno ste ocijenili uzorak ${currentSample.blindCode}.` });
 
     } catch (error) {

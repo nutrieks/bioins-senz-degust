@@ -1,8 +1,6 @@
 
-import { useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { EvaluatorLayout } from "@/components/layout/EvaluatorLayout";
-import { EvaluationProvider } from "@/contexts/EvaluationContext";
 import { EvaluationContent } from "@/components/evaluation/EvaluationContent";
 
 export default function Evaluation() {
@@ -25,9 +23,7 @@ export default function Evaluation() {
 
   return (
     <EvaluatorLayout>
-      <EvaluationProvider>
-        <EvaluationContent eventId={eventId} />
-      </EvaluationProvider>
+      <EvaluationContent eventId={eventId} />
     </EvaluatorLayout>
   );
 }

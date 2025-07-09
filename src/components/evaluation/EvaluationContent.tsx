@@ -5,7 +5,7 @@ import { EvaluationForm } from "@/components/evaluation/EvaluationForm";
 import { CompletionMessage } from "@/components/evaluation/CompletionMessage";
 import { SampleRevealScreen } from "@/components/evaluation/SampleRevealScreen";
 import { LoadingState } from "@/components/evaluation/LoadingState";
-import { useEvaluation } from "@/contexts/EvaluationContext";
+import { useEvaluationManager } from "@/hooks/useEvaluationManager";
 
 interface EvaluationContentProps { 
   eventId: string; 
@@ -18,10 +18,9 @@ export function EvaluationContent({ eventId }: EvaluationContentProps) {
     isEvaluationFinished,
     showSampleReveal,
     currentProductType,
-    samplesForReveal,
     startEvaluation,
     loadNextTask,
-  } = useEvaluation();
+  } = useEvaluationManager(eventId);
 
   useEffect(() => {
     startEvaluation(eventId);
@@ -46,5 +45,5 @@ export function EvaluationContent({ eventId }: EvaluationContentProps) {
     );
   }
 
-  return <EvaluationForm onComplete={() => navigate("/evaluator")} />;
+  return <EvaluationForm eventId={eventId} onComplete={() => navigate("/evaluator")} />;
 }
