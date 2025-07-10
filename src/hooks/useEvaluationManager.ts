@@ -5,6 +5,7 @@ import { useNextSample, useCompletedEvaluations, useSubmitEvaluation } from "@/h
 import { useEventDetailQueries } from "@/hooks/useEventDetailQueries";
 import { getJARAttributes } from "@/services/dataService";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { Sample, JARAttribute, ProductType, HedonicScale, JARRating } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 
@@ -55,29 +56,51 @@ export function useEvaluationManager(eventId?: string) {
   const currentSample = nextSampleData?.sample || null;
   const isComplete = nextSampleData?.isComplete || false;
   
+  // New query to get total samples count in event
+  const { data: totalSamplesCount = 0 } = useQuery({
+    queryKey: ['totalSamples', eventId],
+    queryFn: async () => {
+      if (!eventId) return 0;
+      
+      const { data: productTypesWithSamples, error } = await supabase
+        .from('product_types')
+        .select(`
+          id,
+          samples (id)
+        `)
+        .eq('event_id', eventId);
+      
+      if (error) {
+        console.error('Error fetching total samples:', error);
+        return 0;
+      }
+      
+      const total = productTypesWithSamples?.reduce((sum, pt) => {
+        return sum + (pt.samples?.length || 0);
+      }, 0) || 0;
+      
+      console.log('Total samples in event:', total);
+      return total;
+    },
+    enabled: !!eventId,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+
   // Check if user has completed all evaluations for this event
   const isEvaluationCompleteForUser = useCallback(() => {
-    if (!user || !eventId || !productTypes.length) return false;
+    if (!user || !eventId || totalSamplesCount === 0) return false;
     
-    // Count total samples in event
-    const totalSamplesInEvent = productTypes.reduce((total, pt) => {
-      // We can't directly get sample count without making another query,
-      // but we can use completed evaluations to check completion
-      return total + 1; // This is a simplified check - each product type has samples
-    }, 0);
-    
-    // Count user's completed evaluations for this event
     const userCompletedCount = completedSamples.length;
     
     console.log('Completion check:', {
-      totalSamplesInEvent,
+      totalSamplesInEvent: totalSamplesCount,
       userCompletedCount,
-      isComplete: userCompletedCount > 0 && isComplete
+      isComplete: userCompletedCount >= totalSamplesCount && totalSamplesCount > 0
     });
     
-    // User has completed all evaluations if they have evaluations and isComplete is true
-    return userCompletedCount > 0 && isComplete;
-  }, [user, eventId, productTypes, completedSamples, isComplete]);
+    // User has completed all evaluations if they've evaluated all samples
+    return userCompletedCount >= totalSamplesCount && totalSamplesCount > 0;
+  }, [user, eventId, totalSamplesCount, completedSamples]);
 
   // Update evaluation finished state based on completion (but not during transitions)
   const actuallyFinished = isEvaluationCompleteForUser() && !isTransitioning;
@@ -185,22 +208,23 @@ export function useEvaluationManager(eventId?: string) {
     console.log("=== STARTING EVALUATION ===", { eventId });
     if (!user) return;
     
-    // First fetch data to check completion status
+    // First fetch all required data
     await Promise.all([
       refetchCompleted(),
       refetchNextSample()
     ]);
     
-    // Check if evaluation is already complete for this user
-    // We need a small delay to ensure data is loaded before checking
+    // Wait for queries to settle and check completion
     setTimeout(() => {
       if (isEvaluationCompleteForUser()) {
         console.log("Evaluation already complete for user, preventing re-evaluation");
         setIsEvaluationFinished(true);
+        setIsTransitioning(false);
         return;
       }
       
       // Reset local state only if evaluation is not complete
+      console.log("Starting fresh evaluation - resetting state");
       setCurrentRound(0);
       setShowSampleReveal(false);
       setProcessedProductTypes([]);
@@ -208,7 +232,7 @@ export function useEvaluationManager(eventId?: string) {
       setForcedCompletedSampleIds(undefined);
       setIsEvaluationFinished(false);
       setIsTransitioning(false);
-    }, 100);
+    }, 200); // Increased delay to ensure data loading
     
   }, [user, refetchCompleted, refetchNextSample, isEvaluationCompleteForUser]);
 
@@ -222,6 +246,17 @@ export function useEvaluationManager(eventId?: string) {
   }) => {
     if (!user || !currentSample || !eventId || !currentProductType) {
       throw new Error("Nedostaju podaci za predaju ocjene.");
+    }
+
+    // Check if already completed to prevent duplicates
+    if (completedSamples.includes(currentSample.id)) {
+      console.log("Sample already evaluated, skipping submission");
+      toast({
+        title: "Uzorak već ocijenjen",
+        description: "Ovaj uzorak ste već ocijenili.",
+        variant: "destructive"
+      });
+      return;
     }
 
     console.log("=== SUBMITTING EVALUATION ===", {
@@ -248,8 +283,11 @@ export function useEvaluationManager(eventId?: string) {
       const newCompletedIds = [...(forcedCompletedSampleIds || completedSamples), currentSample.id];
       setForcedCompletedSampleIds(newCompletedIds);
 
-      // Force refresh next sample to get updated state
-      await refetchNextSample();
+      // Force refresh both queries
+      await Promise.all([
+        refetchCompleted(),
+        refetchNextSample()
+      ]);
 
       toast({
         title: "Ocjena spremljena",
@@ -266,10 +304,10 @@ export function useEvaluationManager(eventId?: string) {
       throw error;
     } finally {
       setIsSubmitting(false);
-      // Allow a brief moment for cache to update before clearing transition
-      setTimeout(() => setIsTransitioning(false), 500);
+      // Longer delay to ensure cache updates are complete
+      setTimeout(() => setIsTransitioning(false), 1000);
     }
-  }, [user, currentSample, eventId, currentProductType, forcedCompletedSampleIds, completedSamples, submitEvaluationMutation, refetchNextSample, toast]);
+  }, [user, currentSample, eventId, currentProductType, forcedCompletedSampleIds, completedSamples, submitEvaluationMutation, refetchCompleted, refetchNextSample, toast]);
 
   // Load next task (after evaluation or sample reveal)
   const loadNextTask = useCallback(async () => {

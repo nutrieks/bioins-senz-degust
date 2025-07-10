@@ -47,8 +47,8 @@ export function EvaluationContent({ eventId }: EvaluationContentProps) {
     );
   }
 
-  // If no current sample but not finished or transitioning, show loading
-  if (!currentSample && !isEvaluationFinished && !isTransitioning) {
+  // Always show loading if no current sample and not finished
+  if (!currentSample) {
     return <LoadingState />;
   }
 
