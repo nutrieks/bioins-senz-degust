@@ -5,7 +5,7 @@ import { Form } from "@/components/ui/form";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useEvaluationManager } from "@/hooks/useEvaluationManager";
+import { useEvaluationFlow } from "@/hooks/useEvaluationFlow";
 import { getEvent } from "@/services/dataService";
 import { CompletionScreen } from "./form/CompletionScreen";
 import { SampleHeader } from "./form/SampleHeader";
@@ -25,12 +25,12 @@ export function EvaluationForm({ eventId, onComplete }: EvaluationFormProps) {
   const { user } = useAuth();
   const { 
     currentSample, 
-    isEvaluationFinished,
+    isEvaluationCompleteForUser,
     currentProductType,
-    jarAttributes,
+    currentJARAttributes: jarAttributes,
     submitEvaluation,
     isSubmitting: managerIsSubmitting
-  } = useEvaluationManager(eventId);
+  } = useEvaluationFlow(eventId);
   
   const [eventDate, setEventDate] = useState<string>("");
   
@@ -97,7 +97,7 @@ export function EvaluationForm({ eventId, onComplete }: EvaluationFormProps) {
   }, [currentSample]);
   
   // Ako je ocjenjivanje završeno, prikazujemo poruku
-  if (isEvaluationFinished) {
+  if (isEvaluationCompleteForUser) {
     return <CompletionScreen onContinue={onComplete} />;
   }
   

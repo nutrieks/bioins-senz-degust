@@ -1,11 +1,11 @@
 
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { EvaluationForm } from "@/components/evaluation/EvaluationForm";
+import { EvaluationFormWrapper } from "@/components/evaluation/EvaluationFormWrapper";
 import { CompletionMessage } from "@/components/evaluation/CompletionMessage";
 import { SampleRevealScreen } from "@/components/evaluation/SampleRevealScreen";
 import { LoadingState } from "@/components/evaluation/LoadingState";
-import { useEvaluationManager } from "@/hooks/useEvaluationManager";
+import { useEvaluationFlow } from "@/hooks/useEvaluationFlow";
 
 interface EvaluationContentProps { 
   eventId: string; 
@@ -15,24 +15,32 @@ export function EvaluationContent({ eventId }: EvaluationContentProps) {
   const navigate = useNavigate();
   const {
     isLoading,
-    isEvaluationFinished,
+    isEvaluationCompleteForUser,
     showSampleReveal,
     currentProductType,
     isTransitioning,
     currentSample,
-    startEvaluation,
-    loadNextTask,
-  } = useEvaluationManager(eventId);
+    initializeEvaluation,
+    continueAfterReveal,
+    canEnterEvaluation,
+  } = useEvaluationFlow(eventId);
 
   useEffect(() => {
-    startEvaluation(eventId);
-  }, [eventId, startEvaluation]);
+    initializeEvaluation();
+  }, [eventId, initializeEvaluation]);
+
+  // Route guard - redirect if user can't enter evaluation
+  useEffect(() => {
+    if (!isLoading && !canEnterEvaluation()) {
+      navigate("/evaluator");
+    }
+  }, [isLoading, canEnterEvaluation, navigate]);
 
   if (isLoading || isTransitioning) {
     return <LoadingState />;
   }
 
-  if (isEvaluationFinished) {
+  if (isEvaluationCompleteForUser) {
     return <CompletionMessage onReturn={() => navigate("/evaluator")} />;
   }
 
@@ -42,7 +50,7 @@ export function EvaluationContent({ eventId }: EvaluationContentProps) {
         eventId={eventId}
         productTypeId={currentProductType.id}
         productName={currentProductType.productName}
-        onContinue={loadNextTask}
+        onContinue={continueAfterReveal}
       />
     );
   }
@@ -52,5 +60,5 @@ export function EvaluationContent({ eventId }: EvaluationContentProps) {
     return <LoadingState />;
   }
 
-  return <EvaluationForm eventId={eventId} onComplete={() => navigate("/evaluator")} />;
+  return <EvaluationFormWrapper eventId={eventId} />;
 }
