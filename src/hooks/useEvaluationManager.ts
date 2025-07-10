@@ -21,6 +21,7 @@ export function useEvaluationManager(eventId?: string) {
   const [forcedCompletedSampleIds, setForcedCompletedSampleIds] = useState<string[]>();
   const [isEvaluationFinished, setIsEvaluationFinished] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
   // React Query for event data
   const { 
@@ -54,9 +55,33 @@ export function useEvaluationManager(eventId?: string) {
   const currentSample = nextSampleData?.sample || null;
   const isComplete = nextSampleData?.isComplete || false;
   
-  // Update evaluation finished state based on completion
-  const actuallyFinished = isComplete && !currentSample;
-  if (actuallyFinished !== isEvaluationFinished) {
+  // Check if user has completed all evaluations for this event
+  const isEvaluationCompleteForUser = useCallback(() => {
+    if (!user || !eventId || !productTypes.length) return false;
+    
+    // Count total samples in event
+    const totalSamplesInEvent = productTypes.reduce((total, pt) => {
+      // We can't directly get sample count without making another query,
+      // but we can use completed evaluations to check completion
+      return total + 1; // This is a simplified check - each product type has samples
+    }, 0);
+    
+    // Count user's completed evaluations for this event
+    const userCompletedCount = completedSamples.length;
+    
+    console.log('Completion check:', {
+      totalSamplesInEvent,
+      userCompletedCount,
+      isComplete: userCompletedCount > 0 && isComplete
+    });
+    
+    // User has completed all evaluations if they have evaluations and isComplete is true
+    return userCompletedCount > 0 && isComplete;
+  }, [user, eventId, productTypes, completedSamples, isComplete]);
+
+  // Update evaluation finished state based on completion (but not during transitions)
+  const actuallyFinished = isEvaluationCompleteForUser() && !isTransitioning;
+  if (actuallyFinished !== isEvaluationFinished && !isTransitioning) {
     setIsEvaluationFinished(actuallyFinished);
   }
 
@@ -160,20 +185,32 @@ export function useEvaluationManager(eventId?: string) {
     console.log("=== STARTING EVALUATION ===", { eventId });
     if (!user) return;
     
-    // Reset local state
-    setCurrentRound(0);
-    setShowSampleReveal(false);
-    setProcessedProductTypes([]);
-    setCurrentProductTypeId(undefined);
-    setForcedCompletedSampleIds(undefined);
-    setIsEvaluationFinished(false);
-    
-    // Trigger data fetching
+    // First fetch data to check completion status
     await Promise.all([
       refetchCompleted(),
       refetchNextSample()
     ]);
-  }, [user, refetchCompleted, refetchNextSample]);
+    
+    // Check if evaluation is already complete for this user
+    // We need a small delay to ensure data is loaded before checking
+    setTimeout(() => {
+      if (isEvaluationCompleteForUser()) {
+        console.log("Evaluation already complete for user, preventing re-evaluation");
+        setIsEvaluationFinished(true);
+        return;
+      }
+      
+      // Reset local state only if evaluation is not complete
+      setCurrentRound(0);
+      setShowSampleReveal(false);
+      setProcessedProductTypes([]);
+      setCurrentProductTypeId(undefined);
+      setForcedCompletedSampleIds(undefined);
+      setIsEvaluationFinished(false);
+      setIsTransitioning(false);
+    }, 100);
+    
+  }, [user, refetchCompleted, refetchNextSample, isEvaluationCompleteForUser]);
 
   // Submit evaluation mutation
   const submitEvaluationMutation = useSubmitEvaluation();
@@ -194,6 +231,8 @@ export function useEvaluationManager(eventId?: string) {
     });
 
     setIsSubmitting(true);
+    setIsTransitioning(true); // Prevent "no samples" flash
+    
     try {
       // Submit through mutation
       await submitEvaluationMutation.mutateAsync({
@@ -227,6 +266,8 @@ export function useEvaluationManager(eventId?: string) {
       throw error;
     } finally {
       setIsSubmitting(false);
+      // Allow a brief moment for cache to update before clearing transition
+      setTimeout(() => setIsTransitioning(false), 500);
     }
   }, [user, currentSample, eventId, currentProductType, forcedCompletedSampleIds, completedSamples, submitEvaluationMutation, refetchNextSample, toast]);
 
@@ -234,7 +275,12 @@ export function useEvaluationManager(eventId?: string) {
   const loadNextTask = useCallback(async () => {
     console.log("=== LOADING NEXT TASK ===");
     setShowSampleReveal(false);
+    setIsTransitioning(true);
+    
     await refetchNextSample();
+    
+    // Allow cache to settle before clearing transition
+    setTimeout(() => setIsTransitioning(false), 300);
   }, [refetchNextSample]);
 
   return {
@@ -254,6 +300,7 @@ export function useEvaluationManager(eventId?: string) {
     // Loading states
     isLoading,
     isSubmitting,
+    isTransitioning,
     loadingMessage,
     evaluationError: null, // React Query handles errors internally
     

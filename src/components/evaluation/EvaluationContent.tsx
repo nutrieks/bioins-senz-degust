@@ -18,6 +18,8 @@ export function EvaluationContent({ eventId }: EvaluationContentProps) {
     isEvaluationFinished,
     showSampleReveal,
     currentProductType,
+    isTransitioning,
+    currentSample,
     startEvaluation,
     loadNextTask,
   } = useEvaluationManager(eventId);
@@ -26,7 +28,7 @@ export function EvaluationContent({ eventId }: EvaluationContentProps) {
     startEvaluation(eventId);
   }, [eventId, startEvaluation]);
 
-  if (isLoading) {
+  if (isLoading || isTransitioning) {
     return <LoadingState />;
   }
 
@@ -43,6 +45,11 @@ export function EvaluationContent({ eventId }: EvaluationContentProps) {
         onContinue={loadNextTask}
       />
     );
+  }
+
+  // If no current sample but not finished or transitioning, show loading
+  if (!currentSample && !isEvaluationFinished && !isTransitioning) {
+    return <LoadingState />;
   }
 
   return <EvaluationForm eventId={eventId} onComplete={() => navigate("/evaluator")} />;
