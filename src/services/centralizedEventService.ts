@@ -121,13 +121,19 @@ class CentralizedEventService {
 
       if (eventsError) throw eventsError;
 
-      // For each event, get the count of product types
-      const eventsWithProductCount = await Promise.all(
+      // For each event, get the count of product types and samples
+      const eventsWithCounts = await Promise.all(
         (eventsData || []).map(async (eventData: any) => {
           const { count: productCount } = await supabase
             .from('product_types')
             .select('*', { count: 'exact', head: true })
             .eq('event_id', eventData.id);
+
+          // Get samples count by joining product_types and samples
+          const { count: samplesCount } = await supabase
+            .from('samples')
+            .select('*, product_types!inner(*)', { count: 'exact', head: true })
+            .eq('product_types.event_id', eventData.id);
 
           const event: Event = {
             id: eventData.id,
@@ -135,6 +141,7 @@ class CentralizedEventService {
             status: eventData.status as EventStatus,
             productTypes: [], // Keep empty array for compatibility
             productTypesCount: productCount || 0, // Add the actual count
+            samplesCount: samplesCount || 0, // Add samples count
             createdAt: eventData.created_at,
             randomizationComplete: eventData.randomization_complete
           };
@@ -148,8 +155,8 @@ class CentralizedEventService {
         })
       );
 
-      console.log('CentralizedEventService: Fetched', eventsWithProductCount.length, 'events');
-      return eventsWithProductCount;
+      console.log('CentralizedEventService: Fetched', eventsWithCounts.length, 'events');
+      return eventsWithCounts;
     } catch (error) {
       console.error('CentralizedEventService: Error fetching events:', error);
       return [];

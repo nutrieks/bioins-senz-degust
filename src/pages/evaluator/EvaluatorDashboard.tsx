@@ -52,10 +52,10 @@ export default function EvaluatorDashboard() {
     }).format(date);
   };
 
-  const getProductCountText = (count: number) => {
-    if (count === 1) return "proizvod";
-    if (count < 5) return "proizvoda";
-    return "proizvoda";
+  const getSampleCountText = (count: number) => {
+    if (count === 1) return "uzorak";
+    if (count < 5) return "uzorka";
+    return "uzoraka";
   };
 
   return (
@@ -89,7 +89,7 @@ export default function EvaluatorDashboard() {
             ) : activeEvents.length > 0 ? (
               <div className="space-y-4">
                 {activeEvents.map((event) => {
-                  const productCount = event.productTypesCount || 0;
+                  const samplesCount = event.samplesCount || 0;
                   return (
                     <Card key={event.id}>
                       <CardHeader className="pb-2">
@@ -97,7 +97,7 @@ export default function EvaluatorDashboard() {
                       </CardHeader>
                       <CardContent className="pb-2">
                         <p className="text-sm text-muted-foreground">
-                          {productCount} {getProductCountText(productCount)}
+                          {samplesCount} {getSampleCountText(samplesCount)}
                         </p>
                       </CardContent>
                       <CardFooter>

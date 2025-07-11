@@ -5,7 +5,7 @@ import { EvaluationFormWrapper } from "@/components/evaluation/EvaluationFormWra
 import { CompletionMessage } from "@/components/evaluation/CompletionMessage";
 import { SampleRevealScreen } from "@/components/evaluation/SampleRevealScreen";
 import { LoadingState } from "@/components/evaluation/LoadingState";
-import { useEvaluationFlow } from "@/hooks/useEvaluationFlow";
+import { useEvaluationFlowNew as useEvaluationFlow } from "@/hooks/useEvaluationFlowNew";
 
 interface EvaluationContentProps { 
   eventId: string; 

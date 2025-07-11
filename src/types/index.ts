@@ -41,6 +41,7 @@ export type Event = {
   status: EventStatus;
   productTypes: ProductType[];
   productTypesCount?: number; // Add optional count field
+  samplesCount?: number; // Total number of samples in the event
   createdAt: string;
   randomizationComplete: boolean;
 };
