@@ -6,7 +6,7 @@ import { JARRating, HedonicScale, Sample, JARAttribute } from "@/types";
 import { FormData } from "./types";
 import { validateEvaluationForm } from "./validation/formValidation";
 
-export function useEvaluationForm(currentSample?: Sample | null, jarAttributes?: JARAttribute[]) {
+export function useEvaluationForm(currentSample?: Sample | null, jarAttributes?: JARAttribute[], forceReset?: number) {
   const { toast } = useToast();
   const [formKey, setFormKey] = useState<number>(Date.now());
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -20,6 +20,7 @@ export function useEvaluationForm(currentSample?: Sample | null, jarAttributes?:
     mode: "onSubmit" 
   });
 
+  // Reset form when sample changes OR when forced reset is triggered
   useEffect(() => {
     form.reset({
       hedonic: { appearance: "", odor: "", texture: "", flavor: "", overallLiking: "" },
@@ -29,7 +30,14 @@ export function useEvaluationForm(currentSample?: Sample | null, jarAttributes?:
     if (scrollRef.current) {
       scrollRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
-  }, [currentSample, form]);
+  }, [currentSample, forceReset, form]);
+
+  // Immediate scroll to top after submission
+  const scrollToTop = () => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
 
   const onSubmit = async (data: FormData) => {
     if (!currentSample) return;
@@ -66,5 +74,5 @@ export function useEvaluationForm(currentSample?: Sample | null, jarAttributes?:
     }
   };
 
-  return { form, formKey, isSubmitting, scrollRef, onSubmit };
+  return { form, formKey, isSubmitting, scrollRef, onSubmit, scrollToTop };
 }

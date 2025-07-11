@@ -29,7 +29,8 @@ export function EvaluationForm({ eventId, onComplete }: EvaluationFormProps) {
     currentProductType,
     currentJARAttributes: jarAttributes,
     submitEvaluation,
-    isSubmitting: managerIsSubmitting
+    isSubmitting: managerIsSubmitting,
+    forceFormReset
   } = useEvaluationFlow(eventId);
   
   const [eventDate, setEventDate] = useState<string>("");
@@ -39,8 +40,9 @@ export function EvaluationForm({ eventId, onComplete }: EvaluationFormProps) {
     form,
     formKey,
     scrollRef,
-    onSubmit: originalOnSubmit
-  } = useEvaluationForm(currentSample, jarAttributes);
+    onSubmit: originalOnSubmit,
+    scrollToTop
+  } = useEvaluationForm(currentSample, jarAttributes, forceFormReset);
   
   // Use manager's submission state
   const isSubmitting = managerIsSubmitting;
@@ -71,6 +73,10 @@ export function EvaluationForm({ eventId, onComplete }: EvaluationFormProps) {
           Object.entries(data.jar || {}).map(([key, value]) => [key, parseInt(value as string)])
         )
       });
+      
+      // Immediate scroll to top after successful submission
+      scrollToTop();
+      
     } catch (error) {
       console.error("Form submission error:", error);
       // Error handling is done in submitEvaluation

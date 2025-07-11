@@ -29,6 +29,7 @@ export function useEvaluationFlow(eventId?: string) {
   // Local flow state
   const [showSampleReveal, setShowSampleReveal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [forceFormReset, setForceFormReset] = useState(0);
 
   // Event data
   const { 
@@ -93,7 +94,7 @@ export function useEvaluationFlow(eventId?: string) {
     });
 
     setIsSubmitting(true);
-    setExtendedTransition(3000); // Extended transition to prevent flashing
+    setExtendedTransition(500); // Short transition for quick response
     
     const cleanup = trackSubmission(currentSample.id);
     
@@ -114,6 +115,9 @@ export function useEvaluationFlow(eventId?: string) {
         refetchNextSample(),
         invalidateCompletionData()
       ]);
+
+      // Force form reset immediately after submission
+      setForceFormReset(prev => prev + 1);
 
       toast({
         title: "Ocjena spremljena",
@@ -177,6 +181,7 @@ export function useEvaluationFlow(eventId?: string) {
     showSampleReveal,
     isComplete,
     isEvaluationCompleteForUser,
+    forceFormReset,
     
     // Loading and transition states
     isLoading,
