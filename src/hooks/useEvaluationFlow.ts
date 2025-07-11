@@ -7,6 +7,7 @@ import { getJARAttributes } from "@/services/dataService";
 import { useQuery } from "@tanstack/react-query";
 import { HedonicScale, JARRating } from "@/types";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 /**
  * Manages the complete evaluation flow: sample progression, completion detection, and reveal screens
@@ -30,6 +31,7 @@ export function useEvaluationFlow(eventId?: string) {
   const [showSampleReveal, setShowSampleReveal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [forceFormReset, setForceFormReset] = useState(0);
+  const [optimisticCompletedSamples, setOptimisticCompletedSamples] = useState<string[]>([]);
 
   // Event data
   const { 
@@ -40,10 +42,13 @@ export function useEvaluationFlow(eventId?: string) {
 
   // Completed evaluations
   const { 
-    data: completedSamples = [], 
+    data: serverCompletedSamples = [], 
     isLoading: isLoadingCompleted,
     refetch: refetchCompleted
   } = useCompletedEvaluations(eventId || "", user?.id);
+
+  // Merge server and optimistic completed samples
+  const completedSamples = [...new Set([...serverCompletedSamples.map(e => e.sampleId), ...optimisticCompletedSamples])];
 
   // Next sample
   const { 
@@ -98,6 +103,9 @@ export function useEvaluationFlow(eventId?: string) {
     
     const cleanup = trackSubmission(currentSample.id);
     
+    // Optimistic update - immediately add current sample to completed list
+    setOptimisticCompletedSamples(prev => [...prev, currentSample.id]);
+    
     try {
       // Submit with mutation
       await submitEvaluationMutation.mutateAsync({
@@ -109,6 +117,21 @@ export function useEvaluationFlow(eventId?: string) {
         jarRatings: data.jar,
       });
 
+      // Check if this completes the current product type
+      const { data: currentProductTypeSamples } = await supabase
+        .from('samples')
+        .select('id')
+        .eq('product_type_id', currentProductType.id);
+      
+      const totalSamplesForProductType = currentProductTypeSamples?.length || 0;
+      
+      // Count completed samples for this product type (including current submission)
+      const completedForThisProductType = serverCompletedSamples.filter(e => 
+        e.productTypeId === currentProductType.id
+      ).length + 1; // +1 for current submission that just completed
+      
+      const isProductTypeComplete = completedForThisProductType >= totalSamplesForProductType;
+      
       // Refresh all related data
       await Promise.all([
         refetchCompleted(),
@@ -116,8 +139,19 @@ export function useEvaluationFlow(eventId?: string) {
         invalidateCompletionData()
       ]);
 
+      // Clear optimistic update after successful server sync
+      setOptimisticCompletedSamples(prev => prev.filter(id => id !== currentSample.id));
+
       // Force form reset immediately after submission
       setForceFormReset(prev => prev + 1);
+
+      // Show sample reveal if product type is complete and there are more product types
+      if (isProductTypeComplete) {
+        const remainingProductTypes = productTypes.filter(pt => pt.id !== currentProductType.id);
+        if (remainingProductTypes.length > 0) {
+          setShowSampleReveal(true);
+        }
+      }
 
       toast({
         title: "Ocjena spremljena",
@@ -126,6 +160,8 @@ export function useEvaluationFlow(eventId?: string) {
 
     } catch (error) {
       console.error("Error submitting evaluation:", error);
+      // Revert optimistic update on error
+      setOptimisticCompletedSamples(prev => prev.filter(id => id !== currentSample.id));
       toast({
         title: "Greška",
         description: "Problem kod spremanja ocjene. Molimo pokušajte ponovno.",
@@ -137,17 +173,20 @@ export function useEvaluationFlow(eventId?: string) {
       setIsSubmitting(false);
     }
   }, [
-    user, currentSample, eventId, currentProductType, 
+    user, currentSample, eventId, currentProductType, productTypes,
     canSubmitEvaluation, setExtendedTransition, trackSubmission,
     refetchCompleted, refetchNextSample, invalidateCompletionData,
-    submitEvaluationMutation, toast
+    submitEvaluationMutation, toast, serverCompletedSamples
   ]);
 
   // Continue after sample reveal
   const continueAfterReveal = useCallback(async () => {
     console.log("=== CONTINUING AFTER REVEAL ===");
     setShowSampleReveal(false);
-    setExtendedTransition(1500);
+    setExtendedTransition(500);
+    
+    // Clear any remaining optimistic updates
+    setOptimisticCompletedSamples([]);
     
     await refetchNextSample();
   }, [refetchNextSample, setExtendedTransition]);
@@ -160,6 +199,7 @@ export function useEvaluationFlow(eventId?: string) {
     
     // Reset local state for fresh start
     setShowSampleReveal(false);
+    setOptimisticCompletedSamples([]);
     
     // Fetch initial data
     await Promise.all([
