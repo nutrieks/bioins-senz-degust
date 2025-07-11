@@ -47,8 +47,20 @@ export function useEvaluationFlow(eventId?: string) {
     refetch: refetchCompleted
   } = useCompletedEvaluations(eventId || "", user?.id);
 
-  // Merge server and optimistic completed samples
-  const completedSamples = [...new Set([...serverCompletedSamples.map(e => e.sampleId), ...optimisticCompletedSamples])];
+  // Merge server and optimistic completed samples with comprehensive logging
+  const completedSamples = (() => {
+    const serverIds = serverCompletedSamples.map(e => e.sampleId);
+    const merged = [...new Set([...serverIds, ...optimisticCompletedSamples])];
+    
+    console.log('=== COMPLETED SAMPLES MERGE DEBUG ===');
+    console.log('Server completed samples:', serverCompletedSamples.length);
+    console.log('Server sample IDs:', serverIds);
+    console.log('Optimistic completed samples:', optimisticCompletedSamples);
+    console.log('Final merged completed samples:', merged);
+    console.log('==========================================');
+    
+    return merged;
+  })();
 
   // Next sample
   const { 
@@ -78,7 +90,7 @@ export function useEvaluationFlow(eventId?: string) {
   // Submit evaluation mutation
   const submitEvaluationMutation = useSubmitEvaluation();
 
-  // Submit evaluation with comprehensive protection
+  // Submit evaluation with atomic updates and proper sequencing
   const submitEvaluation = useCallback(async (data: {
     hedonic: HedonicScale;
     jar: JARRating;
@@ -92,32 +104,67 @@ export function useEvaluationFlow(eventId?: string) {
       return; // Protection already shows toast
     }
 
-    console.log("=== PROTECTED EVALUATION SUBMISSION ===", {
+    console.log("=== ATOMIC EVALUATION SUBMISSION START ===", {
       sampleId: currentSample.id,
       blindCode: currentSample.blindCode,
-      productType: currentProductType.productName
+      productType: currentProductType.productName,
+      currentCompletedSamples: completedSamples
     });
 
     setIsSubmitting(true);
-    setExtendedTransition(500); // Short transition for quick response
+    setExtendedTransition(500); 
     
     const cleanup = trackSubmission(currentSample.id);
+    const currentSampleId = currentSample.id;
     
-    // Optimistic update - immediately add current sample to completed list
-    setOptimisticCompletedSamples(prev => [...prev, currentSample.id]);
+    // STEP 1: Optimistic update - immediately add current sample to completed list
+    console.log('STEP 1: Adding optimistic update for sample:', currentSampleId);
+    setOptimisticCompletedSamples(prev => {
+      const newArray = [...prev, currentSampleId];
+      console.log('Optimistic completed samples updated:', newArray);
+      return newArray;
+    });
     
     try {
-      // Submit with mutation
+      // STEP 2: Submit to server
+      console.log('STEP 2: Submitting to server...');
       await submitEvaluationMutation.mutateAsync({
         userId: user.id,
-        sampleId: currentSample.id,
+        sampleId: currentSampleId,
         productTypeId: currentProductType.id,
         eventId: eventId,
         hedonicRatings: data.hedonic,
         jarRatings: data.jar,
       });
+      console.log('✅ Server submission successful');
 
-      // Check if this completes the current product type
+      // STEP 3: Refresh server data
+      console.log('STEP 3: Refreshing server data...');
+      await Promise.all([
+        refetchCompleted(),
+        invalidateCompletionData()
+      ]);
+      console.log('✅ Server data refreshed');
+
+      // STEP 4: Clear optimistic update (it should now be in server data)
+      console.log('STEP 4: Clearing optimistic update for sample:', currentSampleId);
+      setOptimisticCompletedSamples(prev => {
+        const filtered = prev.filter(id => id !== currentSampleId);
+        console.log('Optimistic updates after clearing:', filtered);
+        return filtered;
+      });
+
+      // STEP 5: Refresh next sample query with updated completed samples
+      console.log('STEP 5: Refreshing next sample query...');
+      await refetchNextSample();
+      console.log('✅ Next sample query refreshed');
+
+      // STEP 6: Force form reset
+      console.log('STEP 6: Forcing form reset...');
+      setForceFormReset(prev => prev + 1);
+
+      // STEP 7: Check for product type completion and reveal logic
+      console.log('STEP 7: Checking product type completion...');
       const { data: currentProductTypeSamples } = await supabase
         .from('samples')
         .select('id')
@@ -125,30 +172,26 @@ export function useEvaluationFlow(eventId?: string) {
       
       const totalSamplesForProductType = currentProductTypeSamples?.length || 0;
       
-      // Count completed samples for this product type (including current submission)
-      const completedForThisProductType = serverCompletedSamples.filter(e => 
+      // We need to refetch to get the latest server data for this check
+      const { data: freshServerData } = await refetchCompleted();
+      const completedForThisProductType = (freshServerData || []).filter(e => 
         e.productTypeId === currentProductType.id
-      ).length + 1; // +1 for current submission that just completed
+      ).length;
       
       const isProductTypeComplete = completedForThisProductType >= totalSamplesForProductType;
       
-      // Refresh all related data
-      await Promise.all([
-        refetchCompleted(),
-        refetchNextSample(),
-        invalidateCompletionData()
-      ]);
-
-      // Clear optimistic update after successful server sync
-      setOptimisticCompletedSamples(prev => prev.filter(id => id !== currentSample.id));
-
-      // Force form reset immediately after submission
-      setForceFormReset(prev => prev + 1);
+      console.log('Product type completion check:', {
+        totalSamples: totalSamplesForProductType,
+        completed: completedForThisProductType,
+        isComplete: isProductTypeComplete
+      });
 
       // Show sample reveal if product type is complete and there are more product types
       if (isProductTypeComplete) {
         const remainingProductTypes = productTypes.filter(pt => pt.id !== currentProductType.id);
+        console.log('Product type completed! Remaining product types:', remainingProductTypes.length);
         if (remainingProductTypes.length > 0) {
+          console.log('Setting showSampleReveal to true');
           setShowSampleReveal(true);
         }
       }
@@ -158,10 +201,13 @@ export function useEvaluationFlow(eventId?: string) {
         description: `Uspješno ste ocijenili uzorak ${currentSample.blindCode}.`
       });
 
+      console.log("=== ATOMIC EVALUATION SUBMISSION COMPLETED ===");
+
     } catch (error) {
-      console.error("Error submitting evaluation:", error);
+      console.error("ERROR in evaluation submission:", error);
       // Revert optimistic update on error
-      setOptimisticCompletedSamples(prev => prev.filter(id => id !== currentSample.id));
+      console.log('Reverting optimistic update for sample:', currentSampleId);
+      setOptimisticCompletedSamples(prev => prev.filter(id => id !== currentSampleId));
       toast({
         title: "Greška",
         description: "Problem kod spremanja ocjene. Molimo pokušajte ponovno.",
@@ -176,7 +222,7 @@ export function useEvaluationFlow(eventId?: string) {
     user, currentSample, eventId, currentProductType, productTypes,
     canSubmitEvaluation, setExtendedTransition, trackSubmission,
     refetchCompleted, refetchNextSample, invalidateCompletionData,
-    submitEvaluationMutation, toast, serverCompletedSamples
+    submitEvaluationMutation, toast, completedSamples
   ]);
 
   // Continue after sample reveal
