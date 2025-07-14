@@ -1,285 +1,383 @@
-import { useState, useCallback } from "react";
+import { useReducer, useCallback, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useNextSample, useCompletedEvaluations, useSubmitEvaluation } from "@/hooks/useEvaluations";
 import { useEventDetailQueries } from "@/hooks/useEventDetailQueries";
-import { useEvaluationState } from "@/hooks/useEvaluationState";
-import { getJARAttributes } from "@/services/dataService";
-import { useQuery } from "@tanstack/react-query";
-import { HedonicScale, JARRating } from "@/types";
-import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { getJARAttributes } from "@/services/supabase/jarAttributes";
+import { useSubmitEvaluation } from "@/hooks/useEvaluations";
+import { getCompletedEvaluations } from "@/services/supabase/evaluations";
+import { getNextSample } from "@/services/dataService";
+import { HedonicScale, JARRating, Sample, ProductType } from "@/types";
 
-/**
- * Manages the complete evaluation flow: sample progression, completion detection, and reveal screens
- */
-export function useEvaluationFlow(eventId?: string) {
-  const { user } = useAuth();
-  const { toast } = useToast();
+// Enhanced State Management with useReducer
+interface EvaluationFlowState {
+  // Core state
+  isInitialized: boolean;
+  isTransitioning: boolean;
+  isSubmitting: boolean;
+  showSampleReveal: boolean;
+  forceFormReset: boolean;
   
-  // State management hook
-  const {
-    isEvaluationCompleteForUser,
-    isTransitioning,
-    canEnterEvaluation,
-    canSubmitEvaluation,
-    trackSubmission,
-    setExtendedTransition,
-    invalidateCompletionData
-  } = useEvaluationState(eventId);
+  // Data state
+  currentSample: Sample | null;
+  currentProductType: ProductType | null;
+  completedSamples: string[];
+  optimisticSamples: string[];
   
-  // Local flow state
-  const [showSampleReveal, setShowSampleReveal] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [forceFormReset, setForceFormReset] = useState(0);
-  const [optimisticCompletedSamples, setOptimisticCompletedSamples] = useState<string[]>([]);
+  // Error state
+  error: string | null;
+  
+  // Debug state
+  lastSubmissionId: string | null;
+  debugLog: string[];
+}
 
-  // Event data
-  const { 
-    event, 
-    productTypes = [], 
-    isLoading: isLoadingEvent 
-  } = useEventDetailQueries(eventId);
+type EvaluationFlowAction =
+  | { type: 'INITIALIZE_START' }
+  | { type: 'INITIALIZE_SUCCESS'; payload: { currentSample: Sample | null; currentProductType: ProductType | null; completedSamples: string[] } }
+  | { type: 'INITIALIZE_ERROR'; payload: string }
+  | { type: 'SUBMIT_START'; payload: { sampleId: string } }
+  | { type: 'SUBMIT_SUCCESS'; payload: { nextSample: Sample | null; nextProductType: ProductType | null; showReveal: boolean } }
+  | { type: 'SUBMIT_ERROR'; payload: string }
+  | { type: 'TRANSITION_START' }
+  | { type: 'TRANSITION_END' }
+  | { type: 'REVEAL_CONTINUE' }
+  | { type: 'FORCE_FORM_RESET' }
+  | { type: 'CLEAR_OPTIMISTIC' }
+  | { type: 'ADD_DEBUG_LOG'; payload: string }
+  | { type: 'RESET_STATE' };
 
-  // Completed evaluations
-  const { 
-    data: serverCompletedSamples = [], 
-    isLoading: isLoadingCompleted,
-    refetch: refetchCompleted
-  } = useCompletedEvaluations(eventId || "", user?.id);
+const initialState: EvaluationFlowState = {
+  isInitialized: false,
+  isTransitioning: false,
+  isSubmitting: false,
+  showSampleReveal: false,
+  forceFormReset: false,
+  currentSample: null,
+  currentProductType: null,
+  completedSamples: [],
+  optimisticSamples: [],
+  error: null,
+  lastSubmissionId: null,
+  debugLog: []
+};
 
-  // Merge server and optimistic completed samples with comprehensive logging
-  const completedSamples = (() => {
-    const serverIds = serverCompletedSamples.map(e => e.sampleId);
-    const merged = [...new Set([...serverIds, ...optimisticCompletedSamples])];
-    
-    console.log('=== COMPLETED SAMPLES MERGE DEBUG ===');
-    console.log('Server completed samples:', serverCompletedSamples.length);
-    console.log('Server sample IDs:', serverIds);
-    console.log('Optimistic completed samples:', optimisticCompletedSamples);
-    console.log('Final merged completed samples:', merged);
-    console.log('==========================================');
-    
-    return merged;
+function evaluationFlowReducer(state: EvaluationFlowState, action: EvaluationFlowAction): EvaluationFlowState {
+  const newState = (() => {
+    switch (action.type) {
+      case 'INITIALIZE_START':
+        return {
+          ...state,
+          isTransitioning: true,
+          error: null,
+          debugLog: [...state.debugLog, `[${new Date().toISOString()}] INITIALIZE_START`]
+        };
+
+      case 'INITIALIZE_SUCCESS':
+        return {
+          ...state,
+          isInitialized: true,
+          isTransitioning: false,
+          currentSample: action.payload.currentSample,
+          currentProductType: action.payload.currentProductType,
+          completedSamples: action.payload.completedSamples,
+          optimisticSamples: [], // Clear any old optimistic updates
+          error: null,
+          debugLog: [...state.debugLog, `[${new Date().toISOString()}] INITIALIZE_SUCCESS: sample=${action.payload.currentSample?.id}, productType=${action.payload.currentProductType?.id}, completed=${action.payload.completedSamples.length}`]
+        };
+
+      case 'INITIALIZE_ERROR':
+        return {
+          ...state,
+          isTransitioning: false,
+          error: action.payload,
+          debugLog: [...state.debugLog, `[${new Date().toISOString()}] INITIALIZE_ERROR: ${action.payload}`]
+        };
+
+      case 'SUBMIT_START':
+        return {
+          ...state,
+          isSubmitting: true,
+          optimisticSamples: [...state.optimisticSamples, action.payload.sampleId], // Add optimistic update
+          lastSubmissionId: action.payload.sampleId,
+          error: null,
+          debugLog: [...state.debugLog, `[${new Date().toISOString()}] SUBMIT_START: sampleId=${action.payload.sampleId}, optimistic=[${[...state.optimisticSamples, action.payload.sampleId].join(',')}]`]
+        };
+
+      case 'SUBMIT_SUCCESS':
+        return {
+          ...state,
+          isSubmitting: false,
+          isTransitioning: false,
+          currentSample: action.payload.nextSample,
+          currentProductType: action.payload.nextProductType,
+          showSampleReveal: action.payload.showReveal,
+          forceFormReset: true, // Force form reset after successful submission
+          debugLog: [...state.debugLog, `[${new Date().toISOString()}] SUBMIT_SUCCESS: nextSample=${action.payload.nextSample?.id}, showReveal=${action.payload.showReveal}`]
+        };
+
+      case 'SUBMIT_ERROR':
+        return {
+          ...state,
+          isSubmitting: false,
+          optimisticSamples: state.optimisticSamples.filter(id => id !== state.lastSubmissionId), // Rollback optimistic update
+          error: action.payload,
+          debugLog: [...state.debugLog, `[${new Date().toISOString()}] SUBMIT_ERROR: ${action.payload}, rolled back optimistic update`]
+        };
+
+      case 'TRANSITION_START':
+        return {
+          ...state,
+          isTransitioning: true,
+          debugLog: [...state.debugLog, `[${new Date().toISOString()}] TRANSITION_START`]
+        };
+
+      case 'TRANSITION_END':
+        return {
+          ...state,
+          isTransitioning: false,
+          debugLog: [...state.debugLog, `[${new Date().toISOString()}] TRANSITION_END`]
+        };
+
+      case 'REVEAL_CONTINUE':
+        return {
+          ...state,
+          showSampleReveal: false,
+          debugLog: [...state.debugLog, `[${new Date().toISOString()}] REVEAL_CONTINUE`]
+        };
+
+      case 'FORCE_FORM_RESET':
+        return {
+          ...state,
+          forceFormReset: true,
+          debugLog: [...state.debugLog, `[${new Date().toISOString()}] FORCE_FORM_RESET`]
+        };
+
+      case 'CLEAR_OPTIMISTIC':
+        return {
+          ...state,
+          optimisticSamples: [],
+          forceFormReset: false, // Reset form reset flag
+          debugLog: [...state.debugLog, `[${new Date().toISOString()}] CLEAR_OPTIMISTIC: cleared optimistic updates`]
+        };
+
+      case 'ADD_DEBUG_LOG':
+        return {
+          ...state,
+          debugLog: [...state.debugLog, `[${new Date().toISOString()}] ${action.payload}`]
+        };
+
+      case 'RESET_STATE':
+        return {
+          ...initialState,
+          debugLog: [...state.debugLog, `[${new Date().toISOString()}] RESET_STATE: complete state reset`]
+        };
+
+      default:
+        return state;
+    }
   })();
 
-  // Next sample
-  const { 
-    data: nextSampleData,
-    isLoading: isLoadingNextSample,
-    refetch: refetchNextSample
-  } = useNextSample(
-    user?.id || "",
-    eventId || "",
-    undefined,
-    completedSamples
-  );
-
-  // Current sample and completion state
-  const currentSample = nextSampleData?.sample || null;
-  const isComplete = nextSampleData?.isComplete || false;
-  const currentProductType = productTypes.find(pt => pt.id === currentSample?.productTypeId) || null;
-
-  // JAR attributes
-  const { data: currentJARAttributes = [] } = useQuery({
-    queryKey: ['jarAttributes', currentSample?.productTypeId],
-    queryFn: () => getJARAttributes(currentSample!.productTypeId),
-    enabled: !!currentSample?.productTypeId,
-    staleTime: 1000 * 60 * 5,
+  // Log state changes for debugging
+  console.log('🔄 EvaluationFlow State Change:', {
+    action: action.type,
+    prevState: state,
+    newState,
+    debugLog: newState.debugLog.slice(-5) // Show last 5 debug entries
   });
 
-  // Submit evaluation mutation
+  return newState;
+}
+
+export function useEvaluationFlow(eventId?: string) {
+  const [state, dispatch] = useReducer(evaluationFlowReducer, initialState);
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const initInProgress = useRef(false);
+
+  // Data queries
+  const { event, productTypes } = useEventDetailQueries(eventId);
+  
+  const { data: jarAttributes = [] } = useQuery({
+    queryKey: ['jarAttributes', eventId],
+    queryFn: () => getJARAttributes(eventId!),
+    enabled: !!eventId,
+  });
+
+  const { data: serverCompletedSamples = [] } = useQuery({
+    queryKey: ['completedEvaluations', eventId, user?.id],
+    queryFn: () => getCompletedEvaluations(eventId!, user!.id),
+    enabled: !!eventId && !!user?.id,
+  });
+
   const submitEvaluationMutation = useSubmitEvaluation();
 
-  // Submit evaluation with atomic updates and proper sequencing
-  const submitEvaluation = useCallback(async (data: {
-    hedonic: HedonicScale;
-    jar: JARRating;
-  }) => {
-    if (!user || !currentSample || !eventId || !currentProductType) {
-      throw new Error("Nedostaju podaci za predaju ocjene.");
+  // Merge server and optimistic completed samples
+  const allCompletedSamples = [
+    ...serverCompletedSamples.map(e => e.sampleId),
+    ...state.optimisticSamples
+  ];
+
+  // Core flow functions
+  const initializeEvaluation = useCallback(async () => {
+    if (!eventId || !user?.id || initInProgress.current) {
+      dispatch({ type: 'ADD_DEBUG_LOG', payload: `Initialize skipped: eventId=${!!eventId}, userId=${!!user?.id}, inProgress=${initInProgress.current}` });
+      return;
     }
 
-    // Pre-submission validation
-    if (!canSubmitEvaluation(currentSample.id)) {
-      return; // Protection already shows toast
-    }
+    initInProgress.current = true;
+    dispatch({ type: 'INITIALIZE_START' });
 
-    console.log("=== ATOMIC EVALUATION SUBMISSION START ===", {
-      sampleId: currentSample.id,
-      blindCode: currentSample.blindCode,
-      productType: currentProductType.productName,
-      currentCompletedSamples: completedSamples
-    });
-
-    setIsSubmitting(true);
-    setExtendedTransition(500); 
-    
-    const cleanup = trackSubmission(currentSample.id);
-    const currentSampleId = currentSample.id;
-    
-    // STEP 1: Optimistic update - immediately add current sample to completed list
-    console.log('STEP 1: Adding optimistic update for sample:', currentSampleId);
-    setOptimisticCompletedSamples(prev => {
-      const newArray = [...prev, currentSampleId];
-      console.log('Optimistic completed samples updated:', newArray);
-      return newArray;
-    });
-    
     try {
-      // STEP 2: Submit to server
-      console.log('STEP 2: Submitting to server...');
+      // Wait for all data to be available
+      await queryClient.ensureQueryData({
+        queryKey: ['completedEvaluations', eventId, user.id],
+        queryFn: () => getCompletedEvaluations(eventId, user.id),
+      });
+
+      const freshCompletedSamples = queryClient.getQueryData(['completedEvaluations', eventId, user.id]) as any[] || [];
+      const completedSampleIds = freshCompletedSamples.map(e => e.sampleId);
+
+      dispatch({ type: 'ADD_DEBUG_LOG', payload: `Fresh completed samples: [${completedSampleIds.join(',')}]` });
+
+      // Get next sample
+      const nextSampleData = await getNextSample(user.id, eventId, undefined, completedSampleIds);
+      const nextSample = nextSampleData?.sample || null;
+      const currentProductType = nextSample 
+        ? productTypes?.find(pt => pt.id === nextSample.productTypeId) || null
+        : null;
+
+      dispatch({ 
+        type: 'INITIALIZE_SUCCESS', 
+        payload: { 
+          currentSample: nextSample, 
+          currentProductType,
+          completedSamples: completedSampleIds
+        }
+      });
+
+    } catch (error) {
+      console.error('🚨 Initialize error:', error);
+      dispatch({ type: 'INITIALIZE_ERROR', payload: error instanceof Error ? error.message : 'Initialize failed' });
+    } finally {
+      initInProgress.current = false;
+    }
+  }, [eventId, user?.id, user?.evaluatorPosition, queryClient, productTypes]);
+
+  const submitEvaluation = useCallback(async (data: { hedonic: HedonicScale; jar: JARRating }) => {
+    if (!state.currentSample || !user?.id || !eventId) {
+      dispatch({ type: 'ADD_DEBUG_LOG', payload: 'Submit failed: missing required data' });
+      return;
+    }
+
+    const sampleId = state.currentSample.id;
+    dispatch({ type: 'SUBMIT_START', payload: { sampleId } });
+    dispatch({ type: 'TRANSITION_START' });
+
+    try {
+      // Submit to server
       await submitEvaluationMutation.mutateAsync({
         userId: user.id,
-        sampleId: currentSampleId,
-        productTypeId: currentProductType.id,
+        sampleId: sampleId,
+        productTypeId: state.currentSample.productTypeId,
         eventId: eventId,
         hedonicRatings: data.hedonic,
         jarRatings: data.jar,
       });
-      console.log('✅ Server submission successful');
 
-      // STEP 3: Refresh server data
-      console.log('STEP 3: Refreshing server data...');
-      await Promise.all([
-        refetchCompleted(),
-        invalidateCompletionData()
-      ]);
-      console.log('✅ Server data refreshed');
+      dispatch({ type: 'ADD_DEBUG_LOG', payload: `Server submission successful for sample ${sampleId}` });
 
-      // STEP 4: Clear optimistic update (it should now be in server data)
-      console.log('STEP 4: Clearing optimistic update for sample:', currentSampleId);
-      setOptimisticCompletedSamples(prev => {
-        const filtered = prev.filter(id => id !== currentSampleId);
-        console.log('Optimistic updates after clearing:', filtered);
-        return filtered;
-      });
+      // CRITICAL: Proper data flow sequence
+      // 1. Refetch completed evaluations from server
+      await queryClient.invalidateQueries({ queryKey: ['completedEvaluations', eventId, user.id] });
+      await queryClient.refetchQueries({ queryKey: ['completedEvaluations', eventId, user.id] });
 
-      // STEP 5: Refresh next sample query with updated completed samples
-      console.log('STEP 5: Refreshing next sample query...');
-      await refetchNextSample();
-      console.log('✅ Next sample query refreshed');
+      // 2. Get updated completed samples (including the one we just submitted)
+      const updatedCompletedSamples = queryClient.getQueryData(['completedEvaluations', eventId, user.id]) as any[] || [];
+      const updatedCompletedSampleIds = updatedCompletedSamples.map(e => e.sampleId);
 
-      // STEP 6: Force form reset
-      console.log('STEP 6: Forcing form reset...');
-      setForceFormReset(prev => prev + 1);
+      dispatch({ type: 'ADD_DEBUG_LOG', payload: `Updated completed samples after server sync: [${updatedCompletedSampleIds.join(',')}]` });
 
-      // STEP 7: Check for product type completion and reveal logic
-      console.log('STEP 7: Checking product type completion...');
-      const { data: currentProductTypeSamples } = await supabase
-        .from('samples')
-        .select('id')
-        .eq('product_type_id', currentProductType.id);
-      
-      const totalSamplesForProductType = currentProductTypeSamples?.length || 0;
-      
-      // We need to refetch to get the latest server data for this check
-      const { data: freshServerData } = await refetchCompleted();
-      const completedForThisProductType = (freshServerData || []).filter(e => 
-        e.productTypeId === currentProductType.id
-      ).length;
-      
-      const isProductTypeComplete = completedForThisProductType >= totalSamplesForProductType;
-      
-      console.log('Product type completion check:', {
-        totalSamples: totalSamplesForProductType,
-        completed: completedForThisProductType,
-        isComplete: isProductTypeComplete
-      });
+      // 3. Clear optimistic updates now that server is synced
+      dispatch({ type: 'CLEAR_OPTIMISTIC' });
 
-      // Show sample reveal if product type is complete and there are more product types
-      if (isProductTypeComplete) {
-        const remainingProductTypes = productTypes.filter(pt => pt.id !== currentProductType.id);
-        console.log('Product type completed! Remaining product types:', remainingProductTypes.length);
-        if (remainingProductTypes.length > 0) {
-          console.log('Setting showSampleReveal to true');
-          setShowSampleReveal(true);
+      // 4. Get next sample based on updated completed list
+      const nextSampleData = await getNextSample(user.id, eventId, undefined, updatedCompletedSampleIds);
+      const nextSample = nextSampleData?.sample || null;
+      const nextProductType = nextSample 
+        ? productTypes?.find(pt => pt.id === nextSample.productTypeId) || null
+        : null;
+
+      // 5. Determine if we should show sample reveal
+      const currentProductTypeId = state.currentSample.productTypeId;
+      const shouldShowReveal = !nextSample || (nextSample && nextSample.productTypeId !== currentProductTypeId);
+
+      dispatch({ type: 'ADD_DEBUG_LOG', payload: `Next sample: ${nextSample?.id}, nextProductType: ${nextProductType?.id}, showReveal: ${shouldShowReveal}` });
+
+      // 6. Update state with results
+      dispatch({
+        type: 'SUBMIT_SUCCESS',
+        payload: {
+          nextSample,
+          nextProductType,
+          showReveal: shouldShowReveal
         }
-      }
-
-      toast({
-        title: "Ocjena spremljena",
-        description: `Uspješno ste ocijenili uzorak ${currentSample.blindCode}.`
       });
-
-      console.log("=== ATOMIC EVALUATION SUBMISSION COMPLETED ===");
 
     } catch (error) {
-      console.error("ERROR in evaluation submission:", error);
-      // Revert optimistic update on error
-      console.log('Reverting optimistic update for sample:', currentSampleId);
-      setOptimisticCompletedSamples(prev => prev.filter(id => id !== currentSampleId));
-      toast({
-        title: "Greška",
-        description: "Problem kod spremanja ocjene. Molimo pokušajte ponovno.",
-        variant: "destructive"
-      });
-      throw error;
-    } finally {
-      cleanup();
-      setIsSubmitting(false);
+      console.error('🚨 Submit error:', error);
+      dispatch({ type: 'SUBMIT_ERROR', payload: error instanceof Error ? error.message : 'Submit failed' });
     }
-  }, [
-    user, currentSample, eventId, currentProductType, productTypes,
-    canSubmitEvaluation, setExtendedTransition, trackSubmission,
-    refetchCompleted, refetchNextSample, invalidateCompletionData,
-    submitEvaluationMutation, toast, completedSamples
-  ]);
+  }, [state.currentSample, user?.id, user?.evaluatorPosition, eventId, submitEvaluationMutation, queryClient, productTypes]);
 
-  // Continue after sample reveal
   const continueAfterReveal = useCallback(async () => {
-    console.log("=== CONTINUING AFTER REVEAL ===");
-    setShowSampleReveal(false);
-    setExtendedTransition(500);
+    dispatch({ type: 'REVEAL_CONTINUE' });
+    dispatch({ type: 'TRANSITION_START' });
     
-    // Clear any remaining optimistic updates
-    setOptimisticCompletedSamples([]);
-    
-    await refetchNextSample();
-  }, [refetchNextSample, setExtendedTransition]);
+    try {
+      // Re-initialize to get the next sample
+      await initializeEvaluation();
+    } finally {
+      dispatch({ type: 'TRANSITION_END' });
+    }
+  }, [initializeEvaluation]);
 
-  // Initialize evaluation flow
-  const initializeEvaluation = useCallback(async () => {
-    console.log("=== INITIALIZING EVALUATION FLOW ===", { eventId });
-    
-    if (!user || !eventId) return;
-    
-    // Reset local state for fresh start
-    setShowSampleReveal(false);
-    setOptimisticCompletedSamples([]);
-    
-    // Fetch initial data
-    await Promise.all([
-      refetchCompleted(),
-      refetchNextSample()
-    ]);
-    
-    console.log("✅ Evaluation flow initialized");
-  }, [user, eventId, refetchCompleted, refetchNextSample]);
+  // Derived state
+  const isEvaluationCompleteForUser = !state.currentSample && state.isInitialized && !state.isTransitioning;
+  const isLoading = !state.isInitialized || state.isTransitioning;
+  
+  const canEnterEvaluation = useCallback(() => {
+    return !!event && !!user?.evaluatorPosition;
+  }, [event, user?.evaluatorPosition]);
 
-  // Loading states
-  const isLoading = isLoadingEvent || isLoadingCompleted || isLoadingNextSample;
+  // Debug logging to console
+  if (state.debugLog.length > 0) {
+    console.log('🔍 EvaluationFlow Debug Log:', state.debugLog.slice(-10));
+  }
 
   return {
-    // Current state
-    currentSample,
-    currentProductType,
-    currentJARAttributes,
-    showSampleReveal,
-    isComplete,
-    isEvaluationCompleteForUser,
-    forceFormReset,
-    
-    // Loading and transition states
+    // State
     isLoading,
-    isSubmitting,
-    isTransitioning,
+    isEvaluationCompleteForUser,
+    showSampleReveal: state.showSampleReveal,
+    currentProductType: state.currentProductType,
+    isTransitioning: state.isTransitioning,
+    currentSample: state.currentSample,
+    forceFormReset: state.forceFormReset,
+    isSubmitting: state.isSubmitting,
+    error: state.error,
+    
+    // Data
+    jarAttributes,
+    completedSamples: allCompletedSamples,
     
     // Actions
+    initializeEvaluation,
     submitEvaluation,
     continueAfterReveal,
-    initializeEvaluation,
-    
-    // Guards
     canEnterEvaluation,
+    
+    // Debug
+    debugLog: state.debugLog,
+    dispatch // For debugging purposes
   };
 }

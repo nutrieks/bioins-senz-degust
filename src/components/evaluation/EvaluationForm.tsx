@@ -18,16 +18,15 @@ import { useAuth } from "@/contexts/AuthContext";
 interface EvaluationFormProps {
   eventId: string;
   productTypeId?: string;
-  onComplete: () => void;
 }
 
-export function EvaluationForm({ eventId, onComplete }: EvaluationFormProps) {
+export function EvaluationForm({ eventId }: EvaluationFormProps) {
   const { user } = useAuth();
   const { 
     currentSample, 
     isEvaluationCompleteForUser,
     currentProductType,
-    currentJARAttributes: jarAttributes,
+    jarAttributes,
     submitEvaluation,
     isSubmitting: managerIsSubmitting,
     forceFormReset
@@ -42,7 +41,7 @@ export function EvaluationForm({ eventId, onComplete }: EvaluationFormProps) {
     scrollRef,
     onSubmit: originalOnSubmit,
     scrollToTop
-  } = useEvaluationForm(currentSample, jarAttributes, forceFormReset);
+  } = useEvaluationForm(currentSample, jarAttributes, forceFormReset ? 1 : 0);
   
   // Use manager's submission state
   const isSubmitting = managerIsSubmitting;
@@ -102,19 +101,11 @@ export function EvaluationForm({ eventId, onComplete }: EvaluationFormProps) {
     fetchEventDate();
   }, [currentSample]);
   
-  // Ako je ocjenjivanje završeno, prikazujemo poruku
-  if (isEvaluationCompleteForUser) {
-    return <CompletionScreen onContinue={onComplete} />;
-  }
-  
   if (!currentSample) {
     return (
       <Card className="my-8">
         <CardContent className="p-6 text-center">
           <p>Nema dostupnih uzoraka za ocjenjivanje.</p>
-          <Button className="mt-4" onClick={onComplete}>
-            Povratak na početnu
-          </Button>
         </CardContent>
       </Card>
     );

@@ -1,11 +1,11 @@
 
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { EvaluationFormWrapper } from "@/components/evaluation/EvaluationFormWrapper";
+import { EvaluationForm } from "@/components/evaluation/EvaluationForm";
 import { CompletionMessage } from "@/components/evaluation/CompletionMessage";
 import { SampleRevealScreen } from "@/components/evaluation/SampleRevealScreen";
 import { LoadingState } from "@/components/evaluation/LoadingState";
-import { useEvaluationFlowNew as useEvaluationFlow } from "@/hooks/useEvaluationFlowNew";
+import { useEvaluationFlow } from "@/hooks/useEvaluationFlow";
 
 interface EvaluationContentProps { 
   eventId: string; 
@@ -60,5 +60,5 @@ export function EvaluationContent({ eventId }: EvaluationContentProps) {
     return <LoadingState />;
   }
 
-  return <EvaluationFormWrapper eventId={eventId} />;
+  return <EvaluationForm eventId={eventId} />;
 }
