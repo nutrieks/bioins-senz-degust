@@ -2,7 +2,8 @@
 import React, { Component, ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Home } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Props {
   children: ReactNode;
@@ -27,7 +28,10 @@ export class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: any) {
     // Log the error to console for debugging
-    console.error('ErrorBoundary caught an error:', error, errorInfo);
+    console.error('🚨 ErrorBoundary caught an error:', error, errorInfo);
+    
+    // Clear potentially corrupted auth state
+    this.clearCorruptedState();
     
     this.setState({
       hasError: true,
@@ -36,12 +40,47 @@ export class ErrorBoundary extends Component<Props, State> {
     });
   }
 
+  clearCorruptedState = () => {
+    try {
+      // Clear potentially corrupted storage
+      const keys = Object.keys(localStorage);
+      keys.forEach(key => {
+        if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+          localStorage.removeItem(key);
+        }
+      });
+      
+      // Clear session storage
+      const sessionKeys = Object.keys(sessionStorage || {});
+      sessionKeys.forEach(key => {
+        if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+          sessionStorage.removeItem(key);
+        }
+      });
+    } catch (e) {
+      console.warn('Failed to clear storage:', e);
+    }
+  };
+
   handleReload = () => {
+    this.clearCorruptedState();
     window.location.reload();
   };
 
   handleReset = () => {
+    this.clearCorruptedState();
     this.setState({ hasError: false, error: null, errorInfo: null });
+  };
+
+  handleGoToDashboard = async () => {
+    try {
+      this.clearCorruptedState();
+      await supabase.auth.signOut({ scope: 'global' });
+      window.location.href = '/login';
+    } catch (e) {
+      console.warn('Failed to sign out, redirecting anyway:', e);
+      window.location.href = '/login';
+    }
   };
 
   render() {
@@ -66,13 +105,19 @@ export class ErrorBoundary extends Component<Props, State> {
                   </p>
                 </div>
               )}
-              <div className="flex gap-2">
-                <Button onClick={this.handleReload} className="flex-1">
-                  Osvježi stranicu
+              <div className="flex flex-col gap-2">
+                <Button onClick={this.handleGoToDashboard} className="w-full">
+                  <Home className="mr-2 h-4 w-4" />
+                  Vrati se na prijavu
                 </Button>
-                <Button onClick={this.handleReset} variant="outline" className="flex-1">
-                  Pokušaj ponovno
-                </Button>
+                <div className="flex gap-2">
+                  <Button onClick={this.handleReload} variant="outline" className="flex-1">
+                    Osvježi stranicu
+                  </Button>
+                  <Button onClick={this.handleReset} variant="outline" className="flex-1">
+                    Pokušaj ponovno
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>

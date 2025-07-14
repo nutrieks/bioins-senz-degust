@@ -8,6 +8,9 @@ import { Toaster as SonnerToaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { DebugPanel } from "@/components/DebugPanel";
+import { useAppStability } from "@/hooks/useAppStability";
 import { centralizedEventService } from "@/services/centralizedEventService";
 
 // Stranice
@@ -30,6 +33,14 @@ const queryClient = new QueryClient({
       staleTime: 1000 * 60 * 5, // 5 minutes
       retry: 2,
       retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: 'always',
+    },
+    mutations: {
+      retry: 1,
+      onError: (error) => {
+        console.error('🚨 Mutation error:', error);
+      },
     },
   },
 });
@@ -37,40 +48,52 @@ const queryClient = new QueryClient({
 // Initialize centralized event service with query client
 centralizedEventService.setQueryClient(queryClient);
 
+const AppContent = () => {
+  useAppStability();
+  return (
+    <>
+      <Toaster />
+      <SonnerToaster />
+      <DebugPanel />
+      {/* React Query DevTools - only shows in development */}
+      {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} />}
+      <BrowserRouter>
+        <Routes>
+          {/* JAVNE RUTE */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/" element={<Navigate to="/login" replace />} />
+
+          {/* ZAŠTIĆENE RUTE - SVAKA JE OMOTANA U PROTECTEDROUTE */}
+          <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+          <Route path="/admin/events" element={<ProtectedRoute><EventsPage /></ProtectedRoute>} />
+          <Route path="/admin/events/new" element={<ProtectedRoute><NewEvent /></ProtectedRoute>} />
+          <Route path="/admin/events/:eventId" element={<ProtectedRoute><EventDetail /></ProtectedRoute>} />
+          <Route path="/admin/products" element={<ProtectedRoute><ProductsPage /></ProtectedRoute>} />
+          <Route path="/admin/products/new" element={<ProtectedRoute><NewProductType /></ProtectedRoute>} />
+          <Route path="/admin/products/edit/:productTypeId" element={<ProtectedRoute><EditProductType /></ProtectedRoute>} />
+          <Route path="/admin/users" element={<ProtectedRoute><UsersPage /></ProtectedRoute>} />
+
+          <Route path="/evaluator" element={<ProtectedRoute><EvaluatorDashboard /></ProtectedRoute>} />
+          <Route path="/evaluator/evaluate/:eventId" element={<ProtectedRoute><Evaluation /></ProtectedRoute>} />
+
+          {/* 404 RUTA */}
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </BrowserRouter>
+    </>
+  );
+};
+
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <AuthProvider>
-        <Toaster />
-        <SonnerToaster />
-        {/* React Query DevTools - only shows in development */}
-        {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} />}
-        <BrowserRouter>
-          <Routes>
-            {/* JAVNE RUTE */}
-            <Route path="/login" element={<Login />} />
-            <Route path="/" element={<Navigate to="/login" replace />} />
-
-            {/* ZAŠTIĆENE RUTE - SVAKA JE OMOTANA U PROTECTEDROUTE */}
-            <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
-            <Route path="/admin/events" element={<ProtectedRoute><EventsPage /></ProtectedRoute>} />
-            <Route path="/admin/events/new" element={<ProtectedRoute><NewEvent /></ProtectedRoute>} />
-            <Route path="/admin/events/:eventId" element={<ProtectedRoute><EventDetail /></ProtectedRoute>} />
-            <Route path="/admin/products" element={<ProtectedRoute><ProductsPage /></ProtectedRoute>} />
-            <Route path="/admin/products/new" element={<ProtectedRoute><NewProductType /></ProtectedRoute>} />
-            <Route path="/admin/products/edit/:productTypeId" element={<ProtectedRoute><EditProductType /></ProtectedRoute>} />
-            <Route path="/admin/users" element={<ProtectedRoute><UsersPage /></ProtectedRoute>} />
-
-            <Route path="/evaluator" element={<ProtectedRoute><EvaluatorDashboard /></ProtectedRoute>} />
-            <Route path="/evaluator/evaluate/:eventId" element={<ProtectedRoute><Evaluation /></ProtectedRoute>} />
-
-            {/* 404 RUTA */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </AuthProvider>
-    </TooltipProvider>
-  </QueryClientProvider>
+  <ErrorBoundary>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <AuthProvider>
+          <AppContent />
+        </AuthProvider>
+      </TooltipProvider>
+    </QueryClientProvider>
+  </ErrorBoundary>
 );
 
 export default App;
