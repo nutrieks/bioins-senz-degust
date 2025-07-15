@@ -83,6 +83,20 @@ export class ErrorBoundary extends Component<Props, State> {
     }
   };
 
+  handleRestartApp = () => {
+    // NUCLEAR OPTION: Complete app restart
+    this.clearCorruptedState();
+    // Clear all query cache
+    try {
+      window.localStorage.clear();
+      window.sessionStorage.clear();
+    } catch (e) {
+      console.warn('Failed to clear all storage:', e);
+    }
+    // Force full page reload
+    window.location.href = '/login';
+  };
+
   render() {
     if (this.state.hasError) {
       return (
@@ -106,7 +120,11 @@ export class ErrorBoundary extends Component<Props, State> {
                 </div>
               )}
               <div className="flex flex-col gap-2">
-                <Button onClick={this.handleGoToDashboard} className="w-full">
+                <Button onClick={this.handleRestartApp} className="w-full bg-red-600 hover:bg-red-700">
+                  <Home className="mr-2 h-4 w-4" />
+                  RESTART APLIKACIJE
+                </Button>
+                <Button onClick={this.handleGoToDashboard} variant="outline" className="w-full">
                   <Home className="mr-2 h-4 w-4" />
                   Vrati se na prijavu
                 </Button>

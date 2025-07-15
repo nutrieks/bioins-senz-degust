@@ -177,224 +177,137 @@ export async function getNextSample(
   completedSampleIds?: string[]
 ): Promise<any> {
   try {
-    console.log('=== GETTING NEXT SAMPLE ===');
-    console.log('Parameters:', { userId, eventId, productTypeId, completedSampleIdsCount: completedSampleIds?.length });
+    console.log('🎯 BULLETPROOF getNextSample START');
+    console.log('📊 Parameters:', { userId, eventId, productTypeId, completedCount: completedSampleIds?.length });
 
-    // Get user's evaluator position s dodatnim debug info i retry logikom
-    let user = null;
-    for (let attempt = 1; attempt <= 3; attempt++) {
-      console.log(`User lookup attempt ${attempt}/3`);
-      const { data, error } = await supabase
-        .from('users')
-        .select('evaluator_position, username, role')
-        .eq('id', userId)
-        .single();
+    // STEP 1: Get user data - SIMPLIFIED
+    console.log('👤 Getting user data...');
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('evaluator_position, username, role')
+      .eq('id', userId)
+      .single();
 
-      if (!error && data) {
-        user = data;
-        console.log('User found:', {
-          username: user.username,
-          role: user.role,
-          evaluatorPosition: user.evaluator_position
-        });
-        break;
-      }
-      
-      if (attempt === 3) {
-        console.error('User lookup error after 3 attempts:', error);
-        throw new Error('User not found or not an evaluator');
-      }
-      
-      await new Promise(resolve => setTimeout(resolve, 1000));
+    if (userError || !user) {
+      console.error('❌ User lookup failed:', userError);
+      throw new Error('User not found');
     }
 
     const evaluatorPosition = user.evaluator_position;
+    console.log('✅ User found:', { username: user.username, evaluatorPosition });
 
     if (!evaluatorPosition) {
-      console.error('User has no evaluator position assigned');
-      throw new Error('User is not assigned an evaluator position');
+      console.error('❌ No evaluator position');
+      throw new Error('User has no evaluator position');
     }
 
-    // Get product types for this event
+    // STEP 2: Get product types - SIMPLIFIED
+    console.log('📦 Getting product types...');
     let productTypesToCheck = [];
     
     if (productTypeId) {
-      console.log('Fetching specific product type:', productTypeId);
-      for (let attempt = 1; attempt <= 3; attempt++) {
-        const { data: specificProductType, error } = await supabase
-          .from('product_types')
-          .select('*')
-          .eq('id', productTypeId)
-          .eq('event_id', eventId)
-          .single();
+      const { data: specificProductType, error } = await supabase
+        .from('product_types')
+        .select('*')
+        .eq('id', productTypeId)
+        .eq('event_id', eventId)
+        .single();
           
-        if (!error && specificProductType) {
-          productTypesToCheck = [specificProductType];
-          console.log('Specific product type found:', specificProductType);
-          break;
-        }
-        
-        if (attempt === 3) {
-          console.error('Product type lookup error after 3 attempts:', error);
-          throw error;
-        }
-        
-        await new Promise(resolve => setTimeout(resolve, 1000));
+      if (error || !specificProductType) {
+        console.error('❌ Specific product type not found:', error);
+        throw new Error('Product type not found');
       }
-    } else {
-      console.log('Fetching all product types for event:', eventId);
-      for (let attempt = 1; attempt <= 3; attempt++) {
-        const { data: allProductTypes, error } = await supabase
-          .from('product_types')
-          .select('*')
-          .eq('event_id', eventId)
-          .order('display_order');
-          
-        if (!error && allProductTypes) {
-          productTypesToCheck = allProductTypes;
-          console.log('All product types found:', allProductTypes.length);
-          break;
-        }
-        
-        if (attempt === 3) {
-          console.error('Product types lookup error after 3 attempts:', error);
-          throw error;
-        }
-        
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      }
-    }
-
-    console.log('Product types to check:', productTypesToCheck.length);
-
-    // Get completed evaluations if not provided
-    if (!completedSampleIds) {
-      console.log('Fetching completed evaluations for user');
-      for (let attempt = 1; attempt <= 3; attempt++) {
-        const { data: evaluations, error } = await supabase
-          .from('evaluations')
-          .select('sample_id')
-          .eq('user_id', userId)
-          .eq('event_id', eventId);
-
-        if (!error) {
-          completedSampleIds = evaluations?.map(e => e.sample_id) || [];
-          console.log('Completed evaluations found:', completedSampleIds.length);
-          break;
-        }
-        
-        if (attempt === 3) {
-          console.error('Evaluations lookup error after 3 attempts:', error);
-          throw error;
-        }
-        
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      }
-    }
-
-    // Check each product type for the next sample
-    for (const [index, productType] of productTypesToCheck.entries()) {
-      console.log(`\n--- Checking product type ${index + 1}/${productTypesToCheck.length} ---`);
-      console.log(`Product type: ${productType.product_name} (ID: ${productType.id})`);
       
-      // Get randomization for this product type
-      let randomization = null;
-      for (let attempt = 1; attempt <= 3; attempt++) {
-        console.log(`Randomization lookup attempt ${attempt}/3 for product type ${productType.id}`);
-        randomization = await getRandomization(productType.id);
-        
-        if (randomization) {
-          console.log('Randomization found');
-          break;
-        }
-        
-        if (attempt === 3) {
-          console.log('No randomization found after 3 attempts for product type:', productType.id);
-        } else {
-          await new Promise(resolve => setTimeout(resolve, 1000));
-        }
+      productTypesToCheck = [specificProductType];
+      console.log('✅ Specific product type:', specificProductType.product_name);
+    } else {
+      const { data: allProductTypes, error } = await supabase
+        .from('product_types')
+        .select('*')
+        .eq('event_id', eventId)
+        .order('display_order');
+          
+      if (error || !allProductTypes) {
+        console.error('❌ Product types lookup failed:', error);
+        throw new Error('Could not fetch product types');
       }
+      
+      productTypesToCheck = allProductTypes;
+      console.log('✅ All product types found:', allProductTypes.length);
+    }
+
+    if (productTypesToCheck.length === 0) {
+      console.error('❌ No product types found for event');
+      return { sample: null, isComplete: true };
+    }
+
+    // STEP 3: Get completed evaluations - SIMPLIFIED
+    if (!completedSampleIds) {
+      console.log('📋 Getting completed evaluations...');
+      const { data: evaluations, error } = await supabase
+        .from('evaluations')
+        .select('sample_id')
+        .eq('user_id', userId)
+        .eq('event_id', eventId);
+
+      if (error) {
+        console.error('❌ Evaluations lookup failed:', error);
+        throw new Error('Could not fetch completed evaluations');
+      }
+      
+      completedSampleIds = evaluations?.map(e => e.sample_id) || [];
+      console.log('✅ Completed evaluations:', completedSampleIds.length);
+    }
+
+    // STEP 4: Check each product type for next sample
+    console.log('🔍 Checking product types for next sample...');
+    for (const [index, productType] of productTypesToCheck.entries()) {
+      console.log(`\n📂 Checking product type ${index + 1}/${productTypesToCheck.length}: ${productType.product_name}`);
+      
+      // Get randomization - SIMPLIFIED
+      const randomization = await getRandomization(productType.id);
       
       if (!randomization) {
-        console.log('Skipping product type - no randomization');
+        console.log('❌ No randomization found - skipping');
+        continue;
+      }
+      
+      console.log('✅ Randomization found');
+
+      // Validate and find evaluator assignment
+      if (!randomization.randomization_table?.evaluators) {
+        console.error('❌ Invalid randomization structure');
         continue;
       }
 
-      // Validate randomization structure
-      if (!randomization.randomization_table) {
-        console.error('Invalid randomization - missing randomization_table');
-        continue;
-      }
-
-      if (!randomization.randomization_table.evaluators) {
-        console.error('Invalid randomization - missing evaluators array');
-        continue;
-      }
-
-      console.log('Randomization structure:', {
-        hasTable: !!randomization.randomization_table.table,
-        hasEvaluators: !!randomization.randomization_table.evaluators,
-        evaluatorsCount: randomization.randomization_table.evaluators?.length || 0
-      });
-
-      // Find evaluator's assignment
       const evaluatorAssignment = randomization.randomization_table.evaluators.find(
         (e: any) => e.evaluatorPosition === evaluatorPosition
       );
 
-      if (!evaluatorAssignment) {
-        console.log('No assignment found for evaluator position:', evaluatorPosition);
-        console.log('Available evaluator positions:', 
-          randomization.randomization_table.evaluators.map((e: any) => e.evaluatorPosition)
-        );
+      if (!evaluatorAssignment?.sampleOrder?.length) {
+        console.log('❌ No assignment for evaluator position:', evaluatorPosition);
         continue;
       }
 
-      console.log('Evaluator assignment found:', {
-        position: evaluatorAssignment.evaluatorPosition,
-        samplesCount: evaluatorAssignment.sampleOrder?.length || 0
-      });
-
-      if (!evaluatorAssignment.sampleOrder || evaluatorAssignment.sampleOrder.length === 0) {
-        console.error('No sample order found for evaluator');
-        continue;
-      }
+      console.log('✅ Found assignment with', evaluatorAssignment.sampleOrder.length, 'samples');
 
       // Find next uncompleted sample
       for (const [sampleIndex, sampleAssignment] of evaluatorAssignment.sampleOrder.entries()) {
-        console.log(`Checking sample ${sampleIndex + 1}/${evaluatorAssignment.sampleOrder.length}:`, {
-          sampleId: sampleAssignment.sampleId,
-          blindCode: sampleAssignment.blindCode,
-          isCompleted: completedSampleIds?.includes(sampleAssignment.sampleId)
-        });
+        const isCompleted = completedSampleIds?.includes(sampleAssignment.sampleId);
+        console.log(`🔍 Sample ${sampleIndex + 1}: ${sampleAssignment.blindCode} - ${isCompleted ? 'COMPLETED' : 'PENDING'}`);
         
-        if (!completedSampleIds?.includes(sampleAssignment.sampleId)) {
-          console.log('Found uncompleted sample:', sampleAssignment.sampleId);
+        if (!isCompleted) {
+          console.log('🎯 Found next sample:', sampleAssignment.sampleId);
           
-          // Get full sample data
-          let sample = null;
-          for (let attempt = 1; attempt <= 3; attempt++) {
-            const { data, error } = await supabase
-              .from('samples')
-              .select('*')
-              .eq('id', sampleAssignment.sampleId)
-              .single();
+          // Get full sample data - SIMPLIFIED
+          const { data: sample, error } = await supabase
+            .from('samples')
+            .select('*')
+            .eq('id', sampleAssignment.sampleId)
+            .single();
 
-            if (!error && data) {
-              sample = data;
-              break;
-            }
-            
-            if (attempt === 3) {
-              console.error('Error fetching sample after 3 attempts:', error);
-              break;
-            }
-            
-            await new Promise(resolve => setTimeout(resolve, 1000));
-          }
-
-          if (!sample) {
-            console.error('Could not fetch sample data for:', sampleAssignment.sampleId);
+          if (error || !sample) {
+            console.error('❌ Could not fetch sample:', error);
             continue;
           }
 
@@ -406,12 +319,10 @@ export async function getNextSample(
             blindCode: sampleAssignment.blindCode
           };
 
-          console.log('=== NEXT SAMPLE FOUND ===');
-          console.log('Sample details:', {
+          console.log('🎉 NEXT SAMPLE FOUND:', {
             id: nextSample.id,
             brand: nextSample.brand,
             blindCode: nextSample.blindCode,
-            presentationOrder: nextSample.presentationOrder,
             productType: nextSample.productTypeName
           });
           
@@ -419,7 +330,7 @@ export async function getNextSample(
         }
       }
 
-      console.log('All samples completed for this product type');
+      console.log('✅ All samples completed for this product type');
     }
 
     console.log('=== NO MORE SAMPLES AVAILABLE ===');

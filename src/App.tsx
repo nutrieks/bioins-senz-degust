@@ -11,6 +11,7 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { DebugPanel } from "@/components/DebugPanel";
 import { useAppStability } from "@/hooks/useAppStability";
+import { useAppRecovery } from "@/hooks/useAppRecovery";
 import { centralizedEventService } from "@/services/centralizedEventService";
 
 // Stranice
@@ -50,6 +51,7 @@ centralizedEventService.setQueryClient(queryClient);
 
 const AppContent = () => {
   useAppStability();
+  useAppRecovery(); // BULLETPROOF RECOVERY
   return (
     <>
       <Toaster />

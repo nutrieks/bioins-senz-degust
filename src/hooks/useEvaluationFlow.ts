@@ -217,34 +217,47 @@ export function useEvaluationFlow(eventId?: string) {
     ...state.optimisticSamples
   ];
 
-  // Core flow functions
+  // SIMPLIFIED BULLETPROOF INITIALIZATION  
   const initializeEvaluation = useCallback(async () => {
     if (!eventId || !user?.id || initInProgress.current) {
-      dispatch({ type: 'ADD_DEBUG_LOG', payload: `Initialize skipped: eventId=${!!eventId}, userId=${!!user?.id}, inProgress=${initInProgress.current}` });
+      console.log('🔍 Initialize skipped:', { eventId: !!eventId, userId: !!user?.id, inProgress: initInProgress.current });
       return;
     }
 
     initInProgress.current = true;
     dispatch({ type: 'INITIALIZE_START' });
+    
+    console.log('🚀 Starting evaluation initialization for:', { eventId, userId: user.id, evaluatorPosition: user.evaluatorPosition });
 
     try {
-      // Wait for all data to be available
-      await queryClient.ensureQueryData({
-        queryKey: ['completedEvaluations', eventId, user.id],
-        queryFn: () => getCompletedEvaluations(eventId, user.id),
-      });
+      // Step 1: Get completed evaluations - CRITICAL
+      console.log('📊 Fetching completed evaluations...');
+      const completedEvaluations = await getCompletedEvaluations(eventId, user.id);
+      const completedSampleIds = completedEvaluations.map(e => e.sampleId);
+      console.log('✅ Completed samples:', completedSampleIds);
 
-      const freshCompletedSamples = queryClient.getQueryData(['completedEvaluations', eventId, user.id]) as any[] || [];
-      const completedSampleIds = freshCompletedSamples.map(e => e.sampleId);
-
-      dispatch({ type: 'ADD_DEBUG_LOG', payload: `Fresh completed samples: [${completedSampleIds.join(',')}]` });
-
-      // Get next sample
-      const nextSampleData = await getNextSample(user.id, eventId, undefined, completedSampleIds);
+      // Step 2: Get next sample - CRITICAL  
+      console.log('🎯 Getting next sample...');
+      const nextSampleData = await getNextSample(user.id, eventId, user.evaluatorPosition?.toString(), completedSampleIds);
+      console.log('📝 Next sample data:', nextSampleData);
+      
       const nextSample = nextSampleData?.sample || null;
-      const currentProductType = nextSample 
-        ? productTypes?.find(pt => pt.id === nextSample.productTypeId) || null
+      console.log('🎪 Next sample:', nextSample?.id);
+      
+      // Step 3: Find product type
+      const currentProductType = nextSample && productTypes 
+        ? productTypes.find(pt => pt.id === nextSample.productTypeId) || null
         : null;
+      console.log('📦 Product type:', currentProductType?.id);
+
+      // CRITICAL DEBUG: Log everything
+      console.log('🔍 INITIALIZATION COMPLETE:', {
+        hasNextSample: !!nextSample,
+        sampleId: nextSample?.id,
+        productTypeId: currentProductType?.id,
+        completedCount: completedSampleIds.length,
+        availableProductTypes: productTypes?.length || 0
+      });
 
       dispatch({ 
         type: 'INITIALIZE_SUCCESS', 
@@ -256,7 +269,7 @@ export function useEvaluationFlow(eventId?: string) {
       });
 
     } catch (error) {
-      console.error('🚨 Initialize error:', error);
+      console.error('🚨 INITIALIZATION FAILED:', error);
       dispatch({ type: 'INITIALIZE_ERROR', payload: error instanceof Error ? error.message : 'Initialize failed' });
     } finally {
       initInProgress.current = false;

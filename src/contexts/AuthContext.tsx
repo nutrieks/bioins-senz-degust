@@ -25,22 +25,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       clearTimeout(loadingTimeoutRef.current);
     }
 
-    // Set maximum loading timeout of 10 seconds
+    // BULLETPROOF AUTH RECOVERY: Much shorter timeout (5 sec)
     loadingTimeoutRef.current = setTimeout(() => {
       if (!isUnmountedRef.current) {
-        console.warn('🚨 Auth loading timeout - forcing fallback to login');
-        setLoading(false);
-        setUser(null);
-        // Clear potentially corrupted auth state
+        console.warn('🚨 Auth loading timeout - forcing restart');
+        // Clear corrupted storage immediately
         try {
-          supabase.auth.signOut({ scope: 'global' });
+          Object.keys(localStorage).forEach(key => {
+            if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+              localStorage.removeItem(key);
+            }
+          });
+          Object.keys(sessionStorage || {}).forEach(key => {
+            if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+              sessionStorage.removeItem(key);
+            }
+          });
         } catch (e) {
-          console.warn('Failed to sign out during timeout:', e);
+          console.warn('Storage cleanup failed:', e);
         }
+        
+        // Force immediate redirect to login
+        window.location.href = '/login';
       }
-    }, 10000);
+    }, 5000);
 
-    // Jedini izvor istine: listener koji se aktivira odmah i na svaku promjenu
+    // BULLETPROOF AUTH STATE LISTENER
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (isUnmountedRef.current) return;
 
@@ -48,14 +58,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       try {
         if (session?.user) {
-          // Validate session is still valid
-          const { data: userData, error } = await supabase.from('users').select('*').eq('id', session.user.id).single();
+          // Quick session validation with timeout
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Validation timeout')), 3000)
+          );
+          
+          const validationPromise = supabase
+            .from('users')
+            .select('*')
+            .eq('id', session.user.id)
+            .maybeSingle();
+          
+          const { data: userData, error } = await Promise.race([validationPromise, timeoutPromise]) as any;
           
           if (error || !userData || !userData.is_active) {
-            console.warn('🚨 Invalid or inactive user session, signing out');
+            console.warn('🚨 Invalid/inactive user - forcing logout');
             setUser(null);
             setLoading(false);
-            await supabase.auth.signOut({ scope: 'global' });
+            // Force immediate logout and redirect
+            try {
+              await supabase.auth.signOut({ scope: 'global' });
+            } catch (e) {
+              console.warn('Sign out failed:', e);
+            }
+            window.location.href = '/login';
             return;
           }
 
@@ -72,8 +98,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setUser(null);
         }
       } catch (error) {
-        console.error('🚨 Auth state change error:', error);
+        console.error('🚨 Auth validation failed - forcing restart:', error);
         setUser(null);
+        setLoading(false);
+        // Force logout and redirect on any auth error
+        window.location.href = '/login';
+        return;
       } finally {
         if (!isUnmountedRef.current) {
           setLoading(false);
