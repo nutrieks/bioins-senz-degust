@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode } from "react";
 import { Sample, JARAttribute, ProductType, Evaluation } from "../types";
-import { getProductTypes, getCompletedEvaluations, getJARAttributes, getNextSample, submitEvaluation as submitEvaluationAPI } from "../services/dataService";
+import { getProductTypes, getCompletedEvaluations, getJARAttributes, submitEvaluation as submitEvaluationAPI } from "../services/dataService";
+import { getNextSample } from "../services/supabase/randomization";
 import { useAuth } from "./AuthContext";
 import { useToast } from "@/hooks/use-toast";
 

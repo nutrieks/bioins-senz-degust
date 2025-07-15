@@ -4,9 +4,9 @@ import { useToast } from '@/hooks/use-toast';
 import { 
   getCompletedEvaluations,
   submitEvaluation as submitEvaluationAPI,
-  getEvaluationsStatus,
-  getNextSample
+  getEvaluationsStatus
 } from '@/services/dataService';
+import { getNextSample } from '@/services/supabase/randomization';
 import { EvaluationSubmission } from '@/types';
 
 export function useCompletedEvaluations(eventId: string, userId?: string) {

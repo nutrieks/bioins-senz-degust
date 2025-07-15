@@ -5,7 +5,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getJARAttributes } from "@/services/supabase/jarAttributes";
 import { useSubmitEvaluation } from "@/hooks/useEvaluations";
 import { getCompletedEvaluations } from "@/services/supabase/evaluations";
-import { getNextSample } from "@/services/dataService";
+import { getNextSample as getNextSampleSupabase } from "@/services/supabase/randomization";
 import { HedonicScale, JARRating, Sample, ProductType } from "@/types";
 
 // Enhanced State Management with useReducer
@@ -238,7 +238,7 @@ export function useEvaluationFlow(eventId?: string) {
 
       // Step 2: Get next sample - CRITICAL  
       console.log('🎯 Getting next sample...');
-      const nextSampleData = await getNextSample(user.id, eventId, user.evaluatorPosition?.toString(), completedSampleIds);
+      const nextSampleData = await getNextSampleSupabase(user.id, eventId, user.evaluatorPosition?.toString(), completedSampleIds);
       console.log('📝 Next sample data:', nextSampleData);
       
       const nextSample = nextSampleData?.sample || null;
@@ -314,7 +314,7 @@ export function useEvaluationFlow(eventId?: string) {
       dispatch({ type: 'CLEAR_OPTIMISTIC' });
 
       // 4. Get next sample based on updated completed list
-      const nextSampleData = await getNextSample(user.id, eventId, undefined, updatedCompletedSampleIds);
+      const nextSampleData = await getNextSampleSupabase(user.id, eventId, user.evaluatorPosition?.toString(), updatedCompletedSampleIds);
       const nextSample = nextSampleData?.sample || null;
       const nextProductType = nextSample 
         ? productTypes?.find(pt => pt.id === nextSample.productTypeId) || null
