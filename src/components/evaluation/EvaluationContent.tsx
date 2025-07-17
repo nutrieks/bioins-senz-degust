@@ -23,7 +23,16 @@ export function EvaluationContent({ eventId }: EvaluationContentProps) {
     initializeEvaluation,
     continueAfterReveal,
     canEnterEvaluation,
+    error,
+    dispatch,
   } = useEvaluationFlow(eventId);
+
+  const handleRestart = () => {
+    dispatch({ type: 'RESET_STATE' });
+    setTimeout(() => {
+      initializeEvaluation();
+    }, 100);
+  };
 
   useEffect(() => {
     initializeEvaluation();
@@ -36,8 +45,19 @@ export function EvaluationContent({ eventId }: EvaluationContentProps) {
     }
   }, [isLoading, canEnterEvaluation, navigate]);
 
+  // Show error state if there's an error
+  if (error) {
+    return (
+      <LoadingState 
+        isError={true} 
+        error={error} 
+        onRestart={handleRestart}
+      />
+    );
+  }
+
   if (isLoading || isTransitioning) {
-    return <LoadingState />;
+    return <LoadingState message="Pripremanje ocjenjivanja..." />;
   }
 
   if (isEvaluationCompleteForUser) {
@@ -55,9 +75,16 @@ export function EvaluationContent({ eventId }: EvaluationContentProps) {
     );
   }
 
-  // Always show loading if no current sample and not finished
+  // Show loading if no current sample and not finished (with restart option)
   if (!currentSample) {
-    return <LoadingState />;
+    return (
+      <LoadingState 
+        message="Traženje sljedećeg uzorka..."
+        isError={true}
+        error="Nema dostupnih uzoraka za ocjenjivanje"
+        onRestart={handleRestart}
+      />
+    );
   }
 
   return <EvaluationForm eventId={eventId} />;

@@ -217,7 +217,7 @@ export function useEvaluationFlow(eventId?: string) {
     ...state.optimisticSamples
   ];
 
-  // SIMPLIFIED BULLETPROOF INITIALIZATION  
+  // BULLETPROOF INITIALIZATION WITH TIMEOUT AND FALLBACKS
   const initializeEvaluation = useCallback(async () => {
     if (!eventId || !user?.id || initInProgress.current) {
       console.log('🔍 Initialize skipped:', { eventId: !!eventId, userId: !!user?.id, inProgress: initInProgress.current });
@@ -225,52 +225,135 @@ export function useEvaluationFlow(eventId?: string) {
     }
 
     initInProgress.current = true;
+    const startTime = Date.now();
     dispatch({ type: 'INITIALIZE_START' });
     
-    console.log('🚀 Starting evaluation initialization for:', { eventId, userId: user.id, evaluatorPosition: user.evaluatorPosition });
+    console.log('🚀 BULLETPROOF INITIALIZATION START:', { 
+      eventId, 
+      userId: user.id, 
+      evaluatorPosition: user.evaluatorPosition,
+      evaluatorPositionType: typeof user.evaluatorPosition,
+      timestamp: new Date().toISOString()
+    });
 
     try {
-      // Step 1: Get completed evaluations - CRITICAL
-      console.log('📊 Fetching completed evaluations...');
-      const completedEvaluations = await getCompletedEvaluations(eventId, user.id);
-      const completedSampleIds = completedEvaluations.map(e => e.sampleId);
-      console.log('✅ Completed samples:', completedSampleIds);
-
-      // Step 2: Get next sample - CRITICAL  
-      console.log('🎯 Getting next sample...');
-      const nextSampleData = await getNextSampleSupabase(user.id, eventId, user.evaluatorPosition?.toString(), completedSampleIds);
-      console.log('📝 Next sample data:', nextSampleData);
-      
-      const nextSample = nextSampleData?.sample || null;
-      console.log('🎪 Next sample:', nextSample?.id);
-      
-      // Step 3: Find product type
-      const currentProductType = nextSample && productTypes 
-        ? productTypes.find(pt => pt.id === nextSample.productTypeId) || null
-        : null;
-      console.log('📦 Product type:', currentProductType?.id);
-
-      // CRITICAL DEBUG: Log everything
-      console.log('🔍 INITIALIZATION COMPLETE:', {
-        hasNextSample: !!nextSample,
-        sampleId: nextSample?.id,
-        productTypeId: currentProductType?.id,
-        completedCount: completedSampleIds.length,
-        availableProductTypes: productTypes?.length || 0
+      // TIMEOUT MECHANISM: Max 10 seconds for entire initialization
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('Initialization timeout - exceeded 10 seconds')), 10000);
       });
+
+      const initPromise = async () => {
+        // Checkpoint 1: Validate inputs
+        console.log('✅ CHECKPOINT 1: Input validation');
+        if (!user.evaluatorPosition && user.evaluatorPosition !== 0) {
+          throw new Error(`Invalid evaluator position: ${user.evaluatorPosition} (type: ${typeof user.evaluatorPosition})`);
+        }
+
+        // Checkpoint 2: Get completed evaluations
+        console.log('✅ CHECKPOINT 2: Fetching completed evaluations...');
+        const stepStartTime = Date.now();
+        const completedEvaluations = await getCompletedEvaluations(eventId, user.id);
+        const completedSampleIds = completedEvaluations.map(e => e.sampleId);
+        console.log(`✅ CHECKPOINT 2 COMPLETE: ${Date.now() - stepStartTime}ms, samples:`, completedSampleIds);
+
+        // Checkpoint 3: Validate product types
+        console.log('✅ CHECKPOINT 3: Validating product types...');
+        if (!productTypes || productTypes.length === 0) {
+          throw new Error('No product types available for this event');
+        }
+        console.log(`✅ CHECKPOINT 3 COMPLETE: ${productTypes.length} product types available`);
+
+        // Checkpoint 4: Get next sample with explicit position conversion
+        console.log('✅ CHECKPOINT 4: Getting next sample...');
+        const evaluatorPositionStr = String(user.evaluatorPosition);
+        console.log('🔍 CRITICAL PARAMS:', {
+          userId: user.id,
+          eventId,
+          evaluatorPosition: evaluatorPositionStr,
+          completedSampleIds,
+          evaluatorPositionOriginal: user.evaluatorPosition
+        });
+
+        const stepStartTime4 = Date.now();
+        const nextSampleData = await getNextSampleSupabase(
+          user.id, 
+          eventId, 
+          evaluatorPositionStr, 
+          completedSampleIds
+        );
+        console.log(`✅ CHECKPOINT 4 COMPLETE: ${Date.now() - stepStartTime4}ms, result:`, nextSampleData);
+        
+        const nextSample = nextSampleData?.sample || null;
+        console.log('🎪 Next sample analysis:', {
+          hasNextSample: !!nextSample,
+          sampleId: nextSample?.id,
+          isComplete: nextSampleData?.isComplete,
+          nextSampleData
+        });
+        
+        // Checkpoint 5: Find product type
+        console.log('✅ CHECKPOINT 5: Finding product type...');
+        const currentProductType = nextSample && productTypes 
+          ? productTypes.find(pt => pt.id === nextSample.productTypeId) || null
+          : null;
+        console.log('✅ CHECKPOINT 5 COMPLETE:', {
+          productTypeId: currentProductType?.id,
+          productTypeName: currentProductType?.productName,
+          nextSampleProductTypeId: nextSample?.productTypeId
+        });
+
+        // Final checkpoint: Log complete state
+        const totalTime = Date.now() - startTime;
+        console.log('🎯 BULLETPROOF INITIALIZATION COMPLETE:', {
+          totalTimeMs: totalTime,
+          hasNextSample: !!nextSample,
+          sampleId: nextSample?.id,
+          productTypeId: currentProductType?.id,
+          productTypeName: currentProductType?.productName,
+          completedCount: completedSampleIds.length,
+          availableProductTypes: productTypes?.length || 0,
+          isComplete: nextSampleData?.isComplete,
+          timestamp: new Date().toISOString()
+        });
+
+        return {
+          currentSample: nextSample,
+          currentProductType,
+          completedSamples: completedSampleIds
+        };
+      };
+
+      // Race between initialization and timeout
+      const result = await Promise.race([initPromise(), timeoutPromise]);
 
       dispatch({ 
         type: 'INITIALIZE_SUCCESS', 
-        payload: { 
-          currentSample: nextSample, 
-          currentProductType,
-          completedSamples: completedSampleIds
-        }
+        payload: result
       });
 
     } catch (error) {
-      console.error('🚨 INITIALIZATION FAILED:', error);
-      dispatch({ type: 'INITIALIZE_ERROR', payload: error instanceof Error ? error.message : 'Initialize failed' });
+      const totalTime = Date.now() - startTime;
+      console.error('🚨 BULLETPROOF INITIALIZATION FAILED:', {
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        totalTimeMs: totalTime,
+        userContext: {
+          userId: user.id,
+          evaluatorPosition: user.evaluatorPosition,
+          evaluatorPositionType: typeof user.evaluatorPosition
+        },
+        eventContext: {
+          eventId,
+          productTypesCount: productTypes?.length || 0
+        },
+        timestamp: new Date().toISOString()
+      });
+
+      const errorMessage = error instanceof Error ? error.message : 'Unknown initialization error';
+      dispatch({ 
+        type: 'INITIALIZE_ERROR', 
+        payload: `Init failed (${totalTime}ms): ${errorMessage}` 
+      });
     } finally {
       initInProgress.current = false;
     }
