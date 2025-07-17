@@ -194,8 +194,8 @@ export function useEvaluationFlow(eventId?: string) {
   const queryClient = useQueryClient();
   const initInProgress = useRef(false);
 
-  // Data queries
-  const { event, productTypes } = useEventDetailQueries(eventId);
+  // Data queries - wait for product types to be loaded
+  const { event, productTypes, isLoading: isLoadingQueries, hasError: queriesHaveError } = useEventDetailQueries(eventId);
   
   const { data: jarAttributes = [] } = useQuery({
     queryKey: ['jarAttributes', eventId],
@@ -219,8 +219,15 @@ export function useEvaluationFlow(eventId?: string) {
 
   // BULLETPROOF INITIALIZATION WITH TIMEOUT AND FALLBACKS
   const initializeEvaluation = useCallback(async () => {
-    if (!eventId || !user?.id || initInProgress.current) {
-      console.log('🔍 Initialize skipped:', { eventId: !!eventId, userId: !!user?.id, inProgress: initInProgress.current });
+    if (!eventId || !user?.id || initInProgress.current || isLoadingQueries || queriesHaveError) {
+      console.log('🔍 Initialize skipped:', { 
+        eventId: !!eventId, 
+        userId: !!user?.id, 
+        inProgress: initInProgress.current,
+        isLoadingQueries,
+        queriesHaveError,
+        productTypesLength: productTypes?.length || 0
+      });
       return;
     }
 
@@ -256,10 +263,17 @@ export function useEvaluationFlow(eventId?: string) {
         const completedSampleIds = completedEvaluations.map(e => e.sampleId);
         console.log(`✅ CHECKPOINT 2 COMPLETE: ${Date.now() - stepStartTime}ms, samples:`, completedSampleIds);
 
-        // Checkpoint 3: Validate product types
+        // Checkpoint 3: Validate product types (should be loaded by now)
         console.log('✅ CHECKPOINT 3: Validating product types...');
+        console.log('🔍 Product types state:', { 
+          productTypes, 
+          length: productTypes?.length, 
+          isLoadingQueries,
+          queriesHaveError 
+        });
+        
         if (!productTypes || productTypes.length === 0) {
-          throw new Error('No product types available for this event');
+          throw new Error(`No product types available for this event. Loading: ${isLoadingQueries}, Error: ${queriesHaveError}`);
         }
         console.log(`✅ CHECKPOINT 3 COMPLETE: ${productTypes.length} product types available`);
 
@@ -357,7 +371,7 @@ export function useEvaluationFlow(eventId?: string) {
     } finally {
       initInProgress.current = false;
     }
-  }, [eventId, user?.id, user?.evaluatorPosition, queryClient, productTypes]);
+  }, [eventId, user?.id, user?.evaluatorPosition, queryClient, productTypes, isLoadingQueries, queriesHaveError]);
 
   const submitEvaluation = useCallback(async (data: { hedonic: HedonicScale; jar: JARRating }) => {
     if (!state.currentSample || !user?.id || !eventId) {

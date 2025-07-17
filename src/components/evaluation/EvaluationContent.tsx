@@ -55,7 +55,7 @@ export function EvaluationContent({ eventId }: EvaluationContentProps) {
   }, [allEvents, activeTargetEvent, activeEvents, eventId, navigate]);
   
   const {
-    isLoading,
+    isLoading: isEvaluationLoading,
     isEvaluationCompleteForUser,
     showSampleReveal,
     currentProductType,
@@ -67,6 +67,9 @@ export function EvaluationContent({ eventId }: EvaluationContentProps) {
     error,
     dispatch,
   } = useEvaluationFlow(eventId);
+
+  // Combined loading state - wait for both queries and evaluation flow
+  const isLoading = isEvaluationLoading;
 
   const handleRestart = () => {
     dispatch({ type: 'RESET_STATE' });
