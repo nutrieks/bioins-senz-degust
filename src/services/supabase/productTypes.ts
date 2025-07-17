@@ -208,7 +208,36 @@ export async function deleteProductType(productTypeId: string): Promise<boolean>
 }
 
 export async function getProductTypes(eventId: string): Promise<ProductType[]> {
+  console.log('[getProductTypes] Starting with eventId:', eventId);
+  console.log('[getProductTypes] EventId type:', typeof eventId);
+  
   try {
+    // Check current user auth
+    const { data: user, error: authError } = await supabase.auth.getUser();
+    console.log('[getProductTypes] Current user:', user?.user?.id, 'Role check needed');
+    
+    // First, verify event exists
+    const { data: eventCheck, error: eventError } = await supabase
+      .from('events')
+      .select('id, date, status')
+      .eq('id', eventId)
+      .single();
+    
+    console.log('[getProductTypes] Event check:', { eventCheck, eventError });
+    
+    if (eventError || !eventCheck) {
+      console.error('[getProductTypes] Event not found:', eventError);
+      return [];
+    }
+
+    // Test RLS access to product_types
+    const { count: rls_count, error: rls_error } = await supabase
+      .from('product_types')
+      .select('*', { count: 'exact', head: true })
+      .eq('event_id', eventId);
+    
+    console.log('[getProductTypes] RLS access test:', { rls_count, rls_error });
+
     const { data, error } = await supabase
       .from('product_types')
       .select(`
@@ -219,9 +248,28 @@ export async function getProductTypes(eventId: string): Promise<ProductType[]> {
       .eq('event_id', eventId)
       .order('display_order');
 
-    if (error) throw error;
+    console.log('[getProductTypes] Main query result:', { data, error });
+    console.log('[getProductTypes] Data length:', data?.length || 0);
 
-    return (data || []).map(item => ({
+    if (error) {
+      console.error('[getProductTypes] Database error:', error);
+      throw error;
+    }
+
+    if (!data || data.length === 0) {
+      console.warn('[getProductTypes] No product types found for event:', eventId);
+      
+      // Try simple query without joins
+      const { data: simpleData, error: simpleError } = await supabase
+        .from('product_types')
+        .select('*')
+        .eq('event_id', eventId);
+      
+      console.log('[getProductTypes] Simple fallback query:', { simpleData, simpleError });
+      return [];
+    }
+
+    const result = (data || []).map(item => ({
       id: item.id,
       eventId: item.event_id,
       customerCode: item.customer_code,
@@ -251,8 +299,12 @@ export async function getProductTypes(eventId: string): Promise<ProductType[]> {
         scaleEN: attr.scale_en as [string, string, string, string, string]
       }))
     }));
+
+    console.log('[getProductTypes] Mapped result:', result);
+    console.log('[getProductTypes] Result length:', result.length);
+    return result;
   } catch (error) {
-    console.error('Error fetching product types:', error);
+    console.error('[getProductTypes] Error in catch block:', error);
     return [];
   }
 }

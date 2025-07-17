@@ -16,9 +16,10 @@ export function useEventDetailQueries(eventId: string | undefined) {
   const { data: event, isLoading: isLoadingEvent, isError: eventError, error: eventErrorMessage } = useQuery({
     queryKey: ['event', eventId],
     queryFn: async () => {
-      console.log('useEventDetailQueries: Fetching event with ID:', eventId);
+      console.log('[useEventDetailQueries] Fetching event with ID:', eventId);
+      console.log('[useEventDetailQueries] EventId type:', typeof eventId);
       const result = await getEvent(eventId!);
-      console.log('useEventDetailQueries: Event result:', result);
+      console.log('[useEventDetailQueries] Event result:', result);
       return result;
     },
     enabled: !!eventId,
@@ -30,7 +31,17 @@ export function useEventDetailQueries(eventId: string | undefined) {
   const { data: productTypes = [], isLoading: isLoadingProductTypes, isError: productTypesError, error: productTypesErrorMessage } = useQuery({
     queryKey: ['productTypes', eventId],
     queryFn: async () => {
+      console.log('[useEventDetailQueries] Fetching product types for eventId:', eventId);
+      console.log('[useEventDetailQueries] EventId type:', typeof eventId);
+      
       const types = await getProductTypes(eventId!);
+      console.log('[useEventDetailQueries] Product types received:', types);
+      
+      if (!types || types.length === 0) {
+        console.warn('[useEventDetailQueries] No product types found, returning empty array');
+        return [];
+      }
+      
       const updatedProductTypes = await Promise.all(
         types.map(async (pt) => {
           try {
@@ -48,10 +59,14 @@ export function useEventDetailQueries(eventId: string | undefined) {
           }
         })
       );
+      
+      console.log('[useEventDetailQueries] Final product types with randomization:', updatedProductTypes);
       return updatedProductTypes;
     },
     enabled: !!eventId,
     staleTime: 1000 * 60 * 1,
+    retry: 2,
+    retryDelay: 1000,
   });
 
   const isLoading = isLoadingEvent || isLoadingProductTypes;
