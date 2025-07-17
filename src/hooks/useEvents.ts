@@ -14,7 +14,25 @@ import { Event, EventStatus } from '@/types';
 export function useEvents() {
   return useQuery({
     queryKey: ['events'],
-    queryFn: getEvents,
+    queryFn: async () => {
+      console.log('[useEvents] Starting getEvents call...');
+      const events = await getEvents();
+      console.log('[useEvents] Raw events received:', events);
+      console.log('[useEvents] Events length:', events.length);
+      console.log('[useEvents] Events details:', events.map(e => ({ 
+        id: e.id, 
+        date: e.date, 
+        status: e.status 
+      })));
+      
+      // Validate that all events have proper IDs
+      const invalidEvents = events.filter(e => !e.id || typeof e.id !== 'string');
+      if (invalidEvents.length > 0) {
+        console.error('[useEvents] Found events with invalid IDs:', invalidEvents);
+      }
+      
+      return events;
+    },
     staleTime: 1000 * 60 * 5, // 5 minutes
     retry: 3,
     retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),

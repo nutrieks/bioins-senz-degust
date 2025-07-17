@@ -5,14 +5,54 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/contexts/AuthContext";
 import { EventStatus } from "@/types";
-import { Calendar, ClipboardCheck } from "lucide-react";
+import { Calendar, ClipboardCheck, RotateCcw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useEvents } from "@/hooks/useEvents";
+import { useQueryClient } from '@tanstack/react-query';
+import { useToast } from "@/hooks/use-toast";
 
 export default function EvaluatorDashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
   const { data: allEvents = [], isLoading, isError, error } = useEvents();
+
+  // DEBUG LOGGING - Track all events received
+  console.log('[EvaluatorDashboard] === DEBUG START ===');
+  console.log('[EvaluatorDashboard] Raw allEvents data:', allEvents);
+  console.log('[EvaluatorDashboard] AllEvents length:', allEvents.length);
+  console.log('[EvaluatorDashboard] AllEvents details:', allEvents.map(e => ({ 
+    id: e.id, 
+    date: e.date, 
+    status: e.status 
+  })));
+  console.log('[EvaluatorDashboard] isLoading:', isLoading);
+  console.log('[EvaluatorDashboard] isError:', isError);
+  console.log('[EvaluatorDashboard] error:', error);
+  console.log('[EvaluatorDashboard] === DEBUG END ===');
+
+  const handleClearCache = async () => {
+    console.log('[EvaluatorDashboard] Clearing all caches...');
+    
+    // Clear React Query cache
+    await queryClient.invalidateQueries({ queryKey: ['events'] });
+    await queryClient.invalidateQueries({ queryKey: ['event'] });
+    await queryClient.removeQueries({ queryKey: ['events'] });
+    await queryClient.removeQueries({ queryKey: ['event'] });
+    
+    // Clear browser storage
+    localStorage.clear();
+    sessionStorage.clear();
+    
+    toast({
+      title: "Cache očišćen",
+      description: "Svi cache-ovi su obrisani. Stranica će se osvježiti.",
+    });
+    
+    // Force page reload
+    setTimeout(() => window.location.reload(), 1000);
+  };
 
   if (isError) {
     return (
@@ -25,12 +65,21 @@ export default function EvaluatorDashboard() {
             <p className="text-muted-foreground mb-4">
               {error?.message || 'Nepoznata greška'}
             </p>
-            <Button 
-              onClick={() => window.location.reload()}
-              variant="outline"
-            >
-              Pokušaj ponovno
-            </Button>
+            <div className="space-x-2">
+              <Button 
+                onClick={() => window.location.reload()}
+                variant="outline"
+              >
+                Pokušaj ponovno
+              </Button>
+              <Button 
+                onClick={handleClearCache}
+                variant="outline"
+              >
+                <RotateCcw className="mr-2 h-4 w-4" />
+                Očisti Cache
+              </Button>
+            </div>
           </div>
         </div>
       </EvaluatorLayout>
@@ -39,7 +88,30 @@ export default function EvaluatorDashboard() {
 
   const activeEvents = allEvents.filter((event) => event.status === EventStatus.ACTIVE);
 
+  // DEBUG LOGGING - Track filtered active events
+  console.log('[EvaluatorDashboard] ActiveEvents filtered:', activeEvents);
+  console.log('[EvaluatorDashboard] ActiveEvents count:', activeEvents.length);
+  console.log('[EvaluatorDashboard] ActiveEvents IDs:', activeEvents.map(e => e.id));
+
   const handleStartEvaluation = (eventId: string) => {
+    console.log('[EvaluatorDashboard] handleStartEvaluation called with eventId:', eventId);
+    console.log('[EvaluatorDashboard] EventId type:', typeof eventId);
+    console.log('[EvaluatorDashboard] Target URL will be:', `/evaluator/evaluate/${eventId}`);
+    
+    // Verify this eventId exists in our activeEvents
+    const foundEvent = activeEvents.find(e => e.id === eventId);
+    console.log('[EvaluatorDashboard] Found event for this ID:', foundEvent);
+    
+    if (!foundEvent) {
+      console.error('[EvaluatorDashboard] ERROR: EventId not found in activeEvents!');
+      toast({
+        title: "Greška",
+        description: "Događaj nije pronađen. Molimo osvježite stranicu.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     navigate(`/evaluator/evaluate/${eventId}`);
   };
 
@@ -90,10 +162,19 @@ export default function EvaluatorDashboard() {
               <div className="space-y-4">
                 {activeEvents.map((event) => {
                   const samplesCount = event.samplesCount || 0;
+                  console.log('[EvaluatorDashboard] Rendering event card:', { 
+                    id: event.id, 
+                    date: event.date, 
+                    samplesCount 
+                  });
+                  
                   return (
                     <Card key={event.id}>
                       <CardHeader className="pb-2">
                         <CardTitle className="text-lg">{formatDate(event.date)}</CardTitle>
+                        <CardDescription className="text-xs text-muted-foreground">
+                          ID: {event.id}
+                        </CardDescription>
                       </CardHeader>
                       <CardContent className="pb-2">
                         <p className="text-sm text-muted-foreground">
@@ -119,6 +200,14 @@ export default function EvaluatorDashboard() {
                 <p className="text-sm text-muted-foreground mt-2">
                   Molimo kontaktirajte administratora.
                 </p>
+                <Button 
+                  onClick={handleClearCache}
+                  variant="outline"
+                  className="mt-4"
+                >
+                  <RotateCcw className="mr-2 h-4 w-4" />
+                  Očisti Cache i Pokušaj Ponovno
+                </Button>
               </div>
             )}
           </CardContent>
