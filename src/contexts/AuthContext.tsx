@@ -1,6 +1,7 @@
 
 // Datoteka: src/contexts/AuthContext.tsx
 import React, { createContext, useContext, useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "../types";
 
@@ -16,41 +17,12 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const loadingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isUnmountedRef = useRef(false);
 
   useEffect(() => {
-    // Clear any existing timeout
-    if (loadingTimeoutRef.current) {
-      clearTimeout(loadingTimeoutRef.current);
-    }
+    console.log('🔐 AuthProvider: Setting up auth state listener');
 
-    // BULLETPROOF AUTH RECOVERY: Much shorter timeout (5 sec)
-    loadingTimeoutRef.current = setTimeout(() => {
-      if (!isUnmountedRef.current) {
-        console.warn('🚨 Auth loading timeout - forcing restart');
-        // Clear corrupted storage immediately
-        try {
-          Object.keys(localStorage).forEach(key => {
-            if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
-              localStorage.removeItem(key);
-            }
-          });
-          Object.keys(sessionStorage || {}).forEach(key => {
-            if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
-              sessionStorage.removeItem(key);
-            }
-          });
-        } catch (e) {
-          console.warn('Storage cleanup failed:', e);
-        }
-        
-        // Force immediate redirect to login
-        window.location.href = '/login';
-      }
-    }, 5000);
-
-    // BULLETPROOF AUTH STATE LISTENER
+    // SIMPLIFIED AUTH STATE LISTENER - NO AGGRESSIVE TIMEOUTS
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (isUnmountedRef.current) return;
 
@@ -58,30 +30,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       try {
         if (session?.user) {
-          // Quick session validation with timeout
-          const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Validation timeout')), 3000)
-          );
-          
-          const validationPromise = supabase
+          // Validate user with reasonable timeout
+          const { data: userData, error } = await supabase
             .from('users')
             .select('*')
             .eq('id', session.user.id)
             .maybeSingle();
           
-          const { data: userData, error } = await Promise.race([validationPromise, timeoutPromise]) as any;
-          
           if (error || !userData || !userData.is_active) {
-            console.warn('🚨 Invalid/inactive user - forcing logout');
+            console.warn('🚨 Invalid/inactive user - signing out');
             setUser(null);
             setLoading(false);
-            // Force immediate logout and redirect
-            try {
-              await supabase.auth.signOut({ scope: 'global' });
-            } catch (e) {
-              console.warn('Sign out failed:', e);
-            }
-            window.location.href = '/login';
+            await supabase.auth.signOut();
             return;
           }
 
@@ -94,34 +54,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             password: userData.password
           };
           setUser(mappedUser);
+          console.log('✅ User validated and set:', mappedUser.username);
         } else {
           setUser(null);
+          console.log('🔐 No session - user cleared');
         }
       } catch (error) {
-        console.error('🚨 Auth validation failed - forcing restart:', error);
+        console.error('🚨 Auth validation error:', error);
         setUser(null);
-        setLoading(false);
-        // Force logout and redirect on any auth error
-        window.location.href = '/login';
-        return;
+        await supabase.auth.signOut();
       } finally {
         if (!isUnmountedRef.current) {
           setLoading(false);
-          // Clear timeout since auth is resolved
-          if (loadingTimeoutRef.current) {
-            clearTimeout(loadingTimeoutRef.current);
-            loadingTimeoutRef.current = null;
-          }
         }
+      }
+    });
+
+    // Check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        console.log('🔐 Existing session found');
+        // The onAuthStateChange will handle this
+      } else {
+        console.log('🔐 No existing session');
+        setLoading(false);
       }
     });
 
     return () => {
       isUnmountedRef.current = true;
       subscription.unsubscribe();
-      if (loadingTimeoutRef.current) {
-        clearTimeout(loadingTimeoutRef.current);
-      }
     };
   }, []);
 
@@ -144,11 +106,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = async () => {
     try {
-      // Clear local state first
       setUser(null);
       setLoading(false);
       
-      // Clear potentially corrupted storage
+      // Clear auth storage
       const keys = Object.keys(localStorage);
       keys.forEach(key => {
         if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
@@ -156,13 +117,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       });
       
-      // Attempt global sign out
       await supabase.auth.signOut({ scope: 'global' });
     } catch (error) {
       console.warn('Logout error (continuing anyway):', error);
-    } finally {
-      // Force redirect to login
-      window.location.href = '/login';
     }
   };
 
