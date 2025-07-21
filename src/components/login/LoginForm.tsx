@@ -10,19 +10,22 @@ export function LoginForm() {
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { login, loading } = useAuth();
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setIsSubmitting(true);
     
     try {
-      console.log('Form submitting with identifier:', identifier);
+      console.log('🔐 LoginForm: Starting login process');
       
       const { error: loginError } = await login(identifier, password);
       
       if (loginError) {
+        console.error('🚨 LoginForm: Login failed:', loginError);
         setError("Neispravno korisničko ime ili lozinka");
         toast({
           title: "Greška prilikom prijave",
@@ -30,21 +33,27 @@ export function LoginForm() {
           variant: "destructive",
         });
       } else {
+        console.log('✅ LoginForm: Login successful');
         toast({
           title: "Uspješna prijava",
           description: "Dobrodošli u sustav",
         });
+        // Don't reset form here - let AuthContext handle the redirect
       }
     } catch (error) {
-      console.error('Login form error:', error);
+      console.error('🚨 LoginForm: Unexpected error:', error);
       setError("Došlo je do greške prilikom prijave");
       toast({
         title: "Greška",
         description: "Došlo je do neočekivane greške",
         variant: "destructive",
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
+
+  const isDisabled = loading || isSubmitting;
 
   return (
     <Card className="w-full max-w-md">
@@ -72,7 +81,7 @@ export function LoginForm() {
               autoFocus
               className="w-full"
               placeholder="Unesite ADMIN ili broj mjesta (1-12)"
-              disabled={loading}
+              disabled={isDisabled}
             />
           </div>
           <div className="space-y-2">
@@ -87,11 +96,11 @@ export function LoginForm() {
               required
               className="w-full"
               placeholder="Unesite lozinku"
-              disabled={loading}
+              disabled={isDisabled}
             />
           </div>
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? "Prijava u tijeku..." : "Prijava"}
+          <Button type="submit" className="w-full" disabled={isDisabled}>
+            {isSubmitting ? "Prijava u tijeku..." : "Prijava"}
           </Button>
         </form>
       </CardContent>

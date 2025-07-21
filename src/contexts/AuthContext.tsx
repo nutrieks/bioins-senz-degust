@@ -2,7 +2,7 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { User } from "../types";
+import { User, UserRole } from "../types";
 import { cleanupAuthStorage, checkStorageHealth, recoverFromAuthLoop } from "@/utils/authStorage";
 
 interface AuthContextType {
@@ -17,11 +17,12 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
   const isUnmountedRef = useRef(false);
   const authOperationInProgress = useRef(false);
 
   useEffect(() => {
-    console.log('🔐 AuthProvider: Initializing with storage health check');
+    console.log('🔐 AuthProvider: Starting initialization...');
 
     // STEP 1: Check storage health on startup
     const isStorageHealthy = checkStorageHealth();
@@ -32,15 +33,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // STEP 2: Setup auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (isUnmountedRef.current || authOperationInProgress.current) return;
+      if (isUnmountedRef.current || authOperationInProgress.current) {
+        console.log('🔐 Auth state change ignored (unmounted or in progress)');
+        return;
+      }
 
-      console.log('🔐 Auth state change:', event, session?.user?.id);
+      console.log('🔐 Auth state change EVENT:', event);
+      console.log('🔐 Auth state change SESSION:', session?.user?.id ? `User ID: ${session.user.id}` : 'No session');
 
       // Prevent multiple simultaneous operations
       authOperationInProgress.current = true;
 
       try {
         if (session?.user) {
+          console.log('🔐 Session found, validating user in database...');
+          
           // Validate user with database
           const { data: userData, error } = await supabase
             .from('users')
@@ -48,8 +55,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             .eq('id', session.user.id)
             .maybeSingle();
           
-          if (error || !userData || !userData.is_active) {
-            console.warn('🚨 Invalid/inactive user - signing out');
+          console.log('🔐 Database query result:', { userData, error });
+
+          if (error) {
+            console.error('🚨 Database error during user validation:', error);
+            setUser(null);
+            setLoading(false);
+            cleanupAuthStorage();
+            await supabase.auth.signOut();
+            return;
+          }
+
+          if (!userData) {
+            console.warn('🚨 User not found in database - signing out');
+            setUser(null);
+            setLoading(false);
+            cleanupAuthStorage();
+            await supabase.auth.signOut();
+            return;
+          }
+
+          if (!userData.is_active) {
+            console.warn('🚨 User is not active - signing out');
             setUser(null);
             setLoading(false);
             cleanupAuthStorage();
@@ -60,49 +87,85 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const mappedUser: User = {
             id: userData.id,
             username: userData.username,
-            role: userData.role as any,
+            role: userData.role as UserRole,
             evaluatorPosition: userData.evaluator_position || undefined,
             isActive: userData.is_active,
             password: userData.password
           };
           
+          console.log('✅ User validated successfully:', {
+            username: mappedUser.username,
+            role: mappedUser.role,
+            isActive: mappedUser.isActive
+          });
+
           setUser(mappedUser);
-          console.log('✅ User validated and set:', mappedUser.username);
+          setLoading(false);
+
+          // REDIRECT LOGIC - Handle redirect after successful authentication
+          console.log('🔐 Attempting redirect for user role:', mappedUser.role);
+          
+          // Only redirect if we're on the login page
+          if (window.location.pathname === '/login') {
+            console.log('🔐 On login page, redirecting...');
+            
+            if (mappedUser.role === UserRole.ADMIN) {
+              console.log('🔐 Redirecting admin to /admin');
+              navigate("/admin", { replace: true });
+            } else if (mappedUser.role === UserRole.EVALUATOR) {
+              console.log('🔐 Redirecting evaluator to /evaluator');
+              navigate("/evaluator", { replace: true });
+            } else {
+              console.warn('🚨 Unknown user role:', mappedUser.role);
+            }
+          } else {
+            console.log('🔐 Not on login page, no redirect needed');
+          }
+
         } else {
+          console.log('🔐 No session - clearing user state');
           setUser(null);
-          console.log('🔐 No session - user cleared');
+          setLoading(false);
         }
       } catch (error) {
         console.error('🚨 Auth validation error:', error);
         setUser(null);
+        setLoading(false);
         cleanupAuthStorage();
         await supabase.auth.signOut();
       } finally {
         if (!isUnmountedRef.current) {
-          setLoading(false);
           authOperationInProgress.current = false;
         }
       }
     });
 
     // STEP 3: Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    console.log('🔐 Checking for existing session...');
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (error) {
+        console.error('🚨 Error getting session:', error);
+        setLoading(false);
+        authOperationInProgress.current = false;
+        return;
+      }
+
       if (session) {
-        console.log('🔐 Existing session found');
-        // The onAuthStateChange will handle this
+        console.log('🔐 Existing session found, will be handled by onAuthStateChange');
       } else {
-        console.log('🔐 No existing session');
+        console.log('🔐 No existing session found');
         setLoading(false);
         authOperationInProgress.current = false;
       }
     });
 
     return () => {
+      console.log('🔐 AuthProvider cleanup');
       isUnmountedRef.current = true;
       authOperationInProgress.current = false;
       subscription.unsubscribe();
     };
-  }, []);
+  }, [navigate]);
 
   const login = async (identifier: string, password: string) => {
     if (authOperationInProgress.current) {
@@ -111,6 +174,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     try {
+      console.log('🔐 Starting login process for:', identifier);
       authOperationInProgress.current = true;
       
       // Clean up any existing corrupted state before login
@@ -123,10 +187,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         email = `evaluator${identifier}@bioins.local`;
       }
       
+      console.log('🔐 Attempting Supabase login with email:', email);
+      
       const result = await supabase.auth.signInWithPassword({ email, password });
+      
+      console.log('🔐 Login result:', { 
+        error: result.error, 
+        user: result.data.user ? `User ID: ${result.data.user.id}` : 'No user'
+      });
+      
       return result;
     } catch (error) {
-      console.error('Login error:', error);
+      console.error('🚨 Login error:', error);
       return { error };
     } finally {
       authOperationInProgress.current = false;
@@ -140,6 +212,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     try {
+      console.log('🔐 Starting logout process');
       authOperationInProgress.current = true;
       setUser(null);
       setLoading(false);
@@ -148,8 +221,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       cleanupAuthStorage();
       
       await supabase.auth.signOut({ scope: 'global' });
+      console.log('✅ Logout complete');
     } catch (error) {
-      console.warn('Logout error (continuing anyway):', error);
+      console.warn('⚠️ Logout error (continuing anyway):', error);
     } finally {
       authOperationInProgress.current = false;
     }
