@@ -1,6 +1,8 @@
+
 import { useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
+import { cleanupAuthStorage, recoverFromAuthLoop } from '@/utils/authStorage';
 
 export const useAppStability = () => {
   const queryClient = useQueryClient();
@@ -57,8 +59,8 @@ export const useAppStability = () => {
           const state = JSON.parse(backupState);
           const timeDiff = Date.now() - state.timestamp;
           
-          // If backup is older than 5 minutes, clear queries and refetch
-          if (timeDiff > 5 * 60 * 1000) {
+          // If backup is older than 10 minutes, clear queries and refetch
+          if (timeDiff > 10 * 60 * 1000) {
             console.log('🔄 App health check: Clearing stale cache');
             queryClient.clear();
             queryClient.invalidateQueries();
@@ -92,11 +94,11 @@ export const useAppStability = () => {
       }
     };
 
-    // Periodic health check (every 2 minutes)
+    // Periodic health check (every 5 minutes)
     const healthCheckInterval = setInterval(() => {
       checkAppHealth();
       handleRecovery();
-    }, 2 * 60 * 1000);
+    }, 5 * 60 * 1000);
 
     // Add event listeners
     window.addEventListener('beforeunload', handleBeforeUnload);
@@ -116,9 +118,8 @@ export const useAppStability = () => {
   const recoverApp = () => {
     try {
       console.log('🔄 Manual app recovery initiated');
+      recoverFromAuthLoop();
       queryClient.clear();
-      sessionStorage.clear();
-      localStorage.removeItem('app-state-backup');
       window.location.href = '/login';
     } catch (error) {
       console.error('Manual recovery failed:', error);

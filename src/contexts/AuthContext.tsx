@@ -1,9 +1,9 @@
 
-// Datoteka: src/contexts/AuthContext.tsx
 import React, { createContext, useContext, useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "../types";
+import { cleanupAuthStorage, checkStorageHealth, recoverFromAuthLoop } from "@/utils/authStorage";
 
 interface AuthContextType {
   user: User | null;
@@ -18,19 +18,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const isUnmountedRef = useRef(false);
+  const authOperationInProgress = useRef(false);
 
   useEffect(() => {
-    console.log('🔐 AuthProvider: Setting up auth state listener');
+    console.log('🔐 AuthProvider: Initializing with storage health check');
 
-    // SIMPLIFIED AUTH STATE LISTENER - NO AGGRESSIVE TIMEOUTS
+    // STEP 1: Check storage health on startup
+    const isStorageHealthy = checkStorageHealth();
+    if (!isStorageHealthy) {
+      console.log('🚨 Unhealthy storage detected, cleaning up...');
+      recoverFromAuthLoop();
+    }
+
+    // STEP 2: Setup auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (isUnmountedRef.current) return;
+      if (isUnmountedRef.current || authOperationInProgress.current) return;
 
       console.log('🔐 Auth state change:', event, session?.user?.id);
 
+      // Prevent multiple simultaneous operations
+      authOperationInProgress.current = true;
+
       try {
         if (session?.user) {
-          // Validate user with reasonable timeout
+          // Validate user with database
           const { data: userData, error } = await supabase
             .from('users')
             .select('*')
@@ -41,6 +52,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             console.warn('🚨 Invalid/inactive user - signing out');
             setUser(null);
             setLoading(false);
+            cleanupAuthStorage();
             await supabase.auth.signOut();
             return;
           }
@@ -53,6 +65,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             isActive: userData.is_active,
             password: userData.password
           };
+          
           setUser(mappedUser);
           console.log('✅ User validated and set:', mappedUser.username);
         } else {
@@ -62,15 +75,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } catch (error) {
         console.error('🚨 Auth validation error:', error);
         setUser(null);
+        cleanupAuthStorage();
         await supabase.auth.signOut();
       } finally {
         if (!isUnmountedRef.current) {
           setLoading(false);
+          authOperationInProgress.current = false;
         }
       }
     });
 
-    // Check for existing session
+    // STEP 3: Check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
         console.log('🔐 Existing session found');
@@ -78,17 +93,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } else {
         console.log('🔐 No existing session');
         setLoading(false);
+        authOperationInProgress.current = false;
       }
     });
 
     return () => {
       isUnmountedRef.current = true;
+      authOperationInProgress.current = false;
       subscription.unsubscribe();
     };
   }, []);
 
   const login = async (identifier: string, password: string) => {
+    if (authOperationInProgress.current) {
+      console.log('🚨 Auth operation already in progress');
+      return { error: new Error('Operation in progress') };
+    }
+
     try {
+      authOperationInProgress.current = true;
+      
+      // Clean up any existing corrupted state before login
+      cleanupAuthStorage();
+      
       let email;
       if (identifier.toUpperCase() === 'ADMIN') {
         email = 'admin@bioins.local';
@@ -101,25 +128,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (error) {
       console.error('Login error:', error);
       return { error };
+    } finally {
+      authOperationInProgress.current = false;
     }
   };
 
   const logout = async () => {
+    if (authOperationInProgress.current) {
+      console.log('🚨 Logout operation already in progress');
+      return;
+    }
+
     try {
+      authOperationInProgress.current = true;
       setUser(null);
       setLoading(false);
       
-      // Clear auth storage
-      const keys = Object.keys(localStorage);
-      keys.forEach(key => {
-        if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
-          localStorage.removeItem(key);
-        }
-      });
+      // Complete storage cleanup
+      cleanupAuthStorage();
       
       await supabase.auth.signOut({ scope: 'global' });
     } catch (error) {
       console.warn('Logout error (continuing anyway):', error);
+    } finally {
+      authOperationInProgress.current = false;
     }
   };
 
