@@ -1,6 +1,5 @@
 
 import React, { createContext, useContext, useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { User, UserRole } from "../types";
 import { cleanupAuthStorage, checkStorageHealth, recoverFromAuthLoop } from "@/utils/authStorage";
@@ -17,7 +16,6 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
   const isUnmountedRef = useRef(false);
   const authOperationInProgress = useRef(false);
 
@@ -102,25 +100,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setUser(mappedUser);
           setLoading(false);
 
-          // REDIRECT LOGIC - Handle redirect after successful authentication
-          console.log('🔐 Attempting redirect for user role:', mappedUser.role);
-          
-          // Only redirect if we're on the login page
-          if (window.location.pathname === '/login') {
-            console.log('🔐 On login page, redirecting...');
-            
-            if (mappedUser.role === UserRole.ADMIN) {
-              console.log('🔐 Redirecting admin to /admin');
-              navigate("/admin", { replace: true });
-            } else if (mappedUser.role === UserRole.EVALUATOR) {
-              console.log('🔐 Redirecting evaluator to /evaluator');
-              navigate("/evaluator", { replace: true });
-            } else {
-              console.warn('🚨 Unknown user role:', mappedUser.role);
-            }
-          } else {
-            console.log('🔐 Not on login page, no redirect needed');
-          }
+          // NO MORE REDIRECT LOGIC HERE - Login component handles this
+          console.log('🔐 User set, Login component will handle redirect');
 
         } else {
           console.log('🔐 No session - clearing user state');
@@ -165,7 +146,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       authOperationInProgress.current = false;
       subscription.unsubscribe();
     };
-  }, [navigate]);
+  }, []); // REMOVED navigate dependency
 
   const login = async (identifier: string, password: string) => {
     if (authOperationInProgress.current) {

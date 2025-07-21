@@ -20,7 +20,7 @@ export function LoginForm() {
     setIsSubmitting(true);
     
     try {
-      console.log('🔐 LoginForm: Starting login process');
+      console.log('🔐 LoginForm: Starting login process for:', identifier);
       
       const { error: loginError } = await login(identifier, password);
       
@@ -33,12 +33,13 @@ export function LoginForm() {
           variant: "destructive",
         });
       } else {
-        console.log('✅ LoginForm: Login successful');
+        console.log('✅ LoginForm: Login successful, showing success toast');
         toast({
           title: "Uspješna prijava",
           description: "Dobrodošli u sustav",
         });
-        // Don't reset form here - let AuthContext handle the redirect
+        // AuthContext will update user state, Login component will handle redirect
+        console.log('🔐 LoginForm: Login successful, waiting for AuthContext to update user state');
       }
     } catch (error) {
       console.error('🚨 LoginForm: Unexpected error:', error);
