@@ -33,13 +33,13 @@ export function LoginForm() {
           variant: "destructive",
         });
       } else {
-        console.log('✅ LoginForm: Login successful, showing success toast');
+        setError('');
         toast({
           title: "Uspješna prijava",
-          description: "Dobrodošli u sustav",
+          description: "Preusmjeravanje u tijeku...",
         });
-        // AuthContext will update user state, Login component will handle redirect
-        console.log('🔐 LoginForm: Login successful, waiting for AuthContext to update user state');
+        console.log('🔐 LoginForm: Login successful, AuthContext will handle redirect');
+        // NO REDIRECT HERE - AuthContext handles it
       }
     } catch (error) {
       console.error('🚨 LoginForm: Unexpected error:', error);

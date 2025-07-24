@@ -10,67 +10,40 @@ export default function Login() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    console.log('🔐 Login useEffect triggered:', { 
-      loading, 
-      user: user ? `${user.username} (${user.role})` : 'No user',
-      currentPath: window.location.pathname
-    });
-
-    // Only redirect if user is authenticated and we're not loading
+    console.log('🔐 Login page: Auth state check', { loading, user: user?.username });
+    
+    // NO REDIRECT LOGIC HERE - AuthContext handles all redirects now
     if (!loading && user) {
-      console.log('🔐 Login: User is authenticated, preparing redirect...');
-      
-      // Add a small delay to allow any toasts to show
-      const redirectTimer = setTimeout(() => {
-        if (user.role === UserRole.ADMIN) {
-          console.log('🔐 Redirecting admin to /admin');
-          navigate("/admin", { replace: true });
-        } else if (user.role === UserRole.EVALUATOR) {
-          console.log('🔐 Redirecting evaluator to /evaluator');
-          navigate("/evaluator", { replace: true });
-        } else {
-          console.warn('🚨 Unknown user role:', user.role);
-        }
-      }, 500); // 500ms delay to show toast
-
-      return () => clearTimeout(redirectTimer);
+      console.log('🔐 Login page: User already authenticated, AuthContext will handle redirect');
     }
-  }, [user, loading, navigate]);
+  }, [user, loading]);
 
-  // Show loading state while checking authentication
   if (loading) {
-    console.log('🔐 Login: Showing loading state');
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-secondary/30 p-4">
-        <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold text-primary">Senzorska Degustacija</h1>
-          <p className="text-lg text-muted-foreground">Učitavanje...</p>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-slate-600">Učitavanje...</p>
+          <p className="text-xs text-slate-400 mt-2">AuthProvider loading: {loading ? 'true' : 'false'}</p>
         </div>
       </div>
     );
   }
 
-  // If user is authenticated, show minimal content while redirect happens
   if (user) {
-    console.log('🔐 Login: User authenticated, redirect should happen soon');
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-secondary/30 p-4">
-        <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold text-primary">Senzorska Degustacija</h1>
-          <p className="text-lg text-muted-foreground">Preusmjeravanje...</p>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-slate-600">Prijavljeni ste kao {user.username}</p>
+          <p className="text-xs text-slate-400 mt-2">AuthContext će obraditi preusmjeravanje...</p>
         </div>
       </div>
     );
   }
 
-  // Show login form for unauthenticated users
-  console.log('🔐 Login: Showing login form');
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-secondary/30 p-4">
-      <div className="mb-8 text-center">
-        <h1 className="text-3xl font-bold text-primary">Senzorska Degustacija</h1>
-        <p className="text-lg text-muted-foreground">Platforma za senzorsku analizu</p>
-      </div>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
       <LoginForm />
     </div>
   );
