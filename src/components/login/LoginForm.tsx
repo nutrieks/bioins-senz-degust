@@ -1,10 +1,12 @@
 
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { UserRole } from "@/types";
 
 export function LoginForm() {
   const [identifier, setIdentifier] = useState("");
@@ -13,6 +15,7 @@ export function LoginForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { login, loading } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,7 +25,8 @@ export function LoginForm() {
     try {
       console.log('🔐 LoginForm: Starting login process for:', identifier);
       
-      const { error: loginError } = await login(identifier, password);
+      const result = await login(identifier, password);
+      const { error: loginError } = result;
       
       if (loginError) {
         console.error('🚨 LoginForm: Login failed:', loginError);
@@ -32,14 +36,19 @@ export function LoginForm() {
           description: "Molimo provjerite korisničko ime i lozinku",
           variant: "destructive",
         });
-      } else {
+      } else if (!loginError) {
         setError('');
         toast({
           title: "Uspješna prijava",
           description: "Preusmjeravanje u tijeku...",
         });
-        console.log('🔐 LoginForm: Login successful, AuthContext will handle redirect');
-        // NO REDIRECT HERE - AuthContext handles it
+        console.log('🔐 LoginForm: Login successful, handling direct navigation');
+        
+        // DIRECT NAVIGATION - zewnętrzny prijedlog implementiran
+        const userRole = identifier.toUpperCase() === 'ADMIN' ? UserRole.ADMIN : UserRole.EVALUATOR;
+        const redirectPath = userRole === UserRole.ADMIN ? '/admin' : '/evaluator';
+        console.log('🔐 LoginForm: Navigating to:', redirectPath);
+        navigate(redirectPath);
       }
     } catch (error) {
       console.error('🚨 LoginForm: Unexpected error:', error);

@@ -18,17 +18,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
   const isUnmountedRef = useRef(false);
   const authOperationInProgress = useRef(false);
-  const loadingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     console.log('🔐 AuthProvider: Starting initialization...');
-
-    // SAFETY: Force loading to false after 10 seconds to prevent infinite loading
-    loadingTimeoutRef.current = setTimeout(() => {
-      console.log('🚨 SAFETY: Force setting loading to false after 10 seconds');
-      setLoading(false);
-      authOperationInProgress.current = false;
-    }, 10000);
 
     // STEP 1: Check storage health on startup
     const isStorageHealthy = checkStorageHealth();
@@ -108,37 +100,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setUser(mappedUser);
           setLoading(false);
           
-          // Clear safety timeout
-          if (loadingTimeoutRef.current) {
-            clearTimeout(loadingTimeoutRef.current);
-            loadingTimeoutRef.current = null;
-          }
-
-          // REDIRECT LOGIC - Handle redirects here for reliable navigation
-          console.log('🔐 User set, handling redirect...');
-          const currentPath = window.location.pathname;
-          console.log('🔐 Current path:', currentPath);
-          
-          if (currentPath === '/login' || currentPath === '/') {
-            const redirectPath = mappedUser.role === UserRole.ADMIN ? '/admin' : '/evaluator';
-            console.log('🔐 Redirecting to:', redirectPath);
-            
-            // Use window.location for reliable redirect
-            setTimeout(() => {
-              window.location.href = redirectPath;
-            }, 100);
-          }
+          console.log('✅ User set successfully - AuthContext will NOT handle redirect');
 
         } else {
           console.log('🔐 No session - clearing user state');
           setUser(null);
           setLoading(false);
-          
-          // Clear safety timeout
-          if (loadingTimeoutRef.current) {
-            clearTimeout(loadingTimeoutRef.current);
-            loadingTimeoutRef.current = null;
-          }
         }
       } catch (error) {
         console.error('🚨 Auth validation error:', error);
@@ -146,12 +113,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setLoading(false);
         cleanupAuthStorage();
         await supabase.auth.signOut();
-        
-        // Clear safety timeout
-        if (loadingTimeoutRef.current) {
-          clearTimeout(loadingTimeoutRef.current);
-          loadingTimeoutRef.current = null;
-        }
       } finally {
         if (!isUnmountedRef.current) {
           authOperationInProgress.current = false;
@@ -175,12 +136,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.log('🔐 No existing session found');
         setLoading(false);
         authOperationInProgress.current = false;
-        
-        // Clear safety timeout
-        if (loadingTimeoutRef.current) {
-          clearTimeout(loadingTimeoutRef.current);
-          loadingTimeoutRef.current = null;
-        }
       }
     });
 
@@ -188,13 +143,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log('🔐 AuthProvider cleanup');
       isUnmountedRef.current = true;
       authOperationInProgress.current = false;
-      
-      // Clear safety timeout
-      if (loadingTimeoutRef.current) {
-        clearTimeout(loadingTimeoutRef.current);
-        loadingTimeoutRef.current = null;
-      }
-      
       subscription.unsubscribe();
     };
   }, []); // REMOVED navigate dependency

@@ -1,11 +1,10 @@
-
-import { useEffect } from "react";
+import { useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { EvaluationForm } from "@/components/evaluation/EvaluationForm";
 import { CompletionMessage } from "@/components/evaluation/CompletionMessage";
 import { SampleRevealScreen } from "@/components/evaluation/SampleRevealScreen";
 import { LoadingState } from "@/components/evaluation/LoadingState";
-import { useEvaluationFlow } from "@/hooks/useEvaluationFlow";
+import { useSimpleEvaluationFlow } from "@/hooks/useSimpleEvaluationFlow";
 import { useEvents } from "@/hooks/useEvents";
 import { EventStatus } from "@/types";
 
@@ -54,38 +53,35 @@ export function EvaluationContent({ eventId }: EvaluationContentProps) {
     }
   }, [allEvents, activeTargetEvent, activeEvents, eventId, navigate]);
   
+  // Use simple evaluation flow hook - vanjski prijedlog implementiran
   const {
-    isLoading: isEvaluationLoading,
-    isEvaluationCompleteForUser,
+    isLoading,
+    isSubmitting,
     showSampleReveal,
-    currentProductType,
-    isTransitioning,
+    error,
+    isEvaluationComplete,
     currentSample,
-    initializeEvaluation,
+    currentProductType,
+    jarAttributes,
+    event,
+    submitEvaluation,
     continueAfterReveal,
     canEnterEvaluation,
-    error,
-    dispatch,
-  } = useEvaluationFlow(eventId);
+    debugInfo
+  } = useSimpleEvaluationFlow(eventId);
 
-  // Combined loading state - wait for both queries and evaluation flow
-  const isLoading = isEvaluationLoading;
-
-  const handleRestart = () => {
-    dispatch({ type: 'RESET_STATE' });
-    setTimeout(() => {
-      initializeEvaluation();
-    }, 100);
-  };
-
-  useEffect(() => {
-    initializeEvaluation();
-  }, [eventId, initializeEvaluation]);
+  // Handle restart functionality - simplified
+  const handleRestart = useCallback(() => {
+    console.log('🔄 EvaluationContent: Restarting evaluation');
+    window.location.reload(); // Simple restart
+  }, []);
 
   // Route guard - redirect if user can't enter evaluation
   useEffect(() => {
     if (!isLoading && !canEnterEvaluation()) {
-      navigate("/evaluator");
+      console.log('🚨 EvaluationContent: User cannot enter evaluation, redirecting to dashboard');
+      navigate('/evaluator');
+      return;
     }
   }, [isLoading, canEnterEvaluation, navigate]);
 
@@ -100,14 +96,17 @@ export function EvaluationContent({ eventId }: EvaluationContentProps) {
     );
   }
 
-  if (isLoading || isTransitioning) {
-    return <LoadingState message="Pripremanje ocjenjivanja..." />;
+  // Loading state
+  if (isLoading) {
+    return <LoadingState message="Priprema evaluacije..." />;
   }
 
-  if (isEvaluationCompleteForUser) {
-    return <CompletionMessage onReturn={() => navigate("/evaluator")} />;
+  // Evaluation complete
+  if (isEvaluationComplete) {
+    return <CompletionMessage onReturn={() => navigate('/evaluator')} />;
   }
 
+  // Sample reveal screen
   if (showSampleReveal && currentProductType) {
     return (
       <SampleRevealScreen
