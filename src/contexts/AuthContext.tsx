@@ -2,12 +2,12 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User, UserRole } from "../types";
-import { cleanupAuthStorage, checkStorageHealth, recoverFromAuthLoop } from "@/utils/authStorage";
+import { cleanupAuthStorage } from "@/utils/authStorage";
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (identifier: string, password: string) => Promise<{ error: any | null }>;
+  login: (identifier: string, password: string) => Promise<{ user: User | null; error: any | null }>;
   logout: () => Promise<void>;
 }
 
@@ -17,196 +17,105 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const isUnmountedRef = useRef(false);
-  const authOperationInProgress = useRef(false);
 
   useEffect(() => {
-    console.log('🔐 AuthProvider: Starting initialization...');
+    isUnmountedRef.current = false;
+    console.log('🔐 AuthProvider: Starting session check...');
 
-    // STEP 1: Check storage health on startup
-    const isStorageHealthy = checkStorageHealth();
-    if (!isStorageHealthy) {
-      console.log('🚨 Unhealthy storage detected, cleaning up...');
-      recoverFromAuthLoop();
-    }
+    const checkSession = async () => {
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
-    // STEP 2: Setup auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (isUnmountedRef.current || authOperationInProgress.current) {
-        console.log('🔐 Auth state change ignored (unmounted or in progress)');
+      if (sessionError) {
+        console.error('🚨 AuthProvider: Error getting session:', sessionError);
+        setUser(null);
+        setLoading(false);
         return;
       }
 
-      console.log('🔐 Auth state change EVENT:', event);
-      console.log('🔐 Auth state change SESSION:', session?.user?.id ? `User ID: ${session.user.id}` : 'No session');
-
-      // Prevent multiple simultaneous operations
-      authOperationInProgress.current = true;
-
-      try {
-        if (session?.user) {
-          console.log('🔐 Session found, validating user in database...');
-          
-          // Validate user with database
-          const { data: userData, error } = await supabase
-            .from('users')
-            .select('*')
-            .eq('id', session.user.id)
-            .maybeSingle();
-          
-          console.log('🔐 Database query result:', { userData, error });
-
-          if (error) {
-            console.error('🚨 Database error during user validation:', error);
-            setUser(null);
-            setLoading(false);
-            cleanupAuthStorage();
-            await supabase.auth.signOut();
-            return;
-          }
-
-          if (!userData) {
-            console.warn('🚨 User not found in database - signing out');
-            setUser(null);
-            setLoading(false);
-            cleanupAuthStorage();
-            await supabase.auth.signOut();
-            return;
-          }
-
-          if (!userData.is_active) {
-            console.warn('🚨 User is not active - signing out');
-            setUser(null);
-            setLoading(false);
-            cleanupAuthStorage();
-            await supabase.auth.signOut();
-            return;
-          }
-
+      if (session?.user) {
+        const { data: userData, error: dbError } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', session.user.id)
+          .single();
+        
+        if (dbError || !userData || !userData.is_active) {
+          console.warn('🚨 AuthProvider: User validation failed or user inactive. Signing out.', { dbError, userData });
+          await supabase.auth.signOut();
+          setUser(null);
+        } else {
           const mappedUser: User = {
             id: userData.id,
             username: userData.username,
             role: userData.role as UserRole,
             evaluatorPosition: userData.evaluator_position || undefined,
             isActive: userData.is_active,
-            password: userData.password
+            password: userData.password // Note: Be cautious with password handling on client-side
           };
-          
-          console.log('✅ User validated successfully:', {
-            username: mappedUser.username,
-            role: mappedUser.role,
-            isActive: mappedUser.isActive
-          });
-
           setUser(mappedUser);
-          setLoading(false);
-          
-          console.log('✅ User set successfully - AuthContext will NOT handle redirect');
-
-        } else {
-          console.log('🔐 No session - clearing user state');
-          setUser(null);
-          setLoading(false);
         }
-      } catch (error) {
-        console.error('🚨 Auth validation error:', error);
-        setUser(null);
-        setLoading(false);
-        cleanupAuthStorage();
-        await supabase.auth.signOut();
-      } finally {
-        if (!isUnmountedRef.current) {
-          authOperationInProgress.current = false;
-        }
-      }
-    });
-
-    // STEP 3: Check for existing session
-    console.log('🔐 Checking for existing session...');
-    supabase.auth.getSession().then(({ data: { session }, error }) => {
-      if (error) {
-        console.error('🚨 Error getting session:', error);
-        setLoading(false);
-        authOperationInProgress.current = false;
-        return;
-      }
-
-      if (session) {
-        console.log('🔐 Existing session found, will be handled by onAuthStateChange');
       } else {
-        console.log('🔐 No existing session found');
-        setLoading(false);
-        authOperationInProgress.current = false;
+        setUser(null);
       }
+      setLoading(false);
+    };
+
+    checkSession();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (isUnmountedRef.current) return;
+      console.log('🔐 AuthProvider: Auth state changed. Session:', session ? 'Exists' : 'Null');
+      checkSession();
     });
 
     return () => {
-      console.log('🔐 AuthProvider cleanup');
       isUnmountedRef.current = true;
-      authOperationInProgress.current = false;
       subscription.unsubscribe();
     };
-  }, []); // REMOVED navigate dependency
+  }, []);
 
   const login = async (identifier: string, password: string) => {
-    if (authOperationInProgress.current) {
-      console.log('🚨 Auth operation already in progress');
-      return { error: new Error('Operation in progress') };
+    let email;
+    if (identifier.toUpperCase() === 'ADMIN') {
+      email = 'admin@bioins.local';
+    } else {
+      email = `evaluator${identifier}@bioins.local`;
+    }
+    
+    const { data: authData, error } = await supabase.auth.signInWithPassword({ email, password });
+
+    if (error || !authData.user) {
+      return { user: null, error };
     }
 
-    try {
-      console.log('🔐 Starting login process for:', identifier);
-      authOperationInProgress.current = true;
-      
-      // Clean up any existing corrupted state before login
-      cleanupAuthStorage();
-      
-      let email;
-      if (identifier.toUpperCase() === 'ADMIN') {
-        email = 'admin@bioins.local';
-      } else {
-        email = `evaluator${identifier}@bioins.local`;
-      }
-      
-      console.log('🔐 Attempting Supabase login with email:', email);
-      
-      const result = await supabase.auth.signInWithPassword({ email, password });
-      
-      console.log('🔐 Login result:', { 
-        error: result.error, 
-        user: result.data.user ? `User ID: ${result.data.user.id}` : 'No user'
-      });
-      
-      return result;
-    } catch (error) {
-      console.error('🚨 Login error:', error);
-      return { error };
-    } finally {
-      authOperationInProgress.current = false;
+    // After successful auth, fetch user from our public table
+    const { data: userData, error: dbError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', authData.user.id)
+      .single();
+
+    if (dbError || !userData) {
+      await supabase.auth.signOut();
+      return { user: null, error: dbError || new Error('User not found in database.') };
     }
+    
+    const mappedUser: User = {
+      id: userData.id,
+      username: userData.username,
+      role: userData.role as UserRole,
+      evaluatorPosition: userData.evaluator_position || undefined,
+      isActive: userData.is_active,
+      password: userData.password
+    };
+
+    return { user: mappedUser, error: null };
   };
 
   const logout = async () => {
-    if (authOperationInProgress.current) {
-      console.log('🚨 Logout operation already in progress');
-      return;
-    }
-
-    try {
-      console.log('🔐 Starting logout process');
-      authOperationInProgress.current = true;
-      setUser(null);
-      setLoading(false);
-      
-      // Complete storage cleanup
-      cleanupAuthStorage();
-      
-      await supabase.auth.signOut({ scope: 'global' });
-      console.log('✅ Logout complete');
-    } catch (error) {
-      console.warn('⚠️ Logout error (continuing anyway):', error);
-    } finally {
-      authOperationInProgress.current = false;
-    }
+    setUser(null);
+    await supabase.auth.signOut();
+    cleanupAuthStorage();
   };
 
   return (

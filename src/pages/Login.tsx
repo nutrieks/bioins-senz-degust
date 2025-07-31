@@ -10,38 +10,29 @@ export default function Login() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    console.log('🔐 Login page: Auth state check', { loading, user: user?.username });
-    
-    // NO REDIRECT LOGIC HERE - AuthContext handles all redirects now
+    // Ova logika se izvršava SVAKI PUT kada se 'user' ili 'loading' promijene.
+    // Ako učitavanje završi i imamo korisnika, preusmjeri ga.
     if (!loading && user) {
-      console.log('🔐 Login page: User already authenticated, AuthContext will handle redirect');
+      const redirectPath = user.role === UserRole.ADMIN ? '/admin' : '/evaluator';
+      console.log(`🔐 Login Page: User detected. Redirecting to ${redirectPath}`);
+      navigate(redirectPath, { replace: true });
     }
-  }, [user, loading]);
+  }, [user, loading, navigate]);
 
+  // Prikazujemo spinner dok se provjerava inicijalna sesija
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-slate-600">Učitavanje...</p>
-          <p className="text-xs text-slate-400 mt-2">AuthProvider loading: {loading ? 'true' : 'false'}</p>
+          <p className="text-slate-600">Provjera sesije...</p>
         </div>
       </div>
     );
   }
 
-  if (user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-slate-600">Prijavljeni ste kao {user.username}</p>
-          <p className="text-xs text-slate-400 mt-2">AuthContext će obraditi preusmjeravanje...</p>
-        </div>
-      </div>
-    );
-  }
-
+  // Ako nakon provjere i dalje nema korisnika, prikaži formu za prijavu.
+  // Ako korisnik postoji, useEffect iznad će odraditi preusmjeravanje.
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
       <LoginForm />

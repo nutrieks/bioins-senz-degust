@@ -1,12 +1,10 @@
 
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { UserRole } from "@/types";
 
 export function LoginForm() {
   const [identifier, setIdentifier] = useState("");
@@ -15,7 +13,6 @@ export function LoginForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { login, loading } = useAuth();
   const { toast } = useToast();
-  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,39 +20,34 @@ export function LoginForm() {
     setIsSubmitting(true);
     
     try {
-      console.log('🔐 LoginForm: Starting login process for:', identifier);
-      
-      const result = await login(identifier, password);
-      const { error: loginError } = result;
+      const { error: loginError } = await login(identifier, password);
       
       if (loginError) {
         console.error('🚨 LoginForm: Login failed:', loginError);
-        setError("Neispravno korisničko ime ili lozinka");
+        const errorMessage = loginError.message === 'Invalid login credentials' 
+          ? 'Neispravno korisničko ime ili lozinka'
+          : 'Došlo je do greške.';
+        setError(errorMessage);
         toast({
           title: "Greška prilikom prijave",
-          description: "Molimo provjerite korisničko ime i lozinku",
+          description: errorMessage,
           variant: "destructive",
         });
-      } else if (!loginError) {
+      } else {
         setError('');
         toast({
           title: "Uspješna prijava",
-          description: "Preusmjeravanje u tijeku...",
+          description: "Preusmjeravanje...",
         });
-        console.log('🔐 LoginForm: Login successful, handling direct navigation');
-        
-        // DIRECT NAVIGATION - zewnętrzny prijedlog implementiran
-        const userRole = identifier.toUpperCase() === 'ADMIN' ? UserRole.ADMIN : UserRole.EVALUATOR;
-        const redirectPath = userRole === UserRole.ADMIN ? '/admin' : '/evaluator';
-        console.log('🔐 LoginForm: Navigating to:', redirectPath);
-        navigate(redirectPath);
+        // Navigacija će se dogoditi u Login.tsx stranici putem useEffect hook-a
       }
-    } catch (error) {
-      console.error('🚨 LoginForm: Unexpected error:', error);
-      setError("Došlo je do greške prilikom prijave");
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Došlo je do neočekivane greške";
+      console.error('🚨 LoginForm: Unexpected error:', err);
+      setError(errorMessage);
       toast({
         title: "Greška",
-        description: "Došlo je do neočekivane greške",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
