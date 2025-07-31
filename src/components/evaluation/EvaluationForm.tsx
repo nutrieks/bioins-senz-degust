@@ -1,66 +1,53 @@
 
-import { useState, useEffect } from "react";
-import { format } from "date-fns";
 import { Form } from "@/components/ui/form";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { useEvaluationFlow } from "@/hooks/useEvaluationFlow";
-import { getEvent } from "@/services/dataService";
-import { CompletionScreen } from "./form/CompletionScreen";
 import { SampleHeader } from "./form/SampleHeader";
 import { HedonicScaleSection } from "./form/HedonicScaleSection";
 import { JARScaleSection } from "./form/JARScaleSection";
 import { SubmitButton } from "./form/SubmitButton";
 import { useEvaluationForm } from "./form/useEvaluationForm";
-import { useAuth } from "@/contexts/AuthContext";
+import { Sample, ProductType, User, HedonicScale, JARRating } from "@/types";
 
 interface EvaluationFormProps {
-  eventId: string;
-  productTypeId?: string;
+  user: User;
+  eventDate: string;
+  sample: Sample;
+  productType: ProductType;
+  jarAttributes: any[];
+  onSubmit: (data: { hedonic: HedonicScale; jar: JARRating }) => Promise<void>;
+  isSubmitting: boolean;
 }
 
-export function EvaluationForm({ eventId }: EvaluationFormProps) {
-  const { user } = useAuth();
-  const { 
-    currentSample, 
-    isEvaluationCompleteForUser,
-    currentProductType,
-    jarAttributes,
-    submitEvaluation,
-    isSubmitting: managerIsSubmitting,
-    forceFormReset
-  } = useEvaluationFlow(eventId);
-  
-  const [eventDate, setEventDate] = useState<string>("");
-  
-  // Use our custom hook for form management but override submit
+export function EvaluationForm({ 
+  user, 
+  eventDate, 
+  sample, 
+  productType, 
+  jarAttributes, 
+  onSubmit, 
+  isSubmitting 
+}: EvaluationFormProps) {
+  // Use our custom hook for form management
   const {
     form,
     formKey,
     scrollRef,
-    onSubmit: originalOnSubmit,
     scrollToTop
-  } = useEvaluationForm(currentSample, jarAttributes, forceFormReset ? 1 : 0);
+  } = useEvaluationForm(sample, jarAttributes, 0);
   
-  // Use manager's submission state
-  const isSubmitting = managerIsSubmitting;
-  
-  // Override submit to use our unified submit function with validation
-  const onSubmit = async (data: any) => {
-    if (!currentSample) return;
-    
+  // Handle form submission with validation
+  const handleSubmit = async (data: any) => {
     // Import validation function locally
     const { validateEvaluationForm } = await import("./form/validation/formValidation");
-    const { isValid, errorFields } = validateEvaluationForm(data, form, jarAttributes || []);
+    const { isValid } = validateEvaluationForm(data, form, jarAttributes || []);
     
     if (!isValid) {
-      // Toast is handled by useEvaluationForm validation, but we can add additional validation here
       return;
     }
     
     try {
-      await submitEvaluation({
+      await onSubmit({
         hedonic: {
           appearance: parseInt(data.hedonic.appearance),
           odor: parseInt(data.hedonic.odor),
@@ -78,30 +65,10 @@ export function EvaluationForm({ eventId }: EvaluationFormProps) {
       
     } catch (error) {
       console.error("Form submission error:", error);
-      // Error handling is done in submitEvaluation
     }
   };
   
-  // Dohvati datum događaja
-  useEffect(() => {
-    const fetchEventDate = async () => {
-      if (currentSample?.productTypeId) {
-        try {
-          // Get event info through sample
-          const event = await getEvent(currentSample.productTypeId);
-          if (event) {
-            setEventDate(format(new Date(event.date), "dd.MM.yyyy."));
-          }
-        } catch (error) {
-          console.error("Error fetching event date:", error);
-        }
-      }
-    };
-
-    fetchEventDate();
-  }, [currentSample]);
-  
-  if (!currentSample) {
+  if (!sample) {
     return (
       <Card className="my-8">
         <CardContent className="p-6 text-center">
@@ -115,14 +82,14 @@ export function EvaluationForm({ eventId }: EvaluationFormProps) {
     <ScrollArea className="h-[calc(100vh-240px)]">
       <div className="evaluation-form container max-w-5xl px-4 py-6" ref={scrollRef}>
         <SampleHeader 
-          sampleCode={currentSample.blindCode || ''} 
+          sampleCode={sample.blindCode || ''} 
           user={user} 
           eventDate={eventDate}
-          productType={currentProductType}
+          productType={productType}
         />
         
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} key={formKey}>
+          <form onSubmit={form.handleSubmit(handleSubmit)} key={formKey}>
             <div className="space-y-10">
               {/* Hedonistička skala */}
               <HedonicScaleSection 
@@ -144,7 +111,7 @@ export function EvaluationForm({ eventId }: EvaluationFormProps) {
             
             <SubmitButton 
               isSubmitting={isSubmitting} 
-              currentSample={currentSample} 
+              currentSample={sample} 
             />
           </form>
         </Form>
