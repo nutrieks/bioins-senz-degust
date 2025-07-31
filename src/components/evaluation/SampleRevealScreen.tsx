@@ -1,88 +1,65 @@
 
-import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { getSamples } from "@/services/dataService";
 import { Sample } from "@/types";
 
 interface SampleRevealScreenProps {
-  eventId: string;
-  productTypeId: string;
   productName: string;
+  samples: Sample[];
   onContinue: () => void;
 }
 
 export function SampleRevealScreen({
-  eventId,
-  productTypeId,
   productName,
+  samples,
   onContinue
 }: SampleRevealScreenProps) {
-  const [samples, setSamples] = useState<Sample[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    async function loadSamples() {
-      try {
-        const productSamples = await getSamples(productTypeId);
-        // Sortiranje uzoraka prema blindCode za pregledniji prikaz
-        setSamples(productSamples.sort((a, b) => {
-          if (!a.blindCode || !b.blindCode) return 0;
-          return a.blindCode.localeCompare(b.blindCode);
-        }));
-      } catch (error) {
-        console.error("Error loading samples for reveal:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    loadSamples();
-  }, [productTypeId]);
+  // Sort samples by blind code for better display
+  const sortedSamples = [...samples].sort((a, b) => {
+    if (!a.blindCode || !b.blindCode) return 0;
+    return a.blindCode.localeCompare(b.blindCode);
+  });
 
   return (
-    <Card className="my-8 max-w-2xl mx-auto">
-      <CardHeader className="text-center">
-        <CardTitle className="text-2xl">Otkrivanje uzoraka</CardTitle>
-        <CardDescription className="text-lg">
-          {productName}
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        {isLoading ? (
-          <div className="flex justify-center py-8">
-            <p>Učitavanje...</p>
-          </div>
-        ) : (
-          <>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Šifra</TableHead>
-                  <TableHead>Proizvođač/Marka</TableHead>
-                  <TableHead>Trgovina</TableHead>
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-background via-background to-muted/20 p-4">
+      <Card className="w-full max-w-2xl shadow-lg">
+        <CardHeader className="text-center pb-4">
+          <CardTitle className="text-2xl font-bold">Otkrivanje uzoraka</CardTitle>
+          <CardDescription className="text-lg font-medium text-foreground">
+            {productName}
+          </CardDescription>
+          <p className="text-sm text-muted-foreground mt-2">
+            Završili ste ocjenjivanje svih uzoraka za ovaj tip proizvoda
+          </p>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="font-semibold">Šifra</TableHead>
+                <TableHead className="font-semibold">Proizvođač/Marka</TableHead>
+                <TableHead className="font-semibold">Trgovina</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {sortedSamples.map((sample) => (
+                <TableRow key={sample.id} className="hover:bg-muted/50">
+                  <TableCell className="font-medium text-primary">{sample.blindCode}</TableCell>
+                  <TableCell>{sample.brand}</TableCell>
+                  <TableCell className="text-muted-foreground">{sample.retailerCode}</TableCell>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {samples.map((sample) => (
-                  <TableRow key={sample.id}>
-                    <TableCell className="font-medium">{sample.blindCode}</TableCell>
-                    <TableCell>{sample.brand}</TableCell>
-                    <TableCell>{sample.retailerCode}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+              ))}
+            </TableBody>
+          </Table>
 
-            <div className="flex justify-center mt-8">
-              <Button size="lg" className="px-8" onClick={onContinue}>
-                Nastavi
-              </Button>
-            </div>
-          </>
-        )}
-      </CardContent>
-    </Card>
+          <div className="flex justify-center mt-8">
+            <Button size="lg" className="px-8 font-medium" onClick={onContinue}>
+              Nastavi ocjenjivanje
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 }

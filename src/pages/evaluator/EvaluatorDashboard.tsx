@@ -1,19 +1,18 @@
 
 import { EvaluatorLayout } from "@/components/layout/EvaluatorLayout";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/contexts/AuthContext";
 import { EventStatus } from "@/types";
-import { Calendar, ClipboardCheck, RotateCcw } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Calendar, RotateCcw } from "lucide-react";
 import { useEvents } from "@/hooks/useEvents";
 import { useQueryClient } from '@tanstack/react-query';
 import { useToast } from "@/hooks/use-toast";
+import { EventCard } from "@/components/evaluator/EventCard";
 
 export default function EvaluatorDashboard() {
   const { user } = useAuth();
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { data: allEvents = [], isLoading, isError, error } = useEvents();
@@ -93,43 +92,6 @@ export default function EvaluatorDashboard() {
   console.log('[EvaluatorDashboard] ActiveEvents count:', activeEvents.length);
   console.log('[EvaluatorDashboard] ActiveEvents IDs:', activeEvents.map(e => e.id));
 
-  const handleStartEvaluation = (eventId: string) => {
-    console.log('[EvaluatorDashboard] handleStartEvaluation called with eventId:', eventId);
-    console.log('[EvaluatorDashboard] EventId type:', typeof eventId);
-    console.log('[EvaluatorDashboard] Target URL will be:', `/evaluator/evaluate/${eventId}`);
-    
-    // Verify this eventId exists in our activeEvents
-    const foundEvent = activeEvents.find(e => e.id === eventId);
-    console.log('[EvaluatorDashboard] Found event for this ID:', foundEvent);
-    
-    if (!foundEvent) {
-      console.error('[EvaluatorDashboard] ERROR: EventId not found in activeEvents!');
-      toast({
-        title: "Greška",
-        description: "Događaj nije pronađen. Molimo osvježite stranicu.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    navigate(`/evaluator/evaluate/${eventId}`);
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return new Intl.DateTimeFormat("hr-HR", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    }).format(date);
-  };
-
-  const getSampleCountText = (count: number) => {
-    if (count === 1) return "uzorak";
-    if (count < 5) return "uzorka";
-    return "uzoraka";
-  };
-
   return (
     <EvaluatorLayout>
       <div className="max-w-3xl mx-auto py-8">
@@ -159,40 +121,10 @@ export default function EvaluatorDashboard() {
                 <span className="ml-2">Učitavanje...</span>
               </div>
             ) : activeEvents.length > 0 ? (
-              <div className="space-y-4">
-                {activeEvents.map((event) => {
-                  const samplesCount = event.samplesCount || 0;
-                  console.log('[EvaluatorDashboard] Rendering event card:', { 
-                    id: event.id, 
-                    date: event.date, 
-                    samplesCount 
-                  });
-                  
-                  return (
-                    <Card key={event.id}>
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-lg">{formatDate(event.date)}</CardTitle>
-                        <CardDescription className="text-xs text-muted-foreground">
-                          ID: {event.id}
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent className="pb-2">
-                        <p className="text-sm text-muted-foreground">
-                          {samplesCount} {getSampleCountText(samplesCount)}
-                        </p>
-                      </CardContent>
-                      <CardFooter>
-                        <Button 
-                          className="w-full"
-                          onClick={() => handleStartEvaluation(event.id)}
-                        >
-                          <ClipboardCheck className="mr-2 h-4 w-4" />
-                          Započni ocjenjivanje
-                        </Button>
-                      </CardFooter>
-                    </Card>
-                  );
-                })}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {activeEvents.map((event) => (
+                  <EventCard key={event.id} event={event} />
+                ))}
               </div>
             ) : (
               <div className="text-center p-8">

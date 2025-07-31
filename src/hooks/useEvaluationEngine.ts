@@ -19,6 +19,7 @@ export function useEvaluationEngine(eventId: string) {
   const [tasks, setTasks] = useState<EvaluationTask[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showSampleReveal, setShowSampleReveal] = useState(false);
+  const [samplesForReveal, setSamplesForReveal] = useState<{productName: string, samples: Sample[]}>({ productName: '', samples: [] });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // 1. Centralizirano dohvaćanje SVIH podataka na početku
@@ -129,8 +130,12 @@ export function useEvaluationEngine(eventId: string) {
 
       // Provjeri treba li prikazati otkrivanje uzoraka
       const nextTask = tasks[currentIndex + 1];
-      if (nextTask && nextTask.productType.id !== currentTask.productType.id) {
+      if (!nextTask || nextTask.productType.id !== currentTask.productType.id) {
         console.log('🎯 EvaluationEngine: Showing sample reveal');
+        setSamplesForReveal({ 
+          productName: currentTask.productType.productName,
+          samples: currentTask.productType.samples 
+        });
         setShowSampleReveal(true);
       } else {
         console.log('🎯 EvaluationEngine: Moving to next task');
@@ -172,7 +177,7 @@ export function useEvaluationEngine(eventId: string) {
     currentTask,
     isComplete,
     showSampleReveal,
-    samplesForReveal: data?.allProductTypes.find(pt => pt.id === tasks[currentIndex]?.productType.id)?.samples || [],
+    samplesForReveal,
     submitEvaluation,
     continueAfterReveal,
     isSubmitting,

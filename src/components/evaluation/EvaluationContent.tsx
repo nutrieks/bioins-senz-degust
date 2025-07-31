@@ -44,12 +44,11 @@ export function EvaluationContent({ eventId }: EvaluationContentProps) {
     return <CompletionMessage onReturn={() => navigate("/evaluator")} />;
   }
 
-  if (showSampleReveal && currentTask) {
+  if (showSampleReveal && samplesForReveal.productName) {
     return (
       <SampleRevealScreen
-        eventId={eventId}
-        productTypeId={currentTask.productType.id}
-        productName={currentTask.productType.productName}
+        productName={samplesForReveal.productName}
+        samples={samplesForReveal.samples}
         onContinue={continueAfterReveal}
       />
     );
