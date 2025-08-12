@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
+import { BrandLogo } from "@/components/BrandLogo";
 
 interface EvaluatorLayoutProps {
   children: React.ReactNode;
@@ -19,9 +20,12 @@ export function EvaluatorLayout({ children }: EvaluatorLayoutProps) {
   return (
     <div className="min-h-screen bg-background">
       <header className="bg-gradient-to-r from-primary to-accent text-primary-foreground p-4 flex justify-between items-center">
-        <div>
-          <h1 className="text-lg font-bold">Bioins senzorska analiza</h1>
-          <p className="text-sm opacity-90">Platforma za senzorsku analizu</p>
+        <div className="flex items-center gap-3">
+          <BrandLogo to="/evaluator" size="sm" />
+          <div className="leading-tight">
+            <h1 className="text-lg font-bold">Bioins senzorska analiza</h1>
+            <p className="text-sm/5 opacity-90">Platforma za senzorsku analizu</p>
+          </div>
         </div>
         <div className="flex items-center gap-4">
           <div className="text-right">

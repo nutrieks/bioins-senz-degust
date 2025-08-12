@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { LoginForm } from "@/components/login/LoginForm";
 import { useAuth } from "@/contexts/AuthContext";
 import { UserRole } from "@/types";
+import { BrandLogo } from "@/components/BrandLogo";
 
 export default function Login() {
   const { user, loading } = useAuth();
@@ -34,8 +35,13 @@ export default function Login() {
   // Ako nakon provjere i dalje nema korisnika, prikaži formu za prijavu.
   // Ako korisnik postoji, useEffect iznad će odraditi preusmjeravanje.
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
-      <LoginForm />
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted">
+      <div className="w-full max-w-md px-4 animate-fade-in">
+        <div className="flex justify-center mb-6">
+          <BrandLogo to="/" size="lg" />
+        </div>
+        <LoginForm />
+      </div>
     </div>
   );
 }
