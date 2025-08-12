@@ -58,7 +58,7 @@ export function LoginForm() {
   const isDisabled = loading || isSubmitting;
 
   return (
-    <Card className="w-full max-w-md">
+    <Card className="w-full max-w-md backdrop-blur supports-[backdrop-filter]:bg-background/70 border border-primary/10 shadow-lg animate-fade-in">
       <CardHeader>
         <CardTitle className="text-2xl text-center">Bioins senzorska analiza</CardTitle>
         <CardDescription className="text-center">Prijavite se u platformu za senzorsku analizu</CardDescription>
@@ -101,7 +101,7 @@ export function LoginForm() {
               disabled={isDisabled}
             />
           </div>
-          <Button type="submit" className="w-full" disabled={isDisabled}>
+          <Button type="submit" variant="gradient" className="w-full" disabled={isDisabled}>
             {isSubmitting ? "Prijava u tijeku..." : "Prijava"}
           </Button>
         </form>

@@ -6,14 +6,18 @@ interface BrandLogoProps {
   size?: "sm" | "md" | "lg";
   showText?: boolean;
   className?: string;
+  eager?: boolean;
 }
 
-export function BrandLogo({ to = "/", size = "md", showText = false, className }: BrandLogoProps) {
+export function BrandLogo({ to = "/", size = "md", showText = false, className, eager = false }: BrandLogoProps) {
   const sizeCls = {
     sm: "h-8",
     md: "h-10",
     lg: "h-12",
   }[size];
+
+  const primarySrc = "/lovable-uploads/d8e53a38-4b85-41b6-9800-0deb141cf135.png";
+  const secondarySrc = "/lovable-uploads/75e4eee6-f4f7-4b1f-9b0d-cccf2d719a9a.png";
 
   return (
     <Link
@@ -25,13 +29,19 @@ export function BrandLogo({ to = "/", size = "md", showText = false, className }
       )}
     >
       <img
-        src="/lovable-uploads/75e4eee6-f4f7-4b1f-9b0d-cccf2d719a9a.png"
+        src={primarySrc}
         alt="Bioinstitut – senzorska analiza logo"
         className={cn(sizeCls, "w-auto hover-scale drop-shadow")}
-        loading="lazy"
+        loading={eager ? "eager" : "lazy"}
         onError={(e) => {
           const img = e.currentTarget as HTMLImageElement;
-          if (img.src !== "/logo-placeholder.svg") img.src = "/logo-placeholder.svg";
+          if (!img.dataset.fallback) {
+            img.src = secondarySrc;
+            img.dataset.fallback = "1";
+          } else if (img.dataset.fallback === "1") {
+            img.src = "/logo-placeholder.svg";
+            img.dataset.fallback = "2";
+          }
         }}
       />
       {showText && (
