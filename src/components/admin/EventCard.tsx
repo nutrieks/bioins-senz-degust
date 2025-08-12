@@ -16,7 +16,7 @@ export function EventCard({ event, onEventUpdated, onEventDeleted }: EventCardPr
   const [isUpdating, setIsUpdating] = useState(false);
 
   return (
-    <Card className="bg-white shadow-md rounded-lg overflow-hidden">
+    <Card className="bg-card border rounded-lg overflow-hidden shadow-sm transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:ring-1 hover:ring-primary/10">
       <EventCardHeader
         event={event}
         isUpdating={isUpdating}

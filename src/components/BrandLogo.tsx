@@ -25,10 +25,14 @@ export function BrandLogo({ to = "/", size = "md", showText = false, className }
       )}
     >
       <img
-        src="/logo-placeholder.svg"
-        alt="Bioins senzorska analiza logo"
-        className={cn(sizeCls, "w-auto hover-scale")}
+        src="/lovable-uploads/75e4eee6-f4f7-4b1f-9b0d-cccf2d719a9a.png"
+        alt="Bioinstitut – senzorska analiza logo"
+        className={cn(sizeCls, "w-auto hover-scale drop-shadow")}
         loading="lazy"
+        onError={(e) => {
+          const img = e.currentTarget as HTMLImageElement;
+          if (img.src !== "/logo-placeholder.svg") img.src = "/logo-placeholder.svg";
+        }}
       />
       {showText && (
         <span className="font-semibold text-base md:text-lg">Bioins senzorska analiza</span>
