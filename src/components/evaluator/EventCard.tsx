@@ -57,7 +57,7 @@ export function EventCard({ event }: EventCardProps) {
   };
 
   return (
-    <Card className="h-full transition-all duration-200 hover:shadow-md">
+    <Card className="h-full transition-all duration-200 hover:shadow-md hover-scale">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
@@ -65,7 +65,7 @@ export function EventCard({ event }: EventCardProps) {
             <CardTitle className="text-lg">{formatDate(event.date)}</CardTitle>
           </div>
           {isCompleted && (
-            <Badge variant="secondary" className="bg-green-100 text-green-700 hover:bg-green-100">
+            <Badge variant="secondary">
               <CheckCircle className="h-3 w-3 mr-1" />
               Završeno
             </Badge>

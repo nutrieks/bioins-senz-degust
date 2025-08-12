@@ -1,10 +1,20 @@
 
-import { useParams } from "react-router-dom";
+import { useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { EvaluatorLayout } from "@/components/layout/EvaluatorLayout";
 import { EvaluationContent } from "@/components/evaluation/EvaluationContent";
+import { useEvaluationState } from "@/hooks/useEvaluationState";
 
 export default function Evaluation() {
   const { eventId } = useParams<{ eventId: string }>();
+  const navigate = useNavigate();
+  const { canEnterEvaluation } = useEvaluationState(eventId);
+
+  useEffect(() => {
+    if (eventId && !canEnterEvaluation()) {
+      navigate("/evaluator", { replace: true });
+    }
+  }, [eventId, canEnterEvaluation, navigate]);
 
   if (!eventId) {
     return (

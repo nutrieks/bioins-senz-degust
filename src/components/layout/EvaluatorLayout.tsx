@@ -18,7 +18,7 @@ export function EvaluatorLayout({ children }: EvaluatorLayoutProps) {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="bg-primary text-primary-foreground p-4 flex justify-between items-center">
+      <header className="bg-gradient-to-r from-primary to-accent text-primary-foreground p-4 flex justify-between items-center">
         <div>
           <h1 className="text-lg font-bold">Bioins senzorska analiza</h1>
           <p className="text-sm opacity-90">Platforma za senzorsku analizu</p>
@@ -37,7 +37,7 @@ export function EvaluatorLayout({ children }: EvaluatorLayoutProps) {
         </div>
       </header>
 
-      <main className="py-4 px-4 md:px-0">
+      <main className="py-6 px-4 md:px-0">
         {children}
       </main>
 

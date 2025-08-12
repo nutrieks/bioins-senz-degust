@@ -1,17 +1,33 @@
 
 export function generateLatinSquare(n: number): number[][] {
-  const square: number[][] = [];
-  
+  // Start with a base Latin square and then apply random permutations
+  const base: number[][] = [];
+  // Random offset to vary starting symbol
+  const offset = Math.floor(Math.random() * n);
+
   for (let i = 0; i < n; i++) {
     const row: number[] = [];
     for (let j = 0; j < n; j++) {
-      row.push(((i + j) % n) + 1);
+      row.push(((i + j + offset) % n) + 1);
     }
-    square.push(row);
+    base.push(row);
   }
-  
-  return square;
+
+  // Apply random row and column permutations
+  const rowOrder = shuffleArray(Array.from({ length: n }, (_, i) => i));
+  const colOrder = shuffleArray(Array.from({ length: n }, (_, i) => i));
+
+  const rowPermuted = rowOrder.map((r) => base[r]);
+  const colPermuted = rowPermuted.map((row) => colOrder.map((c) => row[c]));
+
+  // Apply a random symbol permutation (1..n)
+  const symbolOrder = shuffleArray(Array.from({ length: n }, (_, i) => i + 1));
+  const symbolMap = new Map(symbolOrder.map((newSym, idx) => [idx + 1, newSym]));
+
+  const randomized = colPermuted.map((row) => row.map((val) => symbolMap.get(val)!));
+  return randomized;
 }
+
 
 export function shuffleArray<T>(array: T[]): T[] {
   const shuffled = [...array];
