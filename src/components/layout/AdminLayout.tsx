@@ -4,75 +4,60 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Calendar, ClipboardList, Home, LogOut, Menu, Users, PlusCircle } from "lucide-react";
 import { BrandLogo } from "@/components/BrandLogo";
-
 interface AdminLayoutProps {
   children: React.ReactNode;
 }
-
-export function AdminLayout({ children }: AdminLayoutProps) {
-  const { user, logout } = useAuth();
+export function AdminLayout({
+  children
+}: AdminLayoutProps) {
+  const {
+    user,
+    logout
+  } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
   const handleLogout = async () => {
     await logout();
     // Don't navigate manually - AuthContext handles redirect
   };
-
-  const navigation = [
-    {
-      name: "Početna",
-      href: "/admin",
-      icon: Home,
-      current: location.pathname === '/admin'
-    },
-    {
-      name: "Događaji",
-      href: "/admin/events",
-      icon: Calendar,
-      current: location.pathname.includes('/admin/events')
-    },
-    {
-      name: "Proizvodi",
-      href: "/admin/products",
-      icon: ClipboardList,
-      current: location.pathname.includes('/admin/products')
-    },
-    {
-      name: "Korisnici",
-      href: "/admin/users",
-      icon: Users,
-      current: location.pathname.includes('/admin/users')
-    }
-  ];
-
+  const navigation = [{
+    name: "Početna",
+    href: "/admin",
+    icon: Home,
+    current: location.pathname === '/admin'
+  }, {
+    name: "Događaji",
+    href: "/admin/events",
+    icon: Calendar,
+    current: location.pathname.includes('/admin/events')
+  }, {
+    name: "Proizvodi",
+    href: "/admin/products",
+    icon: ClipboardList,
+    current: location.pathname.includes('/admin/products')
+  }, {
+    name: "Korisnici",
+    href: "/admin/users",
+    icon: Users,
+    current: location.pathname.includes('/admin/users')
+  }];
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
-
-  return (
-    <div className="flex h-screen bg-background">
+  return <div className="flex h-screen bg-background">
       {/* Sidebar for desktop */}
       <div className="hidden md:flex md:w-64 md:flex-col">
         <div className="flex min-h-0 flex-1 flex-col border-r bg-card">
           <div className="flex flex-shrink-0 items-center px-4 py-4 border-b">
             <BrandLogo to="/admin" size="sm" />
-            <span className="ml-3 text-lg font-semibold">Bioins senzorska analiza</span>
+            <span className="ml-3 text-lg font-semibold">Senzorska analiza</span>
           </div>
           <nav className="flex-1 space-y-1 px-4 py-4">
-            {navigation.map(item => (
-              <Link
-                key={item.name}
-                to={item.href}
-                className={`flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                  item.current ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                }`}
-              >
+            {navigation.map(item => <Link key={item.name} to={item.href} className={`flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${item.current ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}>
                 <item.icon className="mr-3 h-5 w-5 flex-shrink-0" aria-hidden="true" />
                 {item.name}
-              </Link>
-            ))}
+              </Link>)}
             
             <div className="pt-4 mt-4 border-t">
               <Button variant="outline" className="w-full justify-start" onClick={() => navigate('/admin/events/new')}>
@@ -103,8 +88,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       </div>
 
       {/* Mobile menu */}
-      {isMobileMenuOpen && (
-        <div className="md:hidden fixed inset-0 z-40 bg-background">
+      {isMobileMenuOpen && <div className="md:hidden fixed inset-0 z-40 bg-background">
           <div className="flex min-h-full flex-col">
             <div className="flex items-center justify-between px-4 py-4 border-b">
               <BrandLogo to="/admin" size="sm" />
@@ -114,25 +98,16 @@ export function AdminLayout({ children }: AdminLayoutProps) {
               </Button>
             </div>
             <nav className="flex-1 space-y-1 px-4 py-4">
-              {navigation.map(item => (
-                <Link
-                  key={item.name}
-                  to={item.href}
-                  className={`flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                    item.current ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                  }`}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
+              {navigation.map(item => <Link key={item.name} to={item.href} className={`flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${item.current ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`} onClick={() => setIsMobileMenuOpen(false)}>
                   <item.icon className="mr-3 h-5 w-5 flex-shrink-0" aria-hidden="true" />
                   {item.name}
-                </Link>
-              ))}
+                </Link>)}
               
               <div className="pt-4 mt-4 border-t">
                 <Button variant="outline" className="w-full justify-start" onClick={() => {
-                  navigate('/admin/events/new');
-                  setIsMobileMenuOpen(false);
-                }}>
+              navigate('/admin/events/new');
+              setIsMobileMenuOpen(false);
+            }}>
                   <PlusCircle className="mr-2 h-4 w-4" />
                   Novi događaj
                 </Button>
@@ -150,8 +125,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
               </div>
             </div>
           </div>
-        </div>
-      )}
+        </div>}
 
       {/* Main content */}
       <div className="flex flex-1 flex-col overflow-hidden">
@@ -159,6 +133,5 @@ export function AdminLayout({ children }: AdminLayoutProps) {
           {children}
         </main>
       </div>
-    </div>
-  );
+    </div>;
 }
