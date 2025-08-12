@@ -16,8 +16,10 @@ export function BrandLogo({ to = "/", size = "md", showText = false, className, 
     lg: "h-12",
   }[size];
 
-  const primarySrc = "/lovable-uploads/d8e53a38-4b85-41b6-9800-0deb141cf135.png";
-  const secondarySrc = "/lovable-uploads/75e4eee6-f4f7-4b1f-9b0d-cccf2d719a9a.png";
+  // Add cache busting timestamp to force reload
+  const timestamp = Date.now();
+  const primarySrc = `/lovable-uploads/d8e53a38-4b85-41b6-9800-0deb141cf135.png?t=${timestamp}`;
+  const secondarySrc = `/lovable-uploads/75e4eee6-f4f7-4b1f-9b0d-cccf2d719a9a.png?t=${timestamp}`;
 
   return (
     <Link

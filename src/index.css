@@ -204,3 +204,8 @@
 .jar-item-label .text-sm, .hedonic-item-label .text-sm {
   @apply text-left;
 }
+
+/* Custom hover effects */
+.hover-scale {
+  @apply transition-transform duration-200 hover:scale-105;
+}

@@ -58,7 +58,7 @@ export function LoginForm() {
   const isDisabled = loading || isSubmitting;
 
   return (
-    <Card className="w-full max-w-md backdrop-blur supports-[backdrop-filter]:bg-background/70 border border-primary/10 shadow-lg animate-fade-in">
+    <Card className="w-full max-w-md backdrop-blur-md supports-[backdrop-filter]:bg-background/80 border border-primary/20 shadow-2xl shadow-primary/10 animate-fade-in hover:shadow-primary/20 transition-all duration-300">
       <CardHeader>
         <CardTitle className="text-2xl text-center">Bioins senzorska analiza</CardTitle>
         <CardDescription className="text-center">Prijavite se u platformu za senzorsku analizu</CardDescription>
