@@ -4,8 +4,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Event, EventStatus } from "@/types";
 import { EventCard } from "@/components/admin/EventCard";
-import { PlusCircle } from "lucide-react";
+import { PlusCircle, Calendar, Users, BarChart3, TrendingUp } from "lucide-react";
 import { useEvents, useDeleteEvent } from "@/hooks/useEvents";
+import { MetricsCard } from "@/components/admin/MetricsCard";
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const {
@@ -45,50 +46,99 @@ export default function AdminDashboard() {
     deleteEventMutation.mutate(eventId);
   };
   return <AdminLayout>
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold tracking-tight">Admin Dashboard</h1>
-          <Button onClick={handleCreateEvent}>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Novi događaj
-          </Button>
+      <div className="space-y-8">
+        {/* Header with gradient background */}
+        <div className="admin-gradient-bg rounded-lg p-6 shadow-2xl admin-glow-border">
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight text-white mb-2">
+                Admin Dashboard
+              </h1>
+              <p className="text-white/80">
+                Upravljanje događajima i senzorskim analizama
+              </p>
+            </div>
+            <Button onClick={handleCreateEvent} className="bg-white text-primary hover:bg-white/90 shadow-lg">
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Novi događaj
+            </Button>
+          </div>
+        </div>
+
+        {/* Metrics Cards */}
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          <MetricsCard
+            title="Ukupno događaja"
+            value={events.length}
+            icon={Calendar}
+            trend={{ value: 12, isPositive: true }}
+            description="Svi događaji u sustavu"
+          />
+          <MetricsCard
+            title="Aktivni događaji"
+            value={activeEvents.length}
+            icon={TrendingUp}
+            trend={{ value: 8, isPositive: true }}
+            description="Trenutno aktivni"
+          />
+          <MetricsCard
+            title="Završeni događaji"
+            value={pastEvents.length}
+            icon={BarChart3}
+            description="Kompletni događaji"
+          />
+          <MetricsCard
+            title="Evaluatori"
+            value="24"
+            icon={Users}
+            trend={{ value: -2, isPositive: false }}
+            description="Registrirani korisnici"
+          />
         </div>
 
         <div className="grid gap-6">
-          <Card>
+          <Card className="admin-metrics-card">
             <CardHeader>
-              <CardTitle>Aktivni događaji</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5 text-primary" />
+                Aktivni događaji
+              </CardTitle>
               <CardDescription>
                 Pregled trenutno aktivnih događaja i događaja u pripremi.
               </CardDescription>
             </CardHeader>
             <CardContent>
               {isLoading ? <div className="flex justify-center items-center p-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                  <span className="ml-2">Učitavanje...</span>
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                  <span className="ml-2 text-muted-foreground">Učitavanje...</span>
                 </div> : activeEvents.length > 0 ? <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
                   {activeEvents.map(event => <EventCard key={event.id} event={event} onEventUpdated={handleEventUpdated} onEventDeleted={() => handleDeleteEvent(event.id)} />)}
-                </div> : <div className="text-center p-4 text-muted-foreground">
-                  Nema aktivnih događaja.
+                </div> : <div className="text-center p-8 text-muted-foreground">
+                  <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>Nema aktivnih događaja.</p>
                 </div>}
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="admin-metrics-card">
             <CardHeader>
-              <CardTitle>Završeni događaji</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <BarChart3 className="h-5 w-5 text-primary" />
+                Završeni događaji
+              </CardTitle>
               <CardDescription>
                 Pregled završenih i arhiviranih događaja.
               </CardDescription>
             </CardHeader>
             <CardContent>
               {isLoading ? <div className="flex justify-center items-center p-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                  <span className="ml-2">Učitavanje...</span>
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                  <span className="ml-2 text-muted-foreground">Učitavanje...</span>
                 </div> : pastEvents.length > 0 ? <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
                   {pastEvents.map(event => <EventCard key={event.id} event={event} onEventUpdated={handleEventUpdated} onEventDeleted={() => handleDeleteEvent(event.id)} />)}
-                </div> : <div className="text-center p-4 text-muted-foreground">
-                  Nema završenih događaja.
+                </div> : <div className="text-center p-8 text-muted-foreground">
+                  <BarChart3 className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>Nema završenih događaja.</p>
                 </div>}
             </CardContent>
           </Card>

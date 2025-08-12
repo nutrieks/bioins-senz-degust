@@ -83,6 +83,30 @@
     --sidebar-border: 217.2 32.6% 17.5%;
     --sidebar-ring: 224.3 76.3% 48%;
   }
+
+  /* Dark admin theme variables */
+  .admin-dark {
+    --background: 217 19% 8%;
+    --foreground: 220 15% 95%;
+    --card: 217 19% 10%;
+    --card-foreground: 220 15% 95%;
+    --primary: 217 91% 60%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 217 19% 15%;
+    --secondary-foreground: 220 15% 85%;
+    --muted: 217 19% 12%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 221 83% 53%;
+    --accent-foreground: 210 40% 98%;
+    --border: 217 19% 18%;
+    --ring: 217 91% 60%;
+    
+    /* Admin specific gradients */
+    --admin-gradient-primary: linear-gradient(135deg, hsl(217 91% 60% / 0.8), hsl(221 83% 53% / 0.6));
+    --admin-gradient-card: linear-gradient(145deg, hsl(217 19% 12%), hsl(217 19% 8%));
+    --admin-shadow-glow: 0 0 40px hsl(217 91% 60% / 0.3);
+    --admin-shadow-card: 0 8px 32px hsl(217 19% 4% / 0.6);
+  }
 }
 
 @layer base {
@@ -208,4 +232,26 @@
 /* Custom hover effects */
 .hover-scale {
   @apply transition-transform duration-200 hover:scale-105;
+}
+
+/* Admin dark theme components */
+.admin-metrics-card {
+  background: var(--admin-gradient-card);
+  box-shadow: var(--admin-shadow-card);
+  border: 1px solid hsl(var(--border));
+  transition: all 0.3s ease;
+}
+
+.admin-metrics-card:hover {
+  box-shadow: var(--admin-shadow-glow), var(--admin-shadow-card);
+  transform: translateY(-2px);
+}
+
+.admin-glow-border {
+  border: 1px solid hsl(var(--primary) / 0.3);
+  box-shadow: 0 0 20px hsl(var(--primary) / 0.1);
+}
+
+.admin-gradient-bg {
+  background: var(--admin-gradient-primary);
 }
