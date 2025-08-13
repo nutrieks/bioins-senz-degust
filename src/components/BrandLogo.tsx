@@ -16,7 +16,7 @@ export function BrandLogo({ to = "/", size = "md", showText = false, className, 
     lg: "h-12",
   }[size];
 
-  const logoSrc = `/lovable-uploads/729f9e61-e558-4999-88ea-282eae236430.png`;
+  const logoSrc = `/logo.svg`;
 
   return (
     <Link
@@ -35,6 +35,7 @@ export function BrandLogo({ to = "/", size = "md", showText = false, className, 
         onError={(e) => {
           const img = e.currentTarget as HTMLImageElement;
           if (!img.dataset.fallback) {
+            console.warn("Logo failed to load, using fallback");
             img.src = "/logo-placeholder.svg";
             img.dataset.fallback = "1";
           }

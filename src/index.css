@@ -117,6 +117,11 @@
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
+    @apply bg-gradient-to-br from-slate-50 to-slate-200;
+  }
+
+  .dark body {
+    @apply bg-gradient-to-br from-[#020420] via-slate-900 to-slate-950;
   }
 }
 
