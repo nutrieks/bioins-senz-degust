@@ -19,7 +19,7 @@ export function SampleHeader({
 }: SampleHeaderProps) {
   return (
     <Card className="mb-8">
-      <CardHeader className="text-center bg-[#F1F0FB] rounded-t-lg">
+      <CardHeader className="text-center bg-muted/50 rounded-t-lg">
         <CardTitle className="text-2xl">
           {sampleCode}
         </CardTitle>

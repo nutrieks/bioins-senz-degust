@@ -18,7 +18,7 @@ export function EvaluatorLayout({ children }: EvaluatorLayoutProps) {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background text-foreground">
       <header className="admin-gradient-bg border-b border-border/20 backdrop-blur-sm p-4 flex justify-between items-center admin-glow-border">
         <div className="flex items-center gap-3">
           <BrandLogo to="/evaluator" size="sm" />
