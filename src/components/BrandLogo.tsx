@@ -16,7 +16,7 @@ export function BrandLogo({ to = "/", size = "md", showText = false, className, 
     lg: "h-12",
   }[size];
 
-  const logoSrc = `/logo.svg`;
+  const logoSrc = `/logo.png`;
 
   return (
     <Link
