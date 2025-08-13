@@ -55,11 +55,25 @@ export function LoginForm() {
     }
   };
   const isDisabled = loading || isSubmitting;
-  return <Card className="w-full max-w-md admin-metrics-card bg-card/95 backdrop-blur-sm border-border/50 animate-fade-in">
-      <CardHeader>
-        <CardTitle className="text-2xl text-center text-foreground">Senzorska analiza</CardTitle>
-        <CardDescription className="text-center text-muted-foreground">Prijavite se u platformu za senzorsku analizu</CardDescription>
-      </CardHeader>
+  return (
+    <div className="flex flex-col items-center gap-6">
+      {/* Direct logo display */}
+      <img 
+        src="/logo.png" 
+        alt="BIOINSTITUT Logo" 
+        className="h-16 w-auto" 
+        onError={(e) => {
+          console.error('Logo failed to load:', e);
+          e.currentTarget.style.display = 'none';
+        }}
+        onLoad={() => console.log('Logo loaded successfully')}
+      />
+
+      <Card className="w-full max-w-md admin-metrics-card bg-card/95 backdrop-blur-sm border-border/50 animate-fade-in">
+        <CardHeader>
+          <CardTitle className="text-2xl text-center text-foreground">Senzorska analiza</CardTitle>
+          <CardDescription className="text-center text-muted-foreground">Prijavite se u platformu za senzorsku analizu</CardDescription>
+        </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && <div className="bg-destructive/10 text-destructive p-3 rounded-md text-sm border border-destructive/20">
@@ -82,10 +96,12 @@ export function LoginForm() {
           </Button>
         </form>
       </CardContent>
-      <CardFooter className="flex justify-center">
-        <p className="text-sm text-muted-foreground">
-          © {new Date().getFullYear()} BIOINSTITUT - senzorska analiza
-        </p>
-      </CardFooter>
-    </Card>;
+        <CardFooter className="flex justify-center">
+          <p className="text-sm text-muted-foreground">
+            © {new Date().getFullYear()} BIOINSTITUT - senzorska analiza
+          </p>
+        </CardFooter>
+      </Card>
+    </div>
+  );
 }
