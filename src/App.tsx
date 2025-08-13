@@ -90,7 +90,9 @@ const App = () => (
       <TooltipProvider>
         <BrowserRouter>
           <AuthProvider>
-            <AppContent />
+            <div className="admin-dark">
+              <AppContent />
+            </div>
           </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>

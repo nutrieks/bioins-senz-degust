@@ -19,22 +19,22 @@ export function EvaluatorLayout({ children }: EvaluatorLayoutProps) {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="bg-gradient-to-r from-primary to-accent text-primary-foreground p-4 flex justify-between items-center">
+      <header className="admin-gradient-bg border-b border-border/20 backdrop-blur-sm p-4 flex justify-between items-center admin-glow-border">
         <div className="flex items-center gap-3">
           <BrandLogo to="/evaluator" size="sm" />
           <div className="leading-tight">
-            <h1 className="text-lg font-bold">Bioins senzorska analiza</h1>
-            <p className="text-sm/5 opacity-90">Platforma za senzorsku analizu</p>
+            <h1 className="text-lg font-bold text-foreground">Bioins senzorska analiza</h1>
+            <p className="text-sm opacity-80 text-muted-foreground">Platforma za senzorsku analizu</p>
           </div>
         </div>
         <div className="flex items-center gap-4">
           <div className="text-right">
-            <p className="text-sm font-medium">{user?.username}</p>
-            <p className="text-xs opacity-80">
+            <p className="text-sm font-medium text-foreground">{user?.username}</p>
+            <p className="text-xs opacity-80 text-muted-foreground">
               Ocjenjivačko mjesto: {user?.evaluatorPosition || "-"}
             </p>
           </div>
-          <Button variant="secondary" size="sm" onClick={handleLogout}>
+          <Button variant="secondary" size="sm" onClick={handleLogout} className="hover-scale">
             <LogOut className="h-4 w-4 mr-2" />
             Odjava
           </Button>
@@ -45,7 +45,7 @@ export function EvaluatorLayout({ children }: EvaluatorLayoutProps) {
         {children}
       </main>
 
-      <footer className="bg-muted py-4 text-center text-sm text-muted-foreground">
+      <footer className="bg-card/50 border-t border-border/20 py-4 text-center text-sm text-muted-foreground">
         <p>© {new Date().getFullYear()} Bioins senzorska analiza</p>
       </footer>
     </div>

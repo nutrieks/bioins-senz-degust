@@ -35,11 +35,12 @@ export default function Login() {
   // Ako nakon provjere i dalje nema korisnika, prikaži formu za prijavu.
   // Ako korisnik postoji, useEffect iznad će odraditi preusmjeravanje.
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/20 via-background to-accent/20 relative overflow-hidden">
-      {/* Enhanced background gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-tr from-primary/10 via-transparent to-accent/10 animate-pulse"></div>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-card to-muted relative overflow-hidden">
+      {/* Enhanced dark background gradient overlay */}
+      <div className="absolute inset-0 admin-gradient-bg opacity-20"></div>
+      <div className="absolute inset-0 bg-gradient-to-tr from-primary/5 via-transparent to-accent/5"></div>
       <div className="relative z-10 w-full max-w-md px-4 animate-fade-in">
-        <div className="flex justify-center mb-6">
+        <div className="flex justify-center mb-8">
           <BrandLogo to="/" size="lg" eager />
         </div>
         <LoginForm />

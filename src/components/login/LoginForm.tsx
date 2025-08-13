@@ -55,14 +55,14 @@ export function LoginForm() {
     }
   };
   const isDisabled = loading || isSubmitting;
-  return <Card className="w-full max-w-md backdrop-blur-md supports-[backdrop-filter]:bg-background/80 border border-primary/20 shadow-2xl shadow-primary/10 animate-fade-in hover:shadow-primary/20 transition-all duration-300">
+  return <Card className="w-full max-w-md admin-metrics-card bg-card/95 backdrop-blur-sm border-border/50 animate-fade-in">
       <CardHeader>
-        <CardTitle className="text-2xl text-center">Senzorska analiza</CardTitle>
-        <CardDescription className="text-center">Prijavite se u platformu za senzorsku analizu</CardDescription>
+        <CardTitle className="text-2xl text-center text-foreground">Senzorska analiza</CardTitle>
+        <CardDescription className="text-center text-muted-foreground">Prijavite se u platformu za senzorsku analizu</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
-          {error && <div className="bg-red-50 text-red-700 p-3 rounded-md text-sm">
+          {error && <div className="bg-destructive/10 text-destructive p-3 rounded-md text-sm border border-destructive/20">
               {error}
             </div>}
           <div className="space-y-2">
@@ -77,7 +77,7 @@ export function LoginForm() {
             </label>
             <Input id="password" type="password" value={password} onChange={e => setPassword(e.target.value)} required className="w-full" placeholder="Unesite lozinku" disabled={isDisabled} />
           </div>
-          <Button type="submit" variant="gradient" className="w-full" disabled={isDisabled}>
+          <Button type="submit" className="w-full hover-scale admin-gradient-bg" disabled={isDisabled}>
             {isSubmitting ? "Prijava u tijeku..." : "Prijava"}
           </Button>
         </form>
