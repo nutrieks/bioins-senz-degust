@@ -67,14 +67,14 @@ export function AdminLayout({
           </nav>
           <div className="flex flex-shrink-0 border-t p-4">
             <div className="flex items-center w-full">
-              <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center shadow-lg admin-glow-border mr-3">
+              <div className="h-8 w-8 rounded-full flex items-center justify-center shadow-lg admin-glow-border mr-3 bg-slate-50">
                 {user?.username?.[0]?.toUpperCase() || 'A'}
               </div>
               <div className="flex-1">
                 <p className="text-sm font-medium">{user?.username}</p>
                 <p className="text-xs text-muted-foreground">Administrator</p>
               </div>
-              <Button variant="outline" size="icon" onClick={handleLogout} className="hover:shadow-md transition-all duration-200">
+              <Button variant="outline" size="icon" onClick={handleLogout} className="hover:shadow-md transition-all duration-200 text-slate-50">
                 <LogOut className="h-4 w-4" />
               </Button>
             </div>
