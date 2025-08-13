@@ -23,7 +23,7 @@ export function EvaluatorLayout({ children }: EvaluatorLayoutProps) {
         <div className="flex items-center gap-3">
           <BrandLogo to="/evaluator" size="sm" />
           <div className="leading-tight">
-            <h1 className="text-lg font-bold text-foreground">Bioins senzorska analiza</h1>
+            <h1 className="text-lg font-bold text-foreground">BIOINSTITUT - senzorska analiza</h1>
             <p className="text-sm opacity-80 text-muted-foreground">Platforma za senzorsku analizu</p>
           </div>
         </div>
@@ -46,7 +46,7 @@ export function EvaluatorLayout({ children }: EvaluatorLayoutProps) {
       </main>
 
       <footer className="bg-card/50 border-t border-border/20 py-4 text-center text-sm text-muted-foreground">
-        <p>© {new Date().getFullYear()} Bioins senzorska analiza</p>
+        <p>© {new Date().getFullYear()} BIOINSTITUT - senzorska analiza</p>
       </footer>
     </div>
   );

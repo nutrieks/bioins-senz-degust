@@ -16,13 +16,7 @@ export function BrandLogo({ to = "/", size = "md", showText = false, className, 
     lg: "h-12",
   }[size];
 
-  // Add cache busting timestamp to force reload
-  const timestamp = Date.now();
-  const primarySrc = `/lovable-uploads/d8e53a38-4b85-41b6-9800-0deb141cf135.png?t=${timestamp}`;
-  const secondarySrc = `/lovable-uploads/75e4eee6-f4f7-4b1f-9b0d-cccf2d719a9a.png?t=${timestamp}`;
-  
-  // Debug logo loading
-  console.log("🎨 BrandLogo: Attempting to load logo from:", primarySrc);
+  const logoSrc = `/lovable-uploads/c8ad8c85-1869-4447-ba63-ccabcfcc2347.png`;
 
   return (
     <Link
@@ -34,31 +28,20 @@ export function BrandLogo({ to = "/", size = "md", showText = false, className, 
       )}
     >
       <img
-        src={primarySrc}
-        alt="Bioinstitut – senzorska analiza logo"
+        src={logoSrc}
+        alt="BIOINSTITUT logo - senzorska analiza"
         className={cn(sizeCls, "w-auto hover-scale drop-shadow")}
         loading={eager ? "eager" : "lazy"}
-        onLoad={() => {
-          console.log("✅ BrandLogo: Logo loaded successfully");
-        }}
         onError={(e) => {
           const img = e.currentTarget as HTMLImageElement;
-          console.log("❌ BrandLogo: Failed to load:", img.src);
           if (!img.dataset.fallback) {
-            console.log("🔄 BrandLogo: Trying secondary logo...");
-            img.src = secondarySrc;
-            img.dataset.fallback = "1";
-          } else if (img.dataset.fallback === "1") {
-            console.log("🔄 BrandLogo: Trying placeholder...");
             img.src = "/logo-placeholder.svg";
-            img.dataset.fallback = "2";
-          } else {
-            console.log("💔 BrandLogo: All sources failed");
+            img.dataset.fallback = "1";
           }
         }}
       />
       {showText && (
-        <span className="font-semibold text-base md:text-lg">Bioins senzorska analiza</span>
+        <span className="font-semibold text-base md:text-lg">BIOINSTITUT - senzorska analiza</span>
       )}
     </Link>
   );
