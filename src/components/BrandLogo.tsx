@@ -16,7 +16,7 @@ export function BrandLogo({ to = "/", size = "md", showText = false, className, 
     lg: "h-12",
   }[size];
 
-  const logoSrc = `/lovable-uploads/c8ad8c85-1869-4447-ba63-ccabcfcc2347.png`;
+  const logoSrc = `/lovable-uploads/729f9e61-e558-4999-88ea-282eae236430.png`;
 
   return (
     <Link

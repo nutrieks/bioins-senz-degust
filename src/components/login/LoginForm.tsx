@@ -84,7 +84,7 @@ export function LoginForm() {
       </CardContent>
       <CardFooter className="flex justify-center">
         <p className="text-sm text-muted-foreground">
-          © {new Date().getFullYear()} Bioins senzorska analiza
+          © {new Date().getFullYear()} BIOINSTITUT - senzorska analiza
         </p>
       </CardFooter>
     </Card>;
