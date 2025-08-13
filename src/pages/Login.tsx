@@ -41,7 +41,15 @@ export default function Login() {
       <div className="absolute inset-0 bg-gradient-to-tr from-primary/5 via-transparent to-accent/5"></div>
       <div className="relative z-10 w-full max-w-md px-4 animate-fade-in">
         <div className="flex flex-col items-center gap-6">
-          <BrandLogo to="/" size="lg" eager className="hover-scale" />
+          <img 
+            src="/logo.png" 
+            alt="BIOINSTITUT Logo" 
+            className="h-12 w-auto hover-scale drop-shadow" 
+            onError={(e) => {
+              console.warn("Logo failed to load on login page");
+              e.currentTarget.style.display = 'none';
+            }}
+          />
           <LoginForm />
         </div>
       </div>

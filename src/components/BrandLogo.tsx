@@ -33,12 +33,8 @@ export function BrandLogo({ to = "/", size = "md", showText = false, className, 
         className={cn(sizeCls, "w-auto hover-scale drop-shadow")}
         loading={eager ? "eager" : "lazy"}
         onError={(e) => {
-          const img = e.currentTarget as HTMLImageElement;
-          if (!img.dataset.fallback) {
-            console.warn("Logo failed to load, using fallback");
-            img.src = "/logo-placeholder.svg";
-            img.dataset.fallback = "1";
-          }
+          console.warn("Logo failed to load");
+          e.currentTarget.style.display = 'none';
         }}
       />
       {showText && (
