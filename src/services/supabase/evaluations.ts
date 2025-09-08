@@ -54,7 +54,7 @@ export async function getCompletedEvaluations(
 
 export async function submitEvaluation(evaluation: EvaluationSubmission): Promise<boolean> {
   try {
-    console.log('=== SUPABASE submitEvaluation (optimized) ===');
+    console.log('=== SUPABASE submitEvaluation (with duplicate protection) ===');
     console.log('Evaluation data to insert:', evaluation);
 
     // Validate required fields
@@ -103,6 +103,26 @@ export async function submitEvaluation(evaluation: EvaluationSubmission): Promis
       });
     }
 
+    // Check for existing evaluation first (duplicate prevention)
+    console.log('Checking for existing evaluation...');
+    const { data: existing, error: checkError } = await supabase
+      .from('evaluations')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('sample_id', sampleId)
+      .eq('event_id', eventId)
+      .maybeSingle();
+
+    if (checkError) {
+      console.error('Error checking for existing evaluation:', checkError);
+      throw new Error(`Database error during duplicate check: ${checkError.message}`);
+    }
+
+    if (existing) {
+      console.log('Duplicate evaluation detected:', existing.id);
+      throw new Error('Ovaj uzorak je već ocijenjen. Ne možete ga ocijeniti ponovno.');
+    }
+
     const insertData = {
       user_id: userId,
       sample_id: sampleId,
@@ -118,7 +138,7 @@ export async function submitEvaluation(evaluation: EvaluationSubmission): Promis
 
     console.log('Inserting validated data into evaluations table:', insertData);
 
-    // Simplified insert without complex retry logic - just one attempt
+    // Insert with detailed error handling
     const { data, error } = await supabase
       .from('evaluations')
       .insert(insertData)
@@ -134,6 +154,9 @@ export async function submitEvaluation(evaluation: EvaluationSubmission): Promis
 
       if (error.code === '42501') {
         throw new Error('Nemate dozvolu za spremanje ocjena. Molimo kontaktirajte administratora.');
+      } else if (error.code === '23505' && error.message.includes('unique_user_sample_evaluation')) {
+        // Handle unique constraint violation
+        throw new Error('Ovaj uzorak je već ocijenjen. Molimo osvježite stranicu.');
       } else {
         throw new Error(`Greška pri spremanju: ${error.message}`);
       }
