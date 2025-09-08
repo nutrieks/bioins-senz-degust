@@ -264,3 +264,47 @@
 .admin-gradient-bg {
   background: var(--admin-gradient-primary);
 }
+
+/* Print-safe styles for reports and randomization */
+@media print {
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  
+  .print-safe {
+    background-color: white !important;
+    color: black !important;
+  }
+  
+  .print-text-black {
+    color: black !important;
+  }
+  
+  .print-bg-white {
+    background-color: white !important;
+  }
+  
+  .print-border-black {
+    border-color: black !important;
+  }
+  
+  /* Force table elements to be readable */
+  table, th, td {
+    background-color: white !important;
+    color: black !important;
+    border-color: black !important;
+  }
+  
+  /* Ensure all text is black for print */
+  .print-container, .print-container * {
+    color: black !important;
+    background-color: white !important;
+  }
+  
+  /* Preserve cell backgrounds with proper contrast */
+  .print-container .table-cell-colored {
+    background-color: #f5f5f5 !important;
+    color: black !important;
+  }
+}

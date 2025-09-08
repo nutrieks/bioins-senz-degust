@@ -75,6 +75,8 @@ export function RandomizationTable({
           padding: 2px !important;
           font-size: 0.65rem !important;
           border: 1px solid #000 !important;
+          background-color: white !important;
+          color: black !important;
         }
         .print-hide {
           display: none !important;
@@ -259,20 +261,20 @@ export function RandomizationTable({
       
       <div 
         ref={tableRef} 
-        className="print-container bg-white p-4 rounded-lg overflow-x-auto"
+        className="print-container print-safe bg-white p-4 rounded-lg overflow-x-auto"
       >
-        <div className="text-center mb-4 font-bold text-lg">
+        <div className="text-center mb-4 font-bold text-lg print-text-black">
           Randomizacija: {selectedProductType.productName} ({selectedProductType.baseCode})
         </div>
         
         <Table className="w-full border-collapse border-2 border-black">
           <TableHeader>
             <TableRow>
-              <TableHead className="text-center py-2 px-2 text-sm font-bold border border-black" style={{width: "120px"}}>
+              <TableHead className="text-center py-2 px-2 text-sm font-bold border border-black print-text-black print-bg-white" style={{width: "120px"}}>
                 Dijeljenje / Mjesto
               </TableHead>
               {positions.map((position) => (
-                <TableHead key={position} className="text-center py-2 px-2 text-sm font-bold border border-black" style={{width: "70px"}}>
+                <TableHead key={position} className="text-center py-2 px-2 text-sm font-bold border border-black print-text-black print-bg-white" style={{width: "70px"}}>
                   Mjesto {position}
                 </TableHead>
               ))}
@@ -281,11 +283,11 @@ export function RandomizationTable({
           <TableBody>
             {roundNumbers.map((round) => (
               <TableRow key={round}>
-                <TableCell className="font-medium text-center py-2 px-2 text-sm border border-black">
+                <TableCell className="font-medium text-center py-2 px-2 text-sm border border-black print-text-black print-bg-white">
                   Dijeljenje {round}
                 </TableCell>
                 {positions.map((position) => (
-                  <TableCell key={position} className="text-center py-2 px-2 text-sm border border-black font-mono font-bold">
+                  <TableCell key={position} className="text-center py-2 px-2 text-sm border border-black font-mono font-bold print-text-black print-bg-white">
                     {randomizationTable?.table?.[position]?.[round] || 
                      randomizationTable?.[position]?.[round] || 
                      "-"}

@@ -44,7 +44,7 @@ export function JARTable({ data, attrData, productName }: JARTableProps) {
 
       <div 
         ref={tableRef}
-        className="bg-white p-8 rounded-lg shadow mb-6"
+        className="print-container print-safe bg-white p-8 rounded-lg shadow mb-6"
         style={{
           width: '100%',
           maxWidth: 1800,
@@ -54,30 +54,30 @@ export function JARTable({ data, attrData, productName }: JARTableProps) {
           justifyContent: 'center'
         }}
       >
-        <div className="mb-6 text-center">
-          <h4 className="font-bold text-2xl mb-2">Consumer's reaction to specific attribute</h4>
-          <p className="text-lg mb-1">Method: JAR scale</p>
-          <p className="text-lg mb-1">Sample: {productName}</p>
-          <p className="text-lg mb-4">Attribute: {attrData.nameEN}</p>
+        <div className="mb-6 text-center print-text-black">
+          <h4 className="font-bold text-2xl mb-2 print-text-black">Consumer's reaction to specific attribute</h4>
+          <p className="text-lg mb-1 print-text-black">Method: JAR scale</p>
+          <p className="text-lg mb-1 print-text-black">Sample: {productName}</p>
+          <p className="text-lg mb-4 print-text-black">Attribute: {attrData.nameEN}</p>
         </div>
 
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="text-xl font-bold">Brand</TableHead>
+              <TableHead className="text-xl font-bold print-text-black print-bg-white">Brand</TableHead>
               {JAR_LABELS.map((label) => (
-                <TableHead key={label} className="text-center text-xl font-bold">{label}</TableHead>
+                <TableHead key={label} className="text-center text-xl font-bold print-text-black print-bg-white">{label}</TableHead>
               ))}
             </TableRow>
           </TableHeader>
           <TableBody>
             {data.map((item) => (
               <TableRow key={item.id}>
-                <TableCell className="font-medium text-lg">{item.name}</TableCell>
+                <TableCell className="font-medium text-lg print-text-black print-bg-white">{item.name}</TableCell>
                 {JAR_LABELS.map((label, index) => (
                   <TableCell 
                     key={label} 
-                    className="text-center text-lg font-semibold" 
+                    className="text-center text-lg font-semibold print-text-black table-cell-colored" 
                     style={{ backgroundColor: `${JAR_COLORS[index]}40` }}
                   >
                     {item[label]}

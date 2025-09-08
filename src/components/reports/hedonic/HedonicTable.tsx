@@ -49,25 +49,25 @@ export function HedonicTable({ report, productName }: HedonicTableProps) {
 
         <div 
           ref={tableRef}
-          className="bg-white p-5 rounded-lg shadow"
+          className="print-container print-safe bg-white p-5 rounded-lg shadow"
         >
-          <div className="mb-3 text-center">
-            <h4 className="font-bold text-lg mb-1">Preference data: overall and attribute liking</h4>
-            <p className="text-sm">Method: 9-point hedonic scale</p>
-            <p className="text-sm">Sample: {productName}</p>
-            <p className="text-sm mb-3">Values: mean</p>
+          <div className="mb-3 text-center print-text-black">
+            <h4 className="font-bold text-lg mb-1 print-text-black">Preference data: overall and attribute liking</h4>
+            <p className="text-sm print-text-black">Method: 9-point hedonic scale</p>
+            <p className="text-sm print-text-black">Sample: {productName}</p>
+            <p className="text-sm mb-3 print-text-black">Values: mean</p>
           </div>
 
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="font-bold text-center">Brand</TableHead>
-                  <TableHead className="font-bold text-center">Appearance</TableHead>
-                  <TableHead className="font-bold text-center">Odour</TableHead>
-                  <TableHead className="font-bold text-center">Texture</TableHead>
-                  <TableHead className="font-bold text-center">Flavour</TableHead>
-                  <TableHead className="font-bold text-center">Overall liking</TableHead>
+                  <TableHead className="font-bold text-center print-text-black print-bg-white">Brand</TableHead>
+                  <TableHead className="font-bold text-center print-text-black print-bg-white">Appearance</TableHead>
+                  <TableHead className="font-bold text-center print-text-black print-bg-white">Odour</TableHead>
+                  <TableHead className="font-bold text-center print-text-black print-bg-white">Texture</TableHead>
+                  <TableHead className="font-bold text-center print-text-black print-bg-white">Flavour</TableHead>
+                  <TableHead className="font-bold text-center print-text-black print-bg-white">Overall liking</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -78,7 +78,7 @@ export function HedonicTable({ report, productName }: HedonicTableProps) {
                   return (
                     <TableRow key={id}>
                       <TableCell 
-                        className="font-medium"
+                        className="font-medium print-text-black table-cell-colored"
                         style={{ 
                           backgroundColor: bgColor,
                           color: textColor
@@ -87,31 +87,31 @@ export function HedonicTable({ report, productName }: HedonicTableProps) {
                         {formatSampleLabel(sample)}
                       </TableCell>
                       <TableCell 
-                        className="text-center"
+                        className="text-center print-text-black table-cell-colored"
                         style={{ backgroundColor: bgColor, color: textColor }}
                       >
                         {sample.appearance.mean.toFixed(1)}
                       </TableCell>
                       <TableCell 
-                        className="text-center"
+                        className="text-center print-text-black table-cell-colored"
                         style={{ backgroundColor: bgColor, color: textColor }}
                       >
                         {sample.odor.mean.toFixed(1)}
                       </TableCell>
                       <TableCell 
-                        className="text-center"
+                        className="text-center print-text-black table-cell-colored"
                         style={{ backgroundColor: bgColor, color: textColor }}
                       >
                         {sample.texture.mean.toFixed(1)}
                       </TableCell>
                       <TableCell 
-                        className="text-center"
+                        className="text-center print-text-black table-cell-colored"
                         style={{ backgroundColor: bgColor, color: textColor }}
                       >
                         {sample.flavor.mean.toFixed(1)}
                       </TableCell>
                       <TableCell 
-                        className="text-center"
+                        className="text-center print-text-black table-cell-colored"
                         style={{ backgroundColor: bgColor, color: textColor }}
                       >
                         {sample.overallLiking.mean.toFixed(1)}
