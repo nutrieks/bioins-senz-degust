@@ -44,7 +44,7 @@ export function JARTable({ data, attrData, productName }: JARTableProps) {
 
       <div 
         ref={tableRef}
-        className="print-container print-safe bg-white p-8 rounded-lg shadow mb-6"
+        className="print-container print-safe print-text-black bg-white p-8 rounded-lg shadow mb-6"
         style={{
           width: '100%',
           maxWidth: 1800,

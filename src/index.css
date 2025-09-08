@@ -265,6 +265,50 @@
   background: var(--admin-gradient-primary);
 }
 
+/* Print/export helpers (apply on screen, in PNG exports, and on print) */
+:root {
+  --print-bg: 0 0% 100%;
+  --print-fg: 0 0% 0%;
+}
+
+/* Force white background and pure black text for designated containers */
+.print-container,
+.print-safe {
+  background-color: hsl(var(--print-bg)) !important;
+  color: hsl(var(--print-fg)) !important;
+}
+
+/* Ensure all descendant text is black */
+.print-text-black,
+.print-text-black * {
+  color: hsl(var(--print-fg)) !important;
+}
+
+/* Utility to force white background */
+.print-bg-white {
+  background-color: hsl(var(--print-bg)) !important;
+}
+
+/* Force black borders */
+.print-border-black,
+.print-border-black * {
+  border-color: hsl(var(--print-fg)) !important;
+}
+
+/* Ensure table elements are readable inside print containers */
+.print-container table,
+.print-container th,
+.print-container td {
+  background-color: hsl(var(--print-bg)) !important;
+  color: hsl(var(--print-fg)) !important;
+  border-color: hsl(var(--print-fg)) !important;
+}
+
+/* Colored cells still have black text for contrast */
+.table-cell-colored {
+  color: hsl(var(--print-fg)) !important;
+}
+
 /* Print-safe styles for reports and randomization */
 @media print {
   * {

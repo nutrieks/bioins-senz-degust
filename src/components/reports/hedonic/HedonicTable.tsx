@@ -49,7 +49,7 @@ export function HedonicTable({ report, productName }: HedonicTableProps) {
 
         <div 
           ref={tableRef}
-          className="print-container print-safe bg-white p-5 rounded-lg shadow"
+          className="print-container print-safe print-text-black bg-white p-5 rounded-lg shadow"
         >
           <div className="mb-3 text-center print-text-black">
             <h4 className="font-bold text-lg mb-1 print-text-black">Preference data: overall and attribute liking</h4>

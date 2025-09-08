@@ -261,7 +261,7 @@ export function RandomizationTable({
       
       <div 
         ref={tableRef} 
-        className="print-container print-safe bg-white p-4 rounded-lg overflow-x-auto"
+        className="print-container print-safe print-text-black bg-white p-4 rounded-lg overflow-x-auto"
       >
         <div className="text-center mb-4 font-bold text-lg print-text-black">
           Randomizacija: {selectedProductType.productName} ({selectedProductType.baseCode})

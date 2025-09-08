@@ -94,7 +94,7 @@ export function RandomizationTableView({
       
       <div 
         ref={tableRef} 
-        className="bg-white p-5 rounded-lg print:text-black"
+        className="print-container print-safe print-text-black bg-white p-5 rounded-lg"
       >
         <h1 className="text-xl font-bold mb-4 text-center">
           {selectedProductType.productName} - {selectedProductType.baseCode}
