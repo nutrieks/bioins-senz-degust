@@ -59,7 +59,7 @@ export function JARChart({ data, attrData, productName }: JARChartProps) {
       </div>
       
       {/* Chart container for export and display */}
-      <div ref={chartRef} className="bg-white p-6">
+      <div ref={chartRef} className="print-container print-safe print-text-black bg-white p-6">
         <div 
           className="rounded-lg shadow mx-auto" 
           style={{ width: '100%', maxWidth: 900 }}
@@ -75,7 +75,7 @@ export function JARChart({ data, attrData, productName }: JARChartProps) {
           {/* Chart */}
           <div className="w-full">
             <ResponsiveContainer width="100%" height={500}>
-              <BarChart
+               <BarChart
                 data={data}
                 margin={{
                   top: 30,
@@ -86,19 +86,20 @@ export function JARChart({ data, attrData, productName }: JARChartProps) {
                 barCategoryGap="25%"
                 barGap={3}
               >
+                <CartesianGrid stroke="black" strokeDasharray="3 3" />
                 <XAxis 
                   dataKey="name"
                   angle={-45}
                   textAnchor="end"
                   height={60}
-                  tick={{ fontSize: 11 }}
+                  tick={{ fontSize: 11, fill: 'black' }}
                   interval={0}
                 />
                 <YAxis 
                   domain={[0, 12]}
                   ticks={[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]}
-                  tick={{ fontSize: 11 }}
-                  label={{ value: 'No. of votes', angle: -90, position: 'insideLeft', fontSize: 13 }}
+                  tick={{ fontSize: 11, fill: 'black' }}
+                  label={{ value: 'No. of votes', angle: -90, position: 'insideLeft', fontSize: 13, fill: 'black' }}
                 />
                 <Tooltip 
                   contentStyle={{ 
@@ -140,7 +141,7 @@ export function JARChart({ data, attrData, productName }: JARChartProps) {
                     width: 22,
                     height: 17,
                     backgroundColor: JAR_COLORS[index],
-                    border: "1px solid #aaa",
+                    border: "1px solid #000",
                     display: "inline-block"
                   }}
                 />

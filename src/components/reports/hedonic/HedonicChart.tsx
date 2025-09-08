@@ -46,7 +46,7 @@ export function HedonicChart({ report, productName }: HedonicChartProps) {
       </div>
       
       {/* Chart container for export and display */}
-      <div ref={chartRef} className="bg-white p-6">
+      <div ref={chartRef} className="print-container print-safe print-text-black bg-white p-6">
         <div 
           className="rounded-lg shadow mx-auto" 
           style={{ width: '100%', maxWidth: 900 }}
@@ -62,7 +62,7 @@ export function HedonicChart({ report, productName }: HedonicChartProps) {
           {/* Chart */}
           <div className="w-full">
             <ResponsiveContainer width="100%" height={500}>
-              <BarChart
+               <BarChart
                 data={chartData}
                 margin={{
                   top: 30,
@@ -73,16 +73,17 @@ export function HedonicChart({ report, productName }: HedonicChartProps) {
                 barCategoryGap="25%"
                 barGap={3}
               >
+                <CartesianGrid stroke="black" strokeDasharray="3 3" />
                 <XAxis 
                   dataKey="name"
-                  tick={{ fontSize: 11, fontWeight: 'bold' }}
+                  tick={{ fontSize: 11, fontWeight: 'bold', fill: 'black' }}
                   interval={0}
                 />
                 <YAxis 
                   domain={[0, 9]}
                   ticks={[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]}
-                  tick={{ fontSize: 11 }}
-                  label={{ value: 'Liking (points)', angle: -90, position: 'insideLeft', fontSize: 13 }}
+                  tick={{ fontSize: 11, fill: 'black' }}
+                  label={{ value: 'Liking (points)', angle: -90, position: 'insideLeft', fontSize: 13, fill: 'black' }}
                 />
                 <Tooltip 
                   contentStyle={{ 
@@ -134,7 +135,7 @@ export function HedonicChart({ report, productName }: HedonicChartProps) {
                       width: 22,
                       height: 17,
                       backgroundColor: color,
-                      border: "1px solid #aaa",
+                      border: "1px solid #000",
                       display: "inline-block"
                     }}
                   />
