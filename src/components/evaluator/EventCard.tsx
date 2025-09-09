@@ -10,120 +10,85 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Event } from '@/types';
 import { Calendar, ClipboardCheck, CheckCircle } from 'lucide-react';
-
 interface EventCardProps {
   event: Event;
 }
-
-export function EventCard({ event }: EventCardProps) {
+export function EventCard({
+  event
+}: EventCardProps) {
   const navigate = useNavigate();
-  const { user } = useAuth();
-
-  const { data: status, isLoading } = useQuery({
+  const {
+    user
+  } = useAuth();
+  const {
+    data: status,
+    isLoading
+  } = useQuery({
     queryKey: ['eventStatus', event.id, user?.id],
     queryFn: async () => {
-      if (!user?.id || !user.evaluatorPosition) return { total: 0, completed: 0 };
-
-      const [productTypes, completedEvaluations] = await Promise.all([
-        getProductTypes(event.id),
-        getCompletedEvaluations(event.id, user.id),
-      ]);
-
+      if (!user?.id || !user.evaluatorPosition) return {
+        total: 0,
+        completed: 0
+      };
+      const [productTypes, completedEvaluations] = await Promise.all([getProductTypes(event.id), getCompletedEvaluations(event.id, user.id)]);
       let totalSamples = 0;
       for (const pt of productTypes) {
         const randomization = await getRandomization(pt.id);
-        const evaluatorAssignment = randomization?.randomization_table?.evaluators?.find(
-          (e: any) => e.evaluatorPosition === user.evaluatorPosition
-        );
+        const evaluatorAssignment = randomization?.randomization_table?.evaluators?.find((e: any) => e.evaluatorPosition === user.evaluatorPosition);
         if (evaluatorAssignment?.sampleOrder) {
           totalSamples += evaluatorAssignment.sampleOrder.length;
         }
       }
-      return { total: totalSamples, completed: completedEvaluations.length };
+      return {
+        total: totalSamples,
+        completed: completedEvaluations.length
+      };
     },
-    enabled: !!user?.id,
+    enabled: !!user?.id
   });
-
   const isCompleted = status ? status.completed >= status.total && status.total > 0 : false;
   const hasProgress = status && status.completed > 0 && status.total > 0;
-  const progressPercentage = status && status.total > 0 ? (status.completed / status.total) * 100 : 0;
-
+  const progressPercentage = status && status.total > 0 ? status.completed / status.total * 100 : 0;
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('hr-HR', {
       day: '2-digit',
       month: '2-digit',
-      year: 'numeric',
+      year: 'numeric'
     });
   };
-
-  return (
-    <Card className="h-full transition-all duration-200 hover:shadow-md hover-scale">
+  return <Card className="h-full transition-all duration-200 hover:shadow-md hover-scale">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <Calendar className="h-4 w-4 text-muted-foreground" />
             <CardTitle className="text-lg">{formatDate(event.date)}</CardTitle>
           </div>
-          {isCompleted && (
-            <Badge variant="secondary">
+          {isCompleted && <Badge variant="secondary">
               <CheckCircle className="h-3 w-3 mr-1" />
               Završeno
-            </Badge>
-          )}
+            </Badge>}
         </div>
-        <CardDescription className="text-xs text-muted-foreground">
-          ID: {event.id}
-        </CardDescription>
+        
       </CardHeader>
       
       <CardContent className="pb-3">
-        {isLoading ? (
-          <p className="text-sm text-muted-foreground">Učitavanje statusa...</p>
-        ) : status ? (
-          <div className="space-y-2">
-            <div className="flex justify-between items-center">
-              <span className="text-sm font-medium">
-                Napredak: {status.completed} / {status.total}
-              </span>
-              <span className="text-xs text-muted-foreground">
-                {Math.round(progressPercentage)}%
-              </span>
-            </div>
-            {hasProgress && (
-              <Progress 
-                value={progressPercentage} 
-                className="h-2"
-              />
-            )}
-            {status.total === 0 && (
-              <p className="text-xs text-amber-600">Nema uzoraka za ocjenjivanje</p>
-            )}
-          </div>
-        ) : (
-          <p className="text-sm text-muted-foreground">Nema podataka o statusu</p>
-        )}
+        {isLoading ? <p className="text-sm text-muted-foreground">Učitavanje statusa...</p> : status ? <div className="space-y-2">
+            
+            {hasProgress && <Progress value={progressPercentage} className="h-2" />}
+            {status.total === 0 && <p className="text-xs text-amber-600">Nema uzoraka za ocjenjivanje</p>}
+          </div> : <p className="text-sm text-muted-foreground">Nema podataka o statusu</p>}
       </CardContent>
       
       <CardFooter>
-        <Button
-          className="w-full"
-          onClick={() => navigate(`/evaluator/evaluate/${event.id}`)}
-          disabled={isLoading || isCompleted || (status?.total === 0)}
-          variant={isCompleted ? "secondary" : "default"}
-        >
-          {isCompleted ? (
-            <>
+        <Button className="w-full" onClick={() => navigate(`/evaluator/evaluate/${event.id}`)} disabled={isLoading || isCompleted || status?.total === 0} variant={isCompleted ? "secondary" : "default"}>
+          {isCompleted ? <>
               <CheckCircle className="mr-2 h-4 w-4" />
               Završeno
-            </>
-          ) : (
-            <>
+            </> : <>
               <ClipboardCheck className="mr-2 h-4 w-4" />
               {hasProgress ? "Nastavi ocjenjivanje" : "Započni ocjenjivanje"}
-            </>
-          )}
+            </>}
         </Button>
       </CardFooter>
-    </Card>
-  );
+    </Card>;
 }
