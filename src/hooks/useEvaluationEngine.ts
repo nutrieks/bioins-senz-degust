@@ -172,24 +172,39 @@ export function useEvaluationEngine(eventId: string) {
       await submitEvaluationAPI(submissionData);
       console.log('🎯 EvaluationEngine: Evaluation submitted successfully');
 
+      // Provjeri treba li prikazati otkrivanje uzoraka PRIJE uklanjanja
+      console.log('🎯 EvaluationEngine: Checking if sample reveal needed');
+      const remainingTasksInSameProduct = tasks.filter((task, index) => 
+        index !== currentIndex && task.productType.id === currentTask.productType.id
+      );
+      const wasLastInProductType = remainingTasksInSameProduct.length === 0;
+      
+      console.log('🎯 EvaluationEngine: Product completion check', {
+        currentProduct: currentTask.productType.productName,
+        remainingInProduct: remainingTasksInSameProduct.length,
+        wasLastInProductType
+      });
+
       // Ukloni trenutni zadatak iz lista (lokalno upravljanje)
       console.log('🎯 EvaluationEngine: Removing completed task locally');
       const newTasks = tasks.filter((_, index) => index !== currentIndex);
       setTasks(newTasks);
 
-      // Provjeri treba li prikazati otkrivanje uzoraka
-      const nextTask = newTasks[currentIndex]; // currentIndex ostaje isti, lista je kraća
-      const wasLastInProductType = !nextTask || nextTask.productType.id !== currentTask.productType.id;
-      
-      if (wasLastInProductType && newTasks.length > 0) {
-        console.log('🎯 EvaluationEngine: Showing sample reveal');
+      if (wasLastInProductType) {
+        console.log('🎯 EvaluationEngine: Showing sample reveal for product:', currentTask.productType.productName);
+        
+        // Pokaži samo uzorke koje je ovaj evaluator ocjenjivao u ovom proizvodu
+        const evaluatedSamplesInProduct = tasks
+          .filter(task => task.productType.id === currentTask.productType.id)
+          .map(task => task.sample);
+        
         setSamplesForReveal({ 
           productName: currentTask.productType.productName,
-          samples: currentTask.productType.samples 
+          samples: evaluatedSamplesInProduct
         });
         setShowSampleReveal(true);
       } else {
-        console.log('🎯 EvaluationEngine: Continuing with next task or completing');
+        console.log('🎯 EvaluationEngine: Continuing with next task in same product');
         // currentIndex ostaje isti jer smo uklonili element iz lista
       }
 
