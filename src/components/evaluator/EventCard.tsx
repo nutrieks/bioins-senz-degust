@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Event } from '@/types';
-import { Calendar, ClipboardCheck, CheckCircle } from 'lucide-react';
+import { Calendar, ClipboardCheck, CheckCircle, Package } from 'lucide-react';
 interface EventCardProps {
   event: Event;
 }
@@ -28,20 +28,29 @@ export function EventCard({
     queryFn: async () => {
       if (!user?.id || !user.evaluatorPosition) return {
         total: 0,
-        completed: 0
+        completed: 0,
+        products: []
       };
       const [productTypes, completedEvaluations] = await Promise.all([getProductTypes(event.id), getCompletedEvaluations(event.id, user.id)]);
       let totalSamples = 0;
+      const products = [];
+      
       for (const pt of productTypes) {
         const randomization = await getRandomization(pt.id);
         const evaluatorAssignment = randomization?.randomization_table?.evaluators?.find((e: any) => e.evaluatorPosition === user.evaluatorPosition);
-        if (evaluatorAssignment?.sampleOrder) {
-          totalSamples += evaluatorAssignment.sampleOrder.length;
-        }
+        const sampleCount = evaluatorAssignment?.sampleOrder?.length || 0;
+        totalSamples += sampleCount;
+        
+        products.push({
+          name: pt.productName,
+          sampleCount
+        });
       }
+      
       return {
         total: totalSamples,
-        completed: completedEvaluations.length
+        completed: completedEvaluations.length,
+        products
       };
     },
     enabled: !!user?.id
@@ -70,6 +79,19 @@ export function EventCard({
         </div>
         
       </CardHeader>
+      
+      {!isLoading && status?.products && status.products.length > 0 && (
+        <div className="px-4 pb-2">
+          <div className="space-y-1">
+            {status.products.map((product, index) => (
+              <div key={index} className="flex items-center text-sm text-muted-foreground">
+                <Package className="h-3 w-3 mr-2" />
+                <span>{product.name} - {product.sampleCount} {product.sampleCount === 1 ? 'uzorak' : product.sampleCount >= 2 && product.sampleCount <= 4 ? 'uzorka' : 'uzoraka'}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       
       <CardContent className="pb-3">
         {isLoading ? <p className="text-sm text-muted-foreground">Učitavanje statusa...</p> : status ? <div className="space-y-2">
