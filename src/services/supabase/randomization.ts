@@ -1,7 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { getRandomization, createRandomizationRecord } from './randomization/core';
-import { generateLatinSquare, shuffleArray } from './randomization/generator';
+import { generateSamplePermutations, shuffleArray } from './randomization/generator';
 
 export { getRandomization };
 
@@ -103,8 +103,9 @@ async function createRandomizationTable(samples: any[]): Promise<any> {
     throw new Error(`Cannot randomize ${numSamples} samples with only ${numEvaluators} evaluators. Maximum samples: ${numEvaluators}`);
   }
 
-  // Generate Latin Square for randomization
-  const latinSquare = generateLatinSquare(numEvaluators);
+  // Generate sample permutations - svaki evaluator dobije svaki uzorak točno jednom
+  console.log('🎲 Generating sample permutations for balanced randomization');
+  const samplePermutations = generateSamplePermutations(numSamples, numEvaluators);
   
   // Create randomization table in DUAL format - both for evaluators AND table display
   const randomizationTable: any = {
@@ -127,35 +128,60 @@ async function createRandomizationTable(samples: any[]): Promise<any> {
     randomizationTable.table[position] = {};
   }
 
-  // Create evaluator assignments AND fill table structure
+  // Create evaluator assignments AND fill table structure using balanced permutations
   for (let evaluatorPos = 1; evaluatorPos <= numEvaluators; evaluatorPos++) {
     const evaluatorAssignment: any = {
       evaluatorPosition: evaluatorPos,
       sampleOrder: []
     };
 
-    // Use Latin Square to determine sample order for this evaluator
-    const baseRow = latinSquare[evaluatorPos - 1];
+    // Get the permutation for this evaluator (array of sample numbers 1,2,3...)
+    const sampleOrder = samplePermutations[evaluatorPos - 1];
     
-    // Create sample order for this evaluator AND fill table
-    for (let sampleIndex = 0; sampleIndex < numSamples; sampleIndex++) {
-      const latinSquareValue = baseRow[sampleIndex];
-      const actualSampleIndex = (latinSquareValue - 1) % numSamples;
-      const sample = randomizationTable.samples[actualSampleIndex];
+    console.log(`📋 Evaluator ${evaluatorPos}: sample order [${sampleOrder.join(', ')}]`);
+    
+    // Create sample order for this evaluator - svaki uzorak točno jednom
+    for (let orderIndex = 0; orderIndex < sampleOrder.length; orderIndex++) {
+      const sampleNumber = sampleOrder[orderIndex]; // 1, 2, 3, etc.
+      const sampleIndex = sampleNumber - 1; // Convert to 0-based index
+      const sample = randomizationTable.samples[sampleIndex];
+      
+      if (!sample) {
+        console.error(`❌ Sample not found for position ${sampleNumber}`);
+        throw new Error(`Sample not found for position ${sampleNumber}`);
+      }
       
       evaluatorAssignment.sampleOrder.push({
         sampleId: sample.id,
         blindCode: sample.blindCode,
-        presentationOrder: sampleIndex + 1,
+        presentationOrder: orderIndex + 1,
         brand: sample.brand
       });
 
       // Fill table format for frontend (position -> round -> blindCode)
-      const round = sampleIndex + 1;
+      const round = orderIndex + 1;
       randomizationTable.table[evaluatorPos][round] = sample.blindCode;
     }
 
+    // Validacija - provjeri da evaluator ima točno numSamples uzoraka i nema duplikata
+    const blindCodes = evaluatorAssignment.sampleOrder.map((s: any) => s.blindCode);
+    const uniqueBlindCodes = new Set(blindCodes);
+    
+    if (uniqueBlindCodes.size !== numSamples) {
+      console.error(`❌ Evaluator ${evaluatorPos} has duplicate blind codes:`, blindCodes);
+      throw new Error(`Evaluator ${evaluatorPos} has duplicate samples`);
+    }
+    
+    console.log(`✅ Evaluator ${evaluatorPos}: ${blindCodes.join(' → ')}`);
     randomizationTable.evaluators.push(evaluatorAssignment);
+  }
+  
+  console.log('🎯 Final validation: checking all evaluators have unique sample sequences');
+  // Dodatna validacija - isprintaj sve evaluatore za pregled
+  for (let i = 0; i < randomizationTable.evaluators.length; i++) {
+    const evaluator = randomizationTable.evaluators[i];
+    const sequence = evaluator.sampleOrder.map((s: any) => s.blindCode);
+    console.log(`Evaluator ${i + 1}: ${sequence.join(' → ')}`);
   }
 
   console.log('Randomization table created successfully with dual format');

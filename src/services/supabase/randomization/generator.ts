@@ -1,31 +1,52 @@
 
-export function generateLatinSquare(n: number): number[][] {
-  // Start with a base Latin square and then apply random permutations
-  const base: number[][] = [];
-  // Random offset to vary starting symbol
-  const offset = Math.floor(Math.random() * n);
-
-  for (let i = 0; i < n; i++) {
-    const row: number[] = [];
-    for (let j = 0; j < n; j++) {
-      row.push(((i + j + offset) % n) + 1);
-    }
-    base.push(row);
+// Generira permutacije uzoraka za evaluatore - svaki evaluator dobije svaki uzorak točno jednom
+export function generateSamplePermutations(numSamples: number, numEvaluators: number): number[][] {
+  console.log(`🎲 Generating sample permutations: ${numSamples} samples for ${numEvaluators} evaluators`);
+  
+  if (numSamples > numEvaluators) {
+    throw new Error(`Cannot assign ${numSamples} samples to only ${numEvaluators} evaluators`);
   }
 
-  // Apply random row and column permutations
-  const rowOrder = shuffleArray(Array.from({ length: n }, (_, i) => i));
-  const colOrder = shuffleArray(Array.from({ length: n }, (_, i) => i));
+  const permutations: number[][] = [];
+  
+  // Generiraj različite permutacije uzoraka za svaki evaluator
+  for (let evaluator = 0; evaluator < numEvaluators; evaluator++) {
+    // Kreiraj osnovni niz uzoraka (1, 2, 3, ... numSamples)
+    const sampleOrder = Array.from({ length: numSamples }, (_, i) => i + 1);
+    
+    // Randomno promiješaj redoslijed za ovog evaluatora
+    const shuffled = shuffleArray(sampleOrder);
+    permutations.push(shuffled);
+    
+    console.log(`📋 Evaluator ${evaluator + 1}: ${shuffled.join(', ')}`);
+  }
+  
+  // Validacija - provjeri da svaki evaluator ima svaki uzorak točno jednom
+  for (let i = 0; i < permutations.length; i++) {
+    const evaluatorSamples = permutations[i];
+    const uniqueSamples = new Set(evaluatorSamples);
+    
+    if (uniqueSamples.size !== numSamples) {
+      console.error(`❌ Evaluator ${i + 1} has duplicates:`, evaluatorSamples);
+      throw new Error(`Evaluator ${i + 1} has duplicate samples`);
+    }
+    
+    // Provjeri da su svi uzorci između 1 i numSamples
+    for (const sample of evaluatorSamples) {
+      if (sample < 1 || sample > numSamples) {
+        throw new Error(`Invalid sample number ${sample} for evaluator ${i + 1}`);
+      }
+    }
+  }
+  
+  console.log('✅ All permutations generated successfully - no duplicates');
+  return permutations;
+}
 
-  const rowPermuted = rowOrder.map((r) => base[r]);
-  const colPermuted = rowPermuted.map((row) => colOrder.map((c) => row[c]));
-
-  // Apply a random symbol permutation (1..n)
-  const symbolOrder = shuffleArray(Array.from({ length: n }, (_, i) => i + 1));
-  const symbolMap = new Map(symbolOrder.map((newSym, idx) => [idx + 1, newSym]));
-
-  const randomized = colPermuted.map((row) => row.map((val) => symbolMap.get(val)!));
-  return randomized;
+// Zastarjela funkcija - zadržana za kompatibilnost
+export function generateLatinSquare(n: number): number[][] {
+  console.warn('⚠️ generateLatinSquare is deprecated, use generateSamplePermutations instead');
+  return generateSamplePermutations(n, n);
 }
 
 
