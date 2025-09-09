@@ -102,33 +102,14 @@ export function useEvaluationEngine(eventId: string) {
     refetchOnWindowFocus: true, // Refresh when window gets focus (user comes back)
   });
 
-  // 2. Inicijalizacija stanja s recovery logikom
+  // 2. Inicijalizacija stanja - uvijek počni od 0
   useEffect(() => {
     if (data) {
-      console.log('🎯 EvaluationEngine: Setting tasks');
+      console.log('🎯 EvaluationEngine: Setting tasks and resetting to start');
       setTasks(data.tasks);
-      
-      // Try to recover progress from session storage
-      const storedProgress = sessionStorage.getItem('evaluation_progress');
-      if (storedProgress) {
-        try {
-          const progress = JSON.parse(storedProgress);
-          if (progress.eventId === eventId && 
-              progress.currentIndex < data.tasks.length &&
-              Date.now() - progress.timestamp < 1000 * 60 * 30) { // 30 min limit
-            console.log('🔄 Recovering progress from session:', progress.currentIndex);
-            setCurrentIndex(progress.currentIndex);
-            return;
-          }
-        } catch (e) {
-          console.warn('Failed to parse stored progress:', e);
-        }
-      }
-      
-      // Default to start
-      setCurrentIndex(0);
+      setCurrentIndex(0); // Uvijek počni od početka s aktualnim zadacima
     }
-  }, [data, eventId]);
+  }, [data]);
 
   // Browser navigation guard
   useEffect(() => {
@@ -191,21 +172,16 @@ export function useEvaluationEngine(eventId: string) {
       await submitEvaluationAPI(submissionData);
       console.log('🎯 EvaluationEngine: Evaluation submitted successfully');
 
-      // Refresh evaluation data to get updated completed evaluations
-      await queryClient.invalidateQueries({ 
-        queryKey: ['evaluationEngine', eventId, user.id] 
-      });
-
-      // Store current progress in session storage for recovery
-      sessionStorage.setItem('evaluation_progress', JSON.stringify({
-        eventId,
-        currentIndex: currentIndex + 1,
-        timestamp: Date.now()
-      }));
+      // Ukloni trenutni zadatak iz lista (lokalno upravljanje)
+      console.log('🎯 EvaluationEngine: Removing completed task locally');
+      const newTasks = tasks.filter((_, index) => index !== currentIndex);
+      setTasks(newTasks);
 
       // Provjeri treba li prikazati otkrivanje uzoraka
-      const nextTask = tasks[currentIndex + 1];
-      if (!nextTask || nextTask.productType.id !== currentTask.productType.id) {
+      const nextTask = newTasks[currentIndex]; // currentIndex ostaje isti, lista je kraća
+      const wasLastInProductType = !nextTask || nextTask.productType.id !== currentTask.productType.id;
+      
+      if (wasLastInProductType && newTasks.length > 0) {
         console.log('🎯 EvaluationEngine: Showing sample reveal');
         setSamplesForReveal({ 
           productName: currentTask.productType.productName,
@@ -213,8 +189,8 @@ export function useEvaluationEngine(eventId: string) {
         });
         setShowSampleReveal(true);
       } else {
-        console.log('🎯 EvaluationEngine: Moving to next task');
-        setCurrentIndex(prev => prev + 1);
+        console.log('🎯 EvaluationEngine: Continuing with next task or completing');
+        // currentIndex ostaje isti jer smo uklonili element iz lista
       }
 
       // Success toast
@@ -236,8 +212,9 @@ export function useEvaluationEngine(eventId: string) {
           variant: "default"
         });
         
-        // Refresh data to get current state
-        await refetch();
+        // Samo ukloni trenutni zadatak jer je već ocinjen
+        const newTasks = tasks.filter((_, index) => index !== currentIndex);
+        setTasks(newTasks);
       } else {
         toast({
           title: "Greška pri spremanju",
@@ -256,11 +233,11 @@ export function useEvaluationEngine(eventId: string) {
   const continueAfterReveal = useCallback(() => {
     console.log('🎯 EvaluationEngine: Continuing after reveal');
     setShowSampleReveal(false);
-    setCurrentIndex(prev => prev + 1);
+    // currentIndex ostaje isti jer je lista zadataka već skraćena
   }, []);
 
   const currentTask = tasks[currentIndex];
-  const isComplete = !isLoading && !!data && currentIndex >= tasks.length;
+  const isComplete = !isLoading && !!data && tasks.length === 0;
 
   console.log('🎯 EvaluationEngine: Current state', {
     isLoading,
