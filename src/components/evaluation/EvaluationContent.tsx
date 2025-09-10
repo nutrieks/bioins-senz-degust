@@ -53,11 +53,6 @@ export function EvaluationContent({ eventId }: EvaluationContentProps) {
     );
   }
 
-  if (isComplete) {
-    clearGuard(); // Clear navigation guard when complete
-    return <CompletionMessage onReturn={() => navigate("/evaluator")} />;
-  }
-
   if (showSampleReveal && samplesForReveal.productName) {
     return (
       <SampleRevealScreen
@@ -66,6 +61,11 @@ export function EvaluationContent({ eventId }: EvaluationContentProps) {
         onContinue={continueAfterReveal}
       />
     );
+  }
+
+  if (isComplete) {
+    clearGuard(); // Clear navigation guard when complete
+    return <CompletionMessage onReturn={() => navigate("/evaluator")} />;
   }
 
   if (currentTask && user) {

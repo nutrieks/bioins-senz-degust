@@ -79,7 +79,7 @@ const HedonicRadioItem = React.forwardRef<
         </RadioGroupPrimitive.Indicator>
       </RadioGroupPrimitive.Item>
       {label && (
-        <span className="text-sm font-medium flex-1">{label}</span>
+        <span className="text-base md:text-lg font-medium flex-1">{label}</span>
       )}
     </label>
   )
@@ -124,7 +124,7 @@ const JARRadioItem = React.forwardRef<
           <Circle className="h-3.5 w-3.5 fill-current text-current" />
         </RadioGroupPrimitive.Indicator>
       </RadioGroupPrimitive.Item>
-      <span className="text-sm font-medium flex-1">{label}</span>
+      <span className="text-base md:text-lg font-medium flex-1">{label}</span>
     </label>
   )
 })

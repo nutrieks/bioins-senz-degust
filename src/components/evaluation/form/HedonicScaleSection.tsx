@@ -48,7 +48,7 @@ export function HedonicScaleSection({
             name="hedonic.appearance"
             render={({ field }) => (
               <FormItem className={errors.hedonic?.appearance ? "pb-2 border-l-2 pl-3 border-destructive" : ""}>
-                <FormLabel className="text-lg font-semibold">Izgled:</FormLabel>
+                <FormLabel className="text-lg md:text-xl font-semibold">Izgled:</FormLabel>
                 <div className="mt-2">
                   <HedonicRadioGroup 
                     onValueChange={field.onChange}
@@ -73,7 +73,7 @@ export function HedonicScaleSection({
             name="hedonic.odor"
             render={({ field }) => (
               <FormItem className={errors.hedonic?.odor ? "pb-2 border-l-2 pl-3 border-destructive" : ""}>
-                <FormLabel className="text-lg font-semibold">Miris:</FormLabel>
+                <FormLabel className="text-lg md:text-xl font-semibold">Miris:</FormLabel>
                 <div className="mt-2">
                   <HedonicRadioGroup 
                     onValueChange={field.onChange}
@@ -98,7 +98,7 @@ export function HedonicScaleSection({
             name="hedonic.texture"
             render={({ field }) => (
               <FormItem className={errors.hedonic?.texture ? "pb-2 border-l-2 pl-3 border-destructive" : ""}>
-                <FormLabel className="text-lg font-semibold">Tekstura:</FormLabel>
+                <FormLabel className="text-lg md:text-xl font-semibold">Tekstura:</FormLabel>
                 <div className="mt-2">
                   <HedonicRadioGroup 
                     onValueChange={field.onChange}
@@ -123,7 +123,7 @@ export function HedonicScaleSection({
             name="hedonic.flavor"
             render={({ field }) => (
               <FormItem className={errors.hedonic?.flavor ? "pb-2 border-l-2 pl-3 border-destructive" : ""}>
-                <FormLabel className="text-lg font-semibold">Okus:</FormLabel>
+                <FormLabel className="text-lg md:text-xl font-semibold">Okus:</FormLabel>
                 <div className="mt-2">
                   <HedonicRadioGroup 
                     onValueChange={field.onChange}
@@ -150,7 +150,7 @@ export function HedonicScaleSection({
             name="hedonic.overallLiking"
             render={({ field }) => (
               <FormItem className={errors.hedonic?.overallLiking ? "pb-2 border-l-2 pl-3 border-destructive" : ""}>
-                <FormLabel className="text-lg font-semibold">Ukupni dojam:</FormLabel>
+                <FormLabel className="text-lg md:text-xl font-semibold">Ukupni dojam:</FormLabel>
                 <div className="mt-2">
                   <HedonicRadioGroup 
                     onValueChange={field.onChange}

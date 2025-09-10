@@ -54,7 +54,7 @@ export function JARScaleSection({
                 name={`jar.${attribute.id}`}
                 render={({ field }) => (
                   <FormItem className={errors.jar?.[attribute.id] ? "pb-2 border-l-2 pl-3 border-destructive" : ""}>
-                    <FormLabel className="text-lg font-semibold">{attribute.nameHR}:</FormLabel>
+                    <FormLabel className="text-lg md:text-xl font-semibold">{attribute.nameHR}:</FormLabel>
                     <div className="mt-2">
                       <JARRadioGroup 
                         onValueChange={(value) => {
