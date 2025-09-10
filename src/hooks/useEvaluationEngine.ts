@@ -24,6 +24,8 @@ export function useEvaluationEngine(eventId: string) {
   const [showSampleReveal, setShowSampleReveal] = useState(false);
   const [samplesForReveal, setSamplesForReveal] = useState<{productName: string, samples: Sample[]}>({ productName: '', samples: [] });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // Spremi originalnu randomizaciju za svaki tip proizvoda za ovog evaluatora
+  const [originalEvaluatorAssignments, setOriginalEvaluatorAssignments] = useState<{[productTypeId: string]: Sample[]}>({});
   const submissionTracker = useRef(new Set<string>());
 
   // 1. Centralizirano dohvaćanje SVIH podataka na početku
@@ -53,6 +55,7 @@ export function useEvaluationEngine(eventId: string) {
 
       const completedSampleIds = new Set(completedEvaluations.map(e => e.sampleId));
       const evaluationTasks: EvaluationTask[] = [];
+      const evaluatorAssignments: {[productTypeId: string]: Sample[]} = {};
 
       // Sortiraj tipove proizvoda po definiranom redoslijedu
       productTypes.sort((a, b) => a.displayOrder - b.displayOrder);
@@ -77,25 +80,38 @@ export function useEvaluationEngine(eventId: string) {
 
         const jarAttributes = await getJARAttributes(pt.id);
 
+        // Spremi sve uzorke koje ovaj evaluator treba ocijeniti za ovaj tip proizvoda
+        const allSamplesForEvaluator: Sample[] = [];
+
         for (const sampleOrder of evaluatorAssignment.sampleOrder) {
           const sampleDetails = pt.samples.find(s => s.id === sampleOrder.sampleId);
-          if (sampleDetails && !completedSampleIds.has(sampleDetails.id)) {
-            evaluationTasks.push({
-              sample: { ...sampleDetails, blindCode: sampleOrder.blindCode },
-              productType: pt,
-              jarAttributes: jarAttributes,
-            });
-            console.log('🎯 EvaluationEngine: Added task', { 
-              sampleId: sampleDetails.id, 
-              blindCode: sampleOrder.blindCode,
-              productType: pt.productName 
-            });
+          if (sampleDetails) {
+            const sampleWithBlindCode = { ...sampleDetails, blindCode: sampleOrder.blindCode };
+            allSamplesForEvaluator.push(sampleWithBlindCode);
+            
+            // Dodaj u zadatke samo ako nije već ocijenjen
+            if (!completedSampleIds.has(sampleDetails.id)) {
+              evaluationTasks.push({
+                sample: sampleWithBlindCode,
+                productType: pt,
+                jarAttributes: jarAttributes,
+              });
+              console.log('🎯 EvaluationEngine: Added task', { 
+                sampleId: sampleDetails.id, 
+                blindCode: sampleOrder.blindCode,
+                productType: pt.productName 
+              });
+            }
           }
         }
+        
+        // Spremi sve uzorke za ovaj tip proizvoda (uključujući već ocijenjene)
+        evaluatorAssignments[pt.id] = allSamplesForEvaluator;
+        console.log('🎯 EvaluationEngine: Stored', allSamplesForEvaluator.length, 'samples for product', pt.productName);
       }
 
       console.log('🎯 EvaluationEngine: Created', evaluationTasks.length, 'evaluation tasks');
-      return { tasks: evaluationTasks, allProductTypes: productTypes };
+      return { tasks: evaluationTasks, allProductTypes: productTypes, evaluatorAssignments };
     },
     enabled: !!eventId && !!user?.id,
     staleTime: 1000 * 30, // Refresh data every 30 seconds to catch updates
@@ -107,6 +123,7 @@ export function useEvaluationEngine(eventId: string) {
     if (data) {
       console.log('🎯 EvaluationEngine: Setting tasks and resetting to start');
       setTasks(data.tasks);
+      setOriginalEvaluatorAssignments(data.evaluatorAssignments);
       setCurrentIndex(0); // Uvijek počni od početka s aktualnim zadacima
     }
   }, [data]);
@@ -193,14 +210,14 @@ export function useEvaluationEngine(eventId: string) {
       if (wasLastInProductType) {
         console.log('🎯 EvaluationEngine: Showing sample reveal for product:', currentTask.productType.productName);
         
-        // Pokaži samo uzorke koje je ovaj evaluator ocjenjivao u ovom proizvodu
-        const evaluatedSamplesInProduct = tasks
-          .filter(task => task.productType.id === currentTask.productType.id)
-          .map(task => task.sample);
+        // Koristi originalnu randomizaciju da pokažeš SVI uzorci koje je evaluator trebao ocijeniti
+        const allSamplesForProduct = originalEvaluatorAssignments[currentTask.productType.id] || [];
+        
+        console.log('🎯 EvaluationEngine: Showing', allSamplesForProduct.length, 'samples for reveal');
         
         setSamplesForReveal({ 
           productName: currentTask.productType.productName,
-          samples: evaluatedSamplesInProduct
+          samples: allSamplesForProduct
         });
         setShowSampleReveal(true);
       } else {
