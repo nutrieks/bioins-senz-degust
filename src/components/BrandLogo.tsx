@@ -1,6 +1,5 @@
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
-
 interface BrandLogoProps {
   to?: string;
   size?: "sm" | "md" | "lg";
@@ -8,38 +7,24 @@ interface BrandLogoProps {
   className?: string;
   eager?: boolean;
 }
-
-export function BrandLogo({ to = "/", size = "md", showText = false, className, eager = false }: BrandLogoProps) {
+export function BrandLogo({
+  to = "/",
+  size = "md",
+  showText = false,
+  className,
+  eager = false
+}: BrandLogoProps) {
   const sizeCls = {
     sm: "h-8",
     md: "h-10",
-    lg: "h-12",
+    lg: "h-12"
   }[size];
-
   const logoSrc = `/logo.png`;
-
-  return (
-    <Link
-      to={to}
-      aria-label="Početna"
-      className={cn(
-        "flex items-center gap-3 focus:outline-none focus:ring-2 focus:ring-primary/50 rounded-md",
-        className
-      )}
-    >
-      <img
-        src={logoSrc}
-        alt="BIOINSTITUT logo - senzorska analiza"
-        className={cn(sizeCls, "w-auto hover-scale drop-shadow")}
-        loading={eager ? "eager" : "lazy"}
-        onError={(e) => {
-          console.warn("Logo failed to load");
-          e.currentTarget.style.display = 'none';
-        }}
-      />
-      {showText && (
-        <span className="font-semibold text-base md:text-lg">BIOINSTITUT - senzorska analiza</span>
-      )}
-    </Link>
-  );
+  return <Link to={to} aria-label="Početna" className={cn("flex items-center gap-3 focus:outline-none focus:ring-2 focus:ring-primary/50 rounded-md", className)}>
+      <img src={logoSrc} alt="BIOINSTITUT logo - senzorska analiza" className={cn(sizeCls, "w-auto hover-scale drop-shadow")} loading={eager ? "eager" : "lazy"} onError={e => {
+      console.warn("Logo failed to load");
+      e.currentTarget.style.display = 'none';
+    }} />
+      {showText && <span className="font-semibold text-base md:text-lg text-slate-50">BIOINSTITUT - senzorska analiza</span>}
+    </Link>;
 }
