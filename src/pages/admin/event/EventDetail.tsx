@@ -91,7 +91,7 @@ export default function EventDetail() {
       <div className="container mx-auto py-10">
         <EventDetailHeader />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="w-full mb-6">
           <EventInfoCard
             event={eventWithProductTypes}
             isUpdating={updateStatusMutation.isPending}

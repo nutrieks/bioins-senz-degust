@@ -91,7 +91,7 @@ export function EvaluationProgressTracker({ eventId }: EvaluationProgressTracker
 
             <div className="space-y-4">
               <h3 className="font-medium">Napredak po evaluatoru</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {evaluationStatus
                   .sort((a, b) => a.position - b.position)
                   .map((user) => {
