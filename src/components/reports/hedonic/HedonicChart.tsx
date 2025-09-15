@@ -31,6 +31,10 @@ export function HedonicChart({ report, productName }: HedonicChartProps) {
   };
 
   const { chartData, sortedSamples, colorMap, textColorMap, attributes } = processChartData(report);
+  
+  // Calculate dynamic spacing based on number of samples
+  const sampleCount = sortedSamples.length;
+  const barCategoryGap = sampleCount <= 5 ? "15%" : sampleCount <= 8 ? "8%" : "3%";
 
   return (
     <div className="mb-6">
@@ -70,10 +74,10 @@ export function HedonicChart({ report, productName }: HedonicChartProps) {
                   left: 80,
                   bottom: 80
                 }}
-                barCategoryGap="10%"
+                barCategoryGap={barCategoryGap}
                 barGap={0}
               >
-                <CartesianGrid stroke="black" strokeDasharray="3 3" />
+                <CartesianGrid stroke="black" />
                 <XAxis 
                   dataKey="name"
                   tick={{ fontSize: 11, fontWeight: 'bold', fill: 'black' }}
@@ -111,7 +115,14 @@ export function HedonicChart({ report, productName }: HedonicChartProps) {
                       <LabelList 
                         dataKey={sampleKey} 
                         position="top"
-                        style={{ fill: 'black', fontSize: 16, fontWeight: 'bold' }} 
+                        style={{ 
+                          fill: 'black', 
+                          fontSize: 20, 
+                          fontWeight: 'bold',
+                          stroke: 'white',
+                          strokeWidth: 2,
+                          paintOrder: 'stroke fill'
+                        }} 
                         formatter={(value: number) => value > 0 ? value.toFixed(1) : ''}
                       />
                     </Bar>

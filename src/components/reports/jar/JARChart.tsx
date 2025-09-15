@@ -34,6 +34,10 @@ export function JARChart({ data, attrData, productName }: JARChartProps) {
   console.log("JAR Chart received attrData:", attrData);
   console.log("JAR Chart productName:", productName);
 
+  // Calculate dynamic spacing based on number of samples
+  const sampleCount = data.length;
+  const barCategoryGap = sampleCount <= 5 ? "15%" : sampleCount <= 8 ? "8%" : "3%";
+
   // Check if we have valid data
   if (!data || data.length === 0) {
     return (
@@ -83,10 +87,10 @@ export function JARChart({ data, attrData, productName }: JARChartProps) {
                   left: 80,
                   bottom: 80
                 }}
-                barCategoryGap="10%"
+                barCategoryGap={barCategoryGap}
                 barGap={0}
               >
-                <CartesianGrid stroke="black" strokeDasharray="3 3" />
+                <CartesianGrid stroke="black" />
                 <XAxis 
                   dataKey="name"
                   angle={-45}
@@ -122,7 +126,14 @@ export function JARChart({ data, attrData, productName }: JARChartProps) {
                     <LabelList 
                       dataKey={label} 
                       position="top"
-                      style={{ fill: 'black', fontSize: 16, fontWeight: 'bold' }} 
+                      style={{ 
+                        fill: 'black', 
+                        fontSize: 20, 
+                        fontWeight: 'bold',
+                        stroke: 'white',
+                        strokeWidth: 2,
+                        paintOrder: 'stroke fill'
+                      }} 
                       formatter={(value: number) => value > 0 ? value : ''}
                     />
                   </Bar>
