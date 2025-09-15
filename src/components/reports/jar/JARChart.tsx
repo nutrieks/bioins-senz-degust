@@ -19,7 +19,7 @@ export function JARChart({ data, attrData, productName }: JARChartProps) {
     if (chartRef.current) {
       const dataUrl = await toPng(chartRef.current, {
         backgroundColor: "#fff",
-        pixelRatio: 3,
+        pixelRatio: 6,
         cacheBust: true,
         style: { fontFamily: "inherit" },
       });
@@ -122,7 +122,7 @@ export function JARChart({ data, attrData, productName }: JARChartProps) {
                     <LabelList 
                       dataKey={label} 
                       position="top"
-                      style={{ fill: 'black', fontSize: 10, fontWeight: 'bold' }} 
+                      style={{ fill: 'black', fontSize: 16, fontWeight: 'bold' }} 
                       formatter={(value: number) => value > 0 ? value : ''}
                     />
                   </Bar>

@@ -62,63 +62,112 @@ export function HedonicTable({ report, productName }: HedonicTableProps) {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="font-bold text-center print-text-black print-bg-white">Brand</TableHead>
-                  <TableHead className="font-bold text-center print-text-black print-bg-white">Appearance</TableHead>
-                  <TableHead className="font-bold text-center print-text-black print-bg-white">Odour</TableHead>
-                  <TableHead className="font-bold text-center print-text-black print-bg-white">Texture</TableHead>
-                  <TableHead className="font-bold text-center print-text-black print-bg-white">Flavour</TableHead>
-                  <TableHead className="font-bold text-center print-text-black print-bg-white">Overall liking</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {sortedSamples.map(([id, sample]) => {
-                  const bgColor = colorMap.get(id) || "";
-                  const textColor = textColorMap.get(id) || "#000";
-                  
-                  return (
-                    <TableRow key={id}>
-                      <TableCell 
-                        className="font-medium print-text-black table-cell-colored"
+                  <TableHead className="font-bold text-center print-text-black print-bg-white">Attribute</TableHead>
+                  {sortedSamples.map(([id, sample]) => {
+                    const bgColor = colorMap.get(id) || "";
+                    const textColor = textColorMap.get(id) || "#000";
+                    
+                    return (
+                      <TableHead 
+                        key={id}
+                        className="font-bold text-center print-text-black table-cell-colored"
                         style={{ 
                           backgroundColor: bgColor,
                           color: textColor
                         }}
                       >
                         {formatSampleLabel(sample)}
-                      </TableCell>
+                      </TableHead>
+                    );
+                  })}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                <TableRow>
+                  <TableCell className="font-medium print-text-black print-bg-white">Appearance</TableCell>
+                  {sortedSamples.map(([id, sample]) => {
+                    const bgColor = colorMap.get(id) || "";
+                    const textColor = textColorMap.get(id) || "#000";
+                    
+                    return (
                       <TableCell 
+                        key={id}
                         className="text-center print-text-black table-cell-colored"
                         style={{ backgroundColor: bgColor, color: textColor }}
                       >
                         {sample.appearance.mean.toFixed(1)}
                       </TableCell>
+                    );
+                  })}
+                </TableRow>
+                <TableRow>
+                  <TableCell className="font-medium print-text-black print-bg-white">Odour</TableCell>
+                  {sortedSamples.map(([id, sample]) => {
+                    const bgColor = colorMap.get(id) || "";
+                    const textColor = textColorMap.get(id) || "#000";
+                    
+                    return (
                       <TableCell 
+                        key={id}
                         className="text-center print-text-black table-cell-colored"
                         style={{ backgroundColor: bgColor, color: textColor }}
                       >
                         {sample.odor.mean.toFixed(1)}
                       </TableCell>
+                    );
+                  })}
+                </TableRow>
+                <TableRow>
+                  <TableCell className="font-medium print-text-black print-bg-white">Texture</TableCell>
+                  {sortedSamples.map(([id, sample]) => {
+                    const bgColor = colorMap.get(id) || "";
+                    const textColor = textColorMap.get(id) || "#000";
+                    
+                    return (
                       <TableCell 
+                        key={id}
                         className="text-center print-text-black table-cell-colored"
                         style={{ backgroundColor: bgColor, color: textColor }}
                       >
                         {sample.texture.mean.toFixed(1)}
                       </TableCell>
+                    );
+                  })}
+                </TableRow>
+                <TableRow>
+                  <TableCell className="font-medium print-text-black print-bg-white">Flavour</TableCell>
+                  {sortedSamples.map(([id, sample]) => {
+                    const bgColor = colorMap.get(id) || "";
+                    const textColor = textColorMap.get(id) || "#000";
+                    
+                    return (
                       <TableCell 
+                        key={id}
                         className="text-center print-text-black table-cell-colored"
                         style={{ backgroundColor: bgColor, color: textColor }}
                       >
                         {sample.flavor.mean.toFixed(1)}
                       </TableCell>
+                    );
+                  })}
+                </TableRow>
+                <TableRow>
+                  <TableCell className="font-medium print-text-black print-bg-white">Overall liking</TableCell>
+                  {sortedSamples.map(([id, sample]) => {
+                    const bgColor = colorMap.get(id) || "";
+                    const textColor = textColorMap.get(id) || "#000";
+                    
+                    return (
                       <TableCell 
+                        key={id}
                         className="text-center print-text-black table-cell-colored"
                         style={{ backgroundColor: bgColor, color: textColor }}
                       >
                         {sample.overallLiking.mean.toFixed(1)}
                       </TableCell>
-                    </TableRow>
-                  );
-                })}
+                    );
+                  })}
+                </TableRow>
               </TableBody>
             </Table>
           </div>

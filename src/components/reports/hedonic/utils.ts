@@ -17,6 +17,22 @@ export const RETAILER_COLORS: Record<RetailerCode, string> = {
   [RetailerCode.VI]: "rgb(124, 252, 0)"   // Vindija: Lawn Green
 };
 
+// Predefined distinct green shades for brands (marke) to ensure clear differentiation
+const DISTINCT_GREEN_SHADES = [
+  "rgb(34, 139, 34)",   // Forest Green - first brand gets this specific color
+  "rgb(0, 255, 0)",     // Lime Green - bright and distinct
+  "rgb(50, 205, 50)",   // Lime Green variant
+  "rgb(144, 238, 144)", // Light Green 
+  "rgb(0, 128, 0)",     // Green
+  "rgb(124, 252, 0)",   // Lawn Green
+  "rgb(127, 255, 0)",   // Chart Reuse
+  "rgb(173, 255, 47)",  // Green Yellow
+  "rgb(154, 205, 50)",  // Yellow Green
+  "rgb(107, 142, 35)",  // Olive Drab
+  "rgb(85, 107, 47)",   // Dark Olive Green
+  "rgb(46, 125, 50)"    // Medium Sea Green
+];
+
 // Function to determine if a color is dark and needs white text
 export const isDarkColor = (color: string): boolean => {
   const match = color.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
@@ -26,16 +42,23 @@ export const isDarkColor = (color: string): boolean => {
   return luminance < 0.5;
 };
 
-// Helper function to get a lighter or darker variant of a color for duplicate retailers
+// Helper function to get distinct color variants for brands (marke)
 export const getColorVariant = (color: string, index: number): string => {
-  const match = color.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
-  if (!match) return color;
-  let [, r, g, b] = match.map(Number);
-  const factor = 0.7 + (index * 0.15);
-  r = Math.min(255, Math.round(r * factor));
-  g = Math.min(255, Math.round(g * factor));
-  b = Math.min(255, Math.round(b * factor));
-  return `rgb(${r}, ${g}, ${b})`;
+  // For retailers (non-green colors), use the original dimming approach
+  if (!color.includes("0, 255, 0") && !color.includes("34, 139, 34") && !color.includes("50, 205, 50") && 
+      !color.includes("144, 238, 144") && !color.includes("0, 128, 0") && !color.includes("124, 252, 0")) {
+    const match = color.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+    if (!match) return color;
+    let [, r, g, b] = match.map(Number);
+    const factor = 0.7 + (index * 0.15);
+    r = Math.min(255, Math.round(r * factor));
+    g = Math.min(255, Math.round(g * factor));
+    b = Math.min(255, Math.round(b * factor));
+    return `rgb(${r}, ${g}, ${b})`;
+  }
+  
+  // For green colors (brands), use predefined distinct shades
+  return DISTINCT_GREEN_SHADES[index % DISTINCT_GREEN_SHADES.length] || color;
 };
 
 // Format label for display - showing retailer code + brand
