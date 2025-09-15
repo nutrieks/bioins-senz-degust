@@ -49,7 +49,7 @@ export function HedonicChart({ report, productName }: HedonicChartProps) {
       <div ref={chartRef} className="print-container print-safe print-text-black bg-white p-6">
         <div 
           className="rounded-lg shadow mx-auto" 
-          style={{ width: '100%', maxWidth: 1200 }}
+          style={{ width: '100%', maxWidth: 1400 }}
         >
           {/* Title and description */}
           <div className="mb-4 text-center">
@@ -61,7 +61,7 @@ export function HedonicChart({ report, productName }: HedonicChartProps) {
           
           {/* Chart */}
           <div className="w-full">
-            <ResponsiveContainer width="100%" height={600}>
+            <ResponsiveContainer width="100%" height={800}>
                <BarChart
                 data={chartData}
                 margin={{
@@ -70,8 +70,8 @@ export function HedonicChart({ report, productName }: HedonicChartProps) {
                   left: 80,
                   bottom: 80
                 }}
-                barCategoryGap="35%"
-                barGap={8}
+                barCategoryGap="10%"
+                barGap={0}
               >
                 <CartesianGrid stroke="black" strokeDasharray="3 3" />
                 <XAxis 
