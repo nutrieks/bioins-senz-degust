@@ -62,7 +62,7 @@ export function JARChart({ data, attrData, productName }: JARChartProps) {
       <div ref={chartRef} className="print-container print-safe print-text-black bg-white p-6">
         <div 
           className="rounded-lg shadow mx-auto" 
-          style={{ width: '100%', maxWidth: 900 }}
+          style={{ width: '100%', maxWidth: 1200 }}
         >
           {/* Title and description */}
           <div className="mb-4 text-center">
@@ -74,17 +74,17 @@ export function JARChart({ data, attrData, productName }: JARChartProps) {
           
           {/* Chart */}
           <div className="w-full">
-            <ResponsiveContainer width="100%" height={500}>
+            <ResponsiveContainer width="100%" height={600}>
                <BarChart
                 data={data}
                 margin={{
-                  top: 30,
-                  right: 30,
-                  left: 60,
-                  bottom: 60
+                  top: 40,
+                  right: 50,
+                  left: 80,
+                  bottom: 80
                 }}
-                barCategoryGap="25%"
-                barGap={3}
+                barCategoryGap="35%"
+                barGap={8}
               >
                 <CartesianGrid stroke="black" strokeDasharray="3 3" />
                 <XAxis 
