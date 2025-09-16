@@ -50,29 +50,29 @@ export function HedonicChart({ report, productName }: HedonicChartProps) {
       </div>
       
       {/* Chart container for export and display */}
-      <div ref={chartRef} className="print-container print-safe print-text-black bg-white p-6">
+      <div ref={chartRef} className="print-container print-safe print-text-black bg-white p-1">
         <div 
           className="rounded-lg shadow mx-auto" 
-          style={{ width: '100%', maxWidth: 1400 }}
+          style={{ width: '1920px', height: '1080px' }}
         >
           {/* Title and description */}
-          <div className="mb-4 text-center">
-            <h4 className="font-bold text-lg mb-1">Preference data: overall and attribute liking</h4>
-            <p className="text-sm">Method: 9-point hedonic scale</p>
-            <p className="text-sm">Sample: {productName}</p>
-            <p className="text-sm mb-1">Plot of: mean</p>
+          <div className="mb-1 text-center">
+            <h4 className="font-bold text-base mb-0.5">Preference data: overall and attribute liking</h4>
+            <p className="text-xs">Method: 9-point hedonic scale</p>
+            <p className="text-xs">Sample: {productName}</p>
+            <p className="text-xs mb-0.5">Plot of: mean</p>
           </div>
           
           {/* Chart */}
           <div className="w-full">
-            <ResponsiveContainer width="100%" height={800}>
+            <ResponsiveContainer width="100%" height={950}>
                <BarChart
                 data={chartData}
                 margin={{
-                  top: 40,
-                  right: 50,
-                  left: 80,
-                  bottom: 80
+                  top: 20,
+                  right: 30,
+                  left: 60,
+                  bottom: 40
                 }}
                 barCategoryGap={barCategoryGap}
                 barGap={0}
@@ -133,7 +133,7 @@ export function HedonicChart({ report, productName }: HedonicChartProps) {
           </div>
           
           {/* Custom Legend */}
-          <div className="flex flex-wrap justify-center items-center gap-3 mt-4" style={{ fontSize: 15 }}>
+          <div className="flex flex-wrap justify-center items-center gap-2 mt-1" style={{ fontSize: 14 }}>
             {sortedSamples.map(([id, sample]) => {
               const color = colorMap.get(id) || "#000";
               const textColor = textColorMap.get(id) || "#000";

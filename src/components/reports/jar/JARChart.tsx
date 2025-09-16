@@ -63,29 +63,29 @@ export function JARChart({ data, attrData, productName }: JARChartProps) {
       </div>
       
       {/* Chart container for export and display */}
-      <div ref={chartRef} className="print-container print-safe print-text-black bg-white p-6">
+      <div ref={chartRef} className="print-container print-safe print-text-black bg-white p-1">
         <div 
           className="rounded-lg shadow mx-auto" 
-          style={{ width: '100%', maxWidth: 1400 }}
+          style={{ width: '1920px', height: '1080px' }}
         >
           {/* Title and description */}
-          <div className="mb-4 text-center">
-            <h4 className="font-bold text-lg mb-1">Consumer's reaction to specific attribute</h4>
-            <p className="text-sm">Method: JAR scale</p>
-            <p className="text-sm">Sample: {productName}</p>
-            <p className="text-sm mb-1">Attribute: {attrData.nameEN}</p>
+          <div className="mb-1 text-center">
+            <h4 className="font-bold text-base mb-0.5">Consumer's reaction to specific attribute</h4>
+            <p className="text-xs">Method: JAR scale</p>
+            <p className="text-xs">Sample: {productName}</p>
+            <p className="text-xs mb-0.5">Attribute: {attrData.nameEN}</p>
           </div>
           
           {/* Chart */}
           <div className="w-full">
-            <ResponsiveContainer width="100%" height={800}>
+            <ResponsiveContainer width="100%" height={950}>
                <BarChart
                 data={data}
                 margin={{
-                  top: 40,
-                  right: 50,
-                  left: 80,
-                  bottom: 80
+                  top: 20,
+                  right: 30,
+                  left: 60,
+                  bottom: 40
                 }}
                 barCategoryGap={barCategoryGap}
                 barGap={0}
@@ -143,7 +143,7 @@ export function JARChart({ data, attrData, productName }: JARChartProps) {
           </div>
           
           {/* Custom Legend */}
-          <div className="flex flex-wrap justify-center items-center gap-3 mt-4" style={{ fontSize: 15 }}>
+          <div className="flex flex-wrap justify-center items-center gap-2 mt-1" style={{ fontSize: 14 }}>
             {JAR_LABELS.map((label, index) => (
               <span className="flex items-center gap-2" key={label}>
                 <span
