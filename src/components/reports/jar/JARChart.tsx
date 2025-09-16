@@ -19,7 +19,8 @@ export function JARChart({ data, attrData, productName }: JARChartProps) {
     if (chartRef.current) {
       const dataUrl = await toPng(chartRef.current, {
         backgroundColor: "#fff",
-        pixelRatio: 6,
+        width: 1920,
+        height: 1080,
         cacheBust: true,
         style: { fontFamily: "inherit" },
       });
@@ -63,10 +64,10 @@ export function JARChart({ data, attrData, productName }: JARChartProps) {
       </div>
       
       {/* Chart container for export and display */}
-      <div ref={chartRef} className="print-container print-safe print-text-black bg-white p-1">
+      <div ref={chartRef} className="print-container print-safe print-text-black bg-white p-2">
         <div 
-          className="rounded-lg shadow mx-auto" 
-          style={{ width: '1920px', height: '1080px' }}
+          className="rounded-lg shadow mx-auto w-full" 
+          style={{ aspectRatio: '16/9', minHeight: '400px', maxWidth: '100%' }}
         >
           {/* Title and description */}
           <div className="mb-1 text-center">
@@ -77,8 +78,8 @@ export function JARChart({ data, attrData, productName }: JARChartProps) {
           </div>
           
           {/* Chart */}
-          <div className="w-full">
-            <ResponsiveContainer width="100%" height={950}>
+          <div className="w-full" style={{ height: 'calc(100% - 80px)' }}>
+            <ResponsiveContainer width="100%" height="100%">
                <BarChart
                 data={data}
                 margin={{
