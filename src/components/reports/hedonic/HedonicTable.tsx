@@ -22,7 +22,7 @@ export function HedonicTable({ report, productName }: HedonicTableProps) {
     if (tableRef.current) {
       const dataUrl = await toPng(tableRef.current, {
         backgroundColor: "#fff",
-        pixelRatio: 4,
+        pixelRatio: 6,
         cacheBust: true,
         style: { fontFamily: "inherit" }
       });
@@ -49,20 +49,20 @@ export function HedonicTable({ report, productName }: HedonicTableProps) {
 
         <div 
           ref={tableRef}
-          className="print-container print-safe print-text-black bg-white p-5 rounded-lg shadow"
+          className="print-container print-safe bg-white p-5 rounded-lg shadow"
         >
-          <div className="mb-3 text-center print-text-black">
-            <h4 className="font-bold text-lg mb-1 print-text-black">Preference data: overall and attribute liking</h4>
-            <p className="text-sm print-text-black">Method: 9-point hedonic scale</p>
-            <p className="text-sm print-text-black">Sample: {productName}</p>
-            <p className="text-sm mb-3 print-text-black">Values: mean</p>
+          <div className="mb-3 text-center text-black">
+            <h4 className="font-bold text-lg mb-1 text-black">Preference data: overall and attribute liking</h4>
+            <p className="text-sm text-black">Method: 9-point hedonic scale</p>
+            <p className="text-sm text-black">Sample: {productName}</p>
+            <p className="text-sm mb-3 text-black">Values: mean</p>
           </div>
 
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="font-bold text-center print-text-black print-bg-white">Attribute</TableHead>
+                  <TableHead className="font-bold text-center text-black bg-white">Attribute</TableHead>
                   {sortedSamples.map(([id, sample]) => {
                     const bgColor = colorMap.get(id) || "";
                     const textColor = textColorMap.get(id) || "#000";
@@ -72,9 +72,9 @@ export function HedonicTable({ report, productName }: HedonicTableProps) {
                         key={id}
                         className="font-bold text-center"
                         style={{ 
-                          backgroundColor: bgColor + ' !important',
-                          color: textColor + ' !important',
-                          backgroundImage: 'none !important'
+                          backgroundColor: bgColor,
+                          color: textColor,
+                          backgroundImage: 'none'
                         }}
                       >
                         {formatSampleLabel(sample)}
@@ -85,7 +85,7 @@ export function HedonicTable({ report, productName }: HedonicTableProps) {
               </TableHeader>
               <TableBody>
                 <TableRow>
-                  <TableCell className="font-medium print-text-black print-bg-white">Appearance</TableCell>
+                  <TableCell className="font-medium text-black bg-white">Appearance</TableCell>
                   {sortedSamples.map(([id, sample]) => {
                     const bgColor = colorMap.get(id) || "";
                     const textColor = textColorMap.get(id) || "#000";
@@ -95,9 +95,9 @@ export function HedonicTable({ report, productName }: HedonicTableProps) {
                         key={id}
                         className="text-center"
                         style={{ 
-                          backgroundColor: bgColor + ' !important', 
-                          color: textColor + ' !important',
-                          backgroundImage: 'none !important'
+                          backgroundColor: bgColor, 
+                          color: textColor,
+                          backgroundImage: 'none'
                         }}
                       >
                         {sample.appearance.mean.toFixed(1)}
@@ -106,7 +106,7 @@ export function HedonicTable({ report, productName }: HedonicTableProps) {
                   })}
                 </TableRow>
                 <TableRow>
-                  <TableCell className="font-medium print-text-black print-bg-white">Odour</TableCell>
+                  <TableCell className="font-medium text-black bg-white">Odour</TableCell>
                   {sortedSamples.map(([id, sample]) => {
                     const bgColor = colorMap.get(id) || "";
                     const textColor = textColorMap.get(id) || "#000";
@@ -116,9 +116,9 @@ export function HedonicTable({ report, productName }: HedonicTableProps) {
                         key={id}
                         className="text-center"
                         style={{ 
-                          backgroundColor: bgColor + ' !important', 
-                          color: textColor + ' !important',
-                          backgroundImage: 'none !important'
+                          backgroundColor: bgColor, 
+                          color: textColor,
+                          backgroundImage: 'none'
                         }}
                       >
                         {sample.odor.mean.toFixed(1)}
@@ -127,7 +127,7 @@ export function HedonicTable({ report, productName }: HedonicTableProps) {
                   })}
                 </TableRow>
                 <TableRow>
-                  <TableCell className="font-medium print-text-black print-bg-white">Texture</TableCell>
+                  <TableCell className="font-medium text-black bg-white">Texture</TableCell>
                   {sortedSamples.map(([id, sample]) => {
                     const bgColor = colorMap.get(id) || "";
                     const textColor = textColorMap.get(id) || "#000";
@@ -137,9 +137,9 @@ export function HedonicTable({ report, productName }: HedonicTableProps) {
                         key={id}
                         className="text-center"
                         style={{ 
-                          backgroundColor: bgColor + ' !important', 
-                          color: textColor + ' !important',
-                          backgroundImage: 'none !important'
+                          backgroundColor: bgColor, 
+                          color: textColor,
+                          backgroundImage: 'none'
                         }}
                       >
                         {sample.texture.mean.toFixed(1)}
@@ -148,7 +148,7 @@ export function HedonicTable({ report, productName }: HedonicTableProps) {
                   })}
                 </TableRow>
                 <TableRow>
-                  <TableCell className="font-medium print-text-black print-bg-white">Flavour</TableCell>
+                  <TableCell className="font-medium text-black bg-white">Flavour</TableCell>
                   {sortedSamples.map(([id, sample]) => {
                     const bgColor = colorMap.get(id) || "";
                     const textColor = textColorMap.get(id) || "#000";
@@ -158,9 +158,9 @@ export function HedonicTable({ report, productName }: HedonicTableProps) {
                         key={id}
                         className="text-center"
                         style={{ 
-                          backgroundColor: bgColor + ' !important', 
-                          color: textColor + ' !important',
-                          backgroundImage: 'none !important'
+                          backgroundColor: bgColor, 
+                          color: textColor,
+                          backgroundImage: 'none'
                         }}
                       >
                         {sample.flavor.mean.toFixed(1)}
@@ -169,7 +169,7 @@ export function HedonicTable({ report, productName }: HedonicTableProps) {
                   })}
                 </TableRow>
                 <TableRow>
-                  <TableCell className="font-medium print-text-black print-bg-white">Overall liking</TableCell>
+                  <TableCell className="font-medium text-black bg-white">Overall liking</TableCell>
                   {sortedSamples.map(([id, sample]) => {
                     const bgColor = colorMap.get(id) || "";
                     const textColor = textColorMap.get(id) || "#000";
@@ -179,9 +179,9 @@ export function HedonicTable({ report, productName }: HedonicTableProps) {
                         key={id}
                         className="text-center"
                         style={{ 
-                          backgroundColor: bgColor + ' !important', 
-                          color: textColor + ' !important',
-                          backgroundImage: 'none !important'
+                          backgroundColor: bgColor, 
+                          color: textColor,
+                          backgroundImage: 'none'
                         }}
                       >
                         {sample.overallLiking.mean.toFixed(1)}

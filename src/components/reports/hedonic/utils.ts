@@ -19,12 +19,12 @@ export const RETAILER_COLORS: Record<RetailerCode, string> = {
 
 // Predefined distinct green shades for brands (marke) to ensure clear differentiation
 const DISTINCT_GREEN_SHADES = [
-  "rgb(34, 139, 34)",   // Forest Green - first brand gets this specific color
-  "rgb(0, 255, 0)",     // Lime Green - bright and distinct
-  "rgb(50, 205, 50)",   // Lime Green variant
-  "rgb(144, 238, 144)", // Light Green 
-  "rgb(0, 128, 0)",     // Green
-  "rgb(124, 252, 0)",   // Lawn Green
+  "rgb(34, 139, 34)",   // Forest Green - dark green
+  "rgb(124, 252, 0)",   // Lawn Green - bright contrast
+  "rgb(0, 128, 0)",     // Green - medium
+  "rgb(50, 205, 50)",   // Lime Green - bright
+  "rgb(144, 238, 144)", // Light Green - light
+  "rgb(0, 255, 0)",     // Pure Lime - very bright
   "rgb(127, 255, 0)",   // Chart Reuse
   "rgb(173, 255, 47)",  // Green Yellow
   "rgb(154, 205, 50)",  // Yellow Green

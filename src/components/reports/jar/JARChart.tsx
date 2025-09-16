@@ -126,14 +126,14 @@ export function JARChart({ data, attrData, productName }: JARChartProps) {
                     <LabelList 
                       dataKey={label} 
                       position="top"
-                      style={{ 
-                        fill: 'black', 
-                        fontSize: 20, 
-                        fontWeight: 'bold',
-                        stroke: 'white',
-                        strokeWidth: 2,
-                        paintOrder: 'stroke fill'
-                      }} 
+                        style={{ 
+                          fill: 'black', 
+                          fontSize: 18, 
+                          fontWeight: 'bold',
+                          stroke: 'white',
+                          strokeWidth: 2,
+                          paintOrder: 'stroke fill'
+                        }}
                       formatter={(value: number) => value > 0 ? value : ''}
                     />
                   </Bar>

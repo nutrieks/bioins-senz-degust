@@ -117,12 +117,12 @@ export function HedonicChart({ report, productName }: HedonicChartProps) {
                         position="top"
                         style={{ 
                           fill: 'black', 
-                          fontSize: 20, 
+                          fontSize: 18, 
                           fontWeight: 'bold',
                           stroke: 'white',
                           strokeWidth: 2,
                           paintOrder: 'stroke fill'
-                        }} 
+                        }}
                         formatter={(value: number) => value > 0 ? value.toFixed(1) : ''}
                       />
                     </Bar>
