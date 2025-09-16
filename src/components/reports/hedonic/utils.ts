@@ -122,11 +122,14 @@ export const processChartData = (report: HedonicReport) => {
     [RetailerCode.ME]: 0
   };
   
+  const BRAND_CODES: RetailerCode[] = [RetailerCode.M, RetailerCode.DU, RetailerCode.ME, RetailerCode.MI, RetailerCode.TO, RetailerCode.VI];
+  
   sortedSamples.forEach(([id, sample]) => {
     const retailerCode = sample.retailerCode;
     const count = retailerCounts[retailerCode]++;
     const baseColor = RETAILER_COLORS[retailerCode];
-    const color = count === 0 ? baseColor : getColorVariant(baseColor, count);
+    const isBrand = BRAND_CODES.includes(retailerCode);
+    const color = isBrand ? getColorVariant(baseColor, count) : (count === 0 ? baseColor : getColorVariant(baseColor, count));
     colorMap.set(id, color);
     textColorMap.set(id, isDarkColor(color) ? "#fff" : "#000");
   });

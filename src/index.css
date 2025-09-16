@@ -304,9 +304,11 @@
   border-color: hsl(var(--print-fg)) !important;
 }
 
-/* Colored cells still have black text for contrast */
+/* Colored cells: preserve custom background and text colors */
 .table-cell-colored {
-  color: hsl(var(--print-fg)) !important;
+  background-color: var(--cell-bg) !important;
+  color: var(--cell-fg, hsl(var(--print-fg))) !important;
+  background-image: none !important;
 }
 
 /* Print-safe styles for reports and randomization */
@@ -346,9 +348,10 @@
     background-color: white !important;
   }
   
-  /* Preserve cell backgrounds with proper contrast */
+  /* Preserve colored cell backgrounds in print/export */
   .print-container .table-cell-colored {
-    background-color: #f5f5f5 !important;
-    color: black !important;
+    background-color: var(--cell-bg) !important;
+    color: var(--cell-fg, black) !important;
+    background-image: none !important;
   }
 }

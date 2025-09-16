@@ -70,11 +70,13 @@ export function HedonicTable({ report, productName }: HedonicTableProps) {
                     return (
                       <TableHead 
                         key={id}
-                        className="font-bold text-center"
+                        className="font-bold text-center table-cell-colored"
                         style={{ 
                           backgroundColor: bgColor,
                           color: textColor,
-                          backgroundImage: 'none'
+                          backgroundImage: 'none',
+                          ['--cell-bg' as any]: bgColor,
+                          ['--cell-fg' as any]: textColor
                         }}
                       >
                         {formatSampleLabel(sample)}
@@ -93,11 +95,13 @@ export function HedonicTable({ report, productName }: HedonicTableProps) {
                     return (
                       <TableCell 
                         key={id}
-                        className="text-center"
+                        className="text-center table-cell-colored"
                         style={{ 
                           backgroundColor: bgColor, 
                           color: textColor,
-                          backgroundImage: 'none'
+                          backgroundImage: 'none',
+                          ['--cell-bg' as any]: bgColor,
+                          ['--cell-fg' as any]: textColor
                         }}
                       >
                         {sample.appearance.mean.toFixed(1)}
@@ -114,11 +118,13 @@ export function HedonicTable({ report, productName }: HedonicTableProps) {
                     return (
                       <TableCell 
                         key={id}
-                        className="text-center"
+                        className="text-center table-cell-colored"
                         style={{ 
                           backgroundColor: bgColor, 
                           color: textColor,
-                          backgroundImage: 'none'
+                          backgroundImage: 'none',
+                          ['--cell-bg' as any]: bgColor,
+                          ['--cell-fg' as any]: textColor
                         }}
                       >
                         {sample.odor.mean.toFixed(1)}
@@ -135,11 +141,13 @@ export function HedonicTable({ report, productName }: HedonicTableProps) {
                     return (
                       <TableCell 
                         key={id}
-                        className="text-center"
+                        className="text-center table-cell-colored"
                         style={{ 
                           backgroundColor: bgColor, 
                           color: textColor,
-                          backgroundImage: 'none'
+                          backgroundImage: 'none',
+                          ['--cell-bg' as any]: bgColor,
+                          ['--cell-fg' as any]: textColor
                         }}
                       >
                         {sample.texture.mean.toFixed(1)}
@@ -156,11 +164,13 @@ export function HedonicTable({ report, productName }: HedonicTableProps) {
                     return (
                       <TableCell 
                         key={id}
-                        className="text-center"
+                        className="text-center table-cell-colored"
                         style={{ 
                           backgroundColor: bgColor, 
                           color: textColor,
-                          backgroundImage: 'none'
+                          backgroundImage: 'none',
+                          ['--cell-bg' as any]: bgColor,
+                          ['--cell-fg' as any]: textColor
                         }}
                       >
                         {sample.flavor.mean.toFixed(1)}
@@ -177,11 +187,13 @@ export function HedonicTable({ report, productName }: HedonicTableProps) {
                     return (
                       <TableCell 
                         key={id}
-                        className="text-center"
+                        className="text-center table-cell-colored"
                         style={{ 
                           backgroundColor: bgColor, 
                           color: textColor,
-                          backgroundImage: 'none'
+                          backgroundImage: 'none',
+                          ['--cell-bg' as any]: bgColor,
+                          ['--cell-fg' as any]: textColor
                         }}
                       >
                         {sample.overallLiking.mean.toFixed(1)}

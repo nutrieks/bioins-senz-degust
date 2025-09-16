@@ -77,7 +77,7 @@ export function HedonicChart({ report, productName }: HedonicChartProps) {
                 barCategoryGap={barCategoryGap}
                 barGap={0}
               >
-                <CartesianGrid stroke="black" />
+                {/* Grid removed for cleaner export */}
                 <XAxis 
                   dataKey="name"
                   tick={{ fontSize: 11, fontWeight: 'bold', fill: 'black' }}
@@ -117,7 +117,7 @@ export function HedonicChart({ report, productName }: HedonicChartProps) {
                         position="top"
                         style={{ 
                           fill: 'black', 
-                          fontSize: 18, 
+                          fontSize: 16, 
                           fontWeight: 'bold',
                           stroke: 'white',
                           strokeWidth: 2,

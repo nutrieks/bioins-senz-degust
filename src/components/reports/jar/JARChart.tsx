@@ -90,7 +90,7 @@ export function JARChart({ data, attrData, productName }: JARChartProps) {
                 barCategoryGap={barCategoryGap}
                 barGap={0}
               >
-                <CartesianGrid stroke="black" />
+                {/* Grid removed for cleaner export */}
                 <XAxis 
                   dataKey="name"
                   angle={-45}
@@ -126,14 +126,14 @@ export function JARChart({ data, attrData, productName }: JARChartProps) {
                     <LabelList 
                       dataKey={label} 
                       position="top"
-                        style={{ 
-                          fill: 'black', 
-                          fontSize: 18, 
-                          fontWeight: 'bold',
-                          stroke: 'white',
-                          strokeWidth: 2,
-                          paintOrder: 'stroke fill'
-                        }}
+                      style={{ 
+                        fill: 'black', 
+                        fontSize: 16, 
+                        fontWeight: 'bold',
+                        stroke: 'white',
+                        strokeWidth: 2,
+                        paintOrder: 'stroke fill'
+                      }}
                       formatter={(value: number) => value > 0 ? value : ''}
                     />
                   </Bar>
