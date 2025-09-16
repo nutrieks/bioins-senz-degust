@@ -311,6 +311,13 @@
   background-image: none !important;
 }
 
+/* High-specificity override inside print/export containers (screen/PNG) */
+.print-container .table-cell-colored {
+  background-color: var(--cell-bg) !important;
+  color: var(--cell-fg, hsl(var(--print-fg))) !important;
+  background-image: none !important;
+}
+
 /* Print-safe styles for reports and randomization */
 @media print {
   * {
