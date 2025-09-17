@@ -19,8 +19,7 @@ export function HedonicChart({ report, productName }: HedonicChartProps) {
     if (chartRef.current) {
       const dataUrl = await toPng(chartRef.current, {
         backgroundColor: "#fff",
-        width: 1920,
-        height: 1080,
+        pixelRatio: 2,
         cacheBust: true,
         style: { fontFamily: "inherit" },
       });
@@ -53,8 +52,8 @@ export function HedonicChart({ report, productName }: HedonicChartProps) {
       {/* Chart container for export and display */}
       <div ref={chartRef} className="print-container print-safe print-text-black bg-white">
         <div 
-          className="w-full h-full flex flex-col"
-          style={{ width: '100%', height: '600px', padding: '20px' }}
+          className="w-full flex flex-col"
+          style={{ width: '100%', padding: '20px' }}
         >
           {/* Title */}
           <div className="text-center mb-4">
@@ -65,8 +64,8 @@ export function HedonicChart({ report, productName }: HedonicChartProps) {
           </div>
           
           {/* Chart Container */}
-          <div className="flex-1 w-full">
-            <ResponsiveContainer width="100%" height="85%">
+          <div className="w-full" style={{ height: '450px' }}>
+            <ResponsiveContainer width="100%" height="100%">
                <BarChart
                 data={chartData}
                 margin={{
@@ -133,25 +132,25 @@ export function HedonicChart({ report, productName }: HedonicChartProps) {
             </ResponsiveContainer>
           </div>
           {/* Legend */}
-          <div className="mt-4 w-full">
-            <div className="flex flex-wrap justify-center items-center gap-4" style={{ fontSize: 16 }}>
+          <div className="mt-2 w-full">
+            <div className="flex flex-wrap justify-center items-center gap-2" style={{ fontSize: 11 }}>
               {sortedSamples.map(([id, sample]) => {
                 const color = colorMap.get(id) || "#000";
                 const textColor = textColorMap.get(id) || "#000";
                 
                 return (
-                  <span className="flex items-center gap-2" key={id}>
+                  <span className="flex items-center gap-1" key={id}>
                     <span
-                      className="inline-block rounded-[3px]"
+                      className="inline-block rounded-[2px]"
                       style={{
-                        width: 24,
-                        height: 18,
+                        width: 14,
+                        height: 10,
                         backgroundColor: color,
                         border: "1px solid #000",
                         display: "inline-block"
                       }}
                     />
-                    <span style={{ color: "#111", fontWeight: 500 }}>
+                    <span style={{ color: "#111", fontWeight: 400 }}>
                       {`${sample.retailerCode} ${sample.brand}`}
                     </span>
                   </span>
