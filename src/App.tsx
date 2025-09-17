@@ -26,6 +26,7 @@ import NewProductType from "./pages/admin/products/NewProductType";
 import EditProductType from "./pages/admin/products/EditProductType";
 import UsersPage from "./pages/admin/users/UsersPage";
 import Evaluation from "./pages/evaluator/Evaluation";
+import EvaluatorResults from "./pages/evaluator/EvaluatorResults";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -76,6 +77,7 @@ const AppContent = () => {
 
         <Route path="/evaluator" element={<ProtectedRoute><EvaluatorDashboard /></ProtectedRoute>} />
         <Route path="/evaluator/evaluate/:eventId" element={<ProtectedRoute><Evaluation /></ProtectedRoute>} />
+        <Route path="/evaluator/results/:eventId" element={<ProtectedRoute><EvaluatorResults /></ProtectedRoute>} />
 
         {/* 404 RUTA */}
         <Route path="*" element={<NotFound />} />

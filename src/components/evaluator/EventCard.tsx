@@ -8,8 +8,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { Event } from '@/types';
-import { Calendar, ClipboardCheck, CheckCircle, Package } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Event, EventStatus } from '@/types';
+import { Calendar, ClipboardCheck, CheckCircle, Package, BarChart3 } from 'lucide-react';
 interface EventCardProps {
   event: Event;
 }
@@ -58,6 +59,7 @@ export function EventCard({
   const isCompleted = status ? status.completed >= status.total && status.total > 0 : false;
   const hasProgress = status && status.completed > 0 && status.total > 0;
   const progressPercentage = status && status.total > 0 ? status.completed / status.total * 100 : 0;
+  const canViewResults = event.status === EventStatus.COMPLETED;
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('hr-HR', {
       day: '2-digit',
@@ -101,7 +103,7 @@ export function EventCard({
           </div> : <p className="text-sm text-muted-foreground">Nema podataka o statusu</p>}
       </CardContent>
       
-      <CardFooter>
+      <CardFooter className="flex-col space-y-3">
         <Button className="w-full" onClick={() => navigate(`/evaluator/evaluate/${event.id}`)} disabled={isLoading || isCompleted || status?.total === 0} variant={isCompleted ? "secondary" : "default"}>
           {isCompleted ? <>
               <CheckCircle className="mr-2 h-4 w-4" />
@@ -111,6 +113,29 @@ export function EventCard({
               {hasProgress ? "Nastavi ocjenjivanje" : "Započni ocjenjivanje"}
             </>}
         </Button>
+        
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="w-full">
+                <Button 
+                  className="w-full" 
+                  onClick={() => navigate(`/evaluator/results/${event.id}`)} 
+                  disabled={!canViewResults}
+                  variant="outline"
+                >
+                  <BarChart3 className="mr-2 h-4 w-4" />
+                  Rezultati
+                </Button>
+              </div>
+            </TooltipTrigger>
+            {!canViewResults && (
+              <TooltipContent>
+                <p>Rezultati će biti dostupni kada admin završi događaj</p>
+              </TooltipContent>
+            )}
+          </Tooltip>
+        </TooltipProvider>
       </CardFooter>
     </Card>;
 }
