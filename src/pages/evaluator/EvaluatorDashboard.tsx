@@ -85,12 +85,14 @@ export default function EvaluatorDashboard() {
     );
   }
 
-  const activeEvents = allEvents.filter((event) => event.status === EventStatus.ACTIVE);
+  const availableEvents = allEvents.filter((event) => 
+    event.status === EventStatus.ACTIVE || event.status === EventStatus.COMPLETED
+  );
 
-  // DEBUG LOGGING - Track filtered active events
-  console.log('[EvaluatorDashboard] ActiveEvents filtered:', activeEvents);
-  console.log('[EvaluatorDashboard] ActiveEvents count:', activeEvents.length);
-  console.log('[EvaluatorDashboard] ActiveEvents IDs:', activeEvents.map(e => e.id));
+  // DEBUG LOGGING - Track filtered available events
+  console.log('[EvaluatorDashboard] AvailableEvents filtered:', availableEvents);
+  console.log('[EvaluatorDashboard] AvailableEvents count:', availableEvents.length);
+  console.log('[EvaluatorDashboard] AvailableEvents IDs:', availableEvents.map(e => e.id));
 
   return (
     <EvaluatorLayout>
@@ -108,10 +110,10 @@ export default function EvaluatorDashboard() {
           <CardHeader>
             <CardTitle className="flex items-center justify-center">
               <Calendar className="mr-2 h-5 w-5" />
-              Aktivni događaji
+              Dostupni događaji
             </CardTitle>
             <CardDescription className="text-center">
-              Odaberite događaj za početak ocjenjivanja
+              Odaberite događaj za ocjenjivanje ili pregled rezultata
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -120,17 +122,17 @@ export default function EvaluatorDashboard() {
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                 <span className="ml-2">Učitavanje...</span>
               </div>
-            ) : activeEvents.length > 0 ? (
+            ) : availableEvents.length > 0 ? (
               <div className="flex justify-center">
                 <div className="w-full max-w-md">
-                  {activeEvents.map((event) => (
+                  {availableEvents.map((event) => (
                     <EventCard key={event.id} event={event} />
                   ))}
                 </div>
               </div>
             ) : (
               <div className="text-center p-8">
-                <p>Nema aktivnih događaja za ocjenjivanje.</p>
+                <p>Nema dostupnih događaja.</p>
                 <p className="text-sm text-muted-foreground mt-2">
                   Molimo kontaktirajte administratora.
                 </p>
