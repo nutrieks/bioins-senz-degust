@@ -121,10 +121,12 @@ export default function EvaluatorDashboard() {
                 <span className="ml-2">Učitavanje...</span>
               </div>
             ) : activeEvents.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {activeEvents.map((event) => (
-                  <EventCard key={event.id} event={event} />
-                ))}
+              <div className="flex justify-center">
+                <div className="w-full max-w-md">
+                  {activeEvents.map((event) => (
+                    <EventCard key={event.id} event={event} />
+                  ))}
+                </div>
               </div>
             ) : (
               <div className="text-center p-8">
