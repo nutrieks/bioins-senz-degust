@@ -120,12 +120,12 @@
   }
 
   body:not(.dark) {
-    @apply bg-gradient-to-br from-slate-50 to-slate-200;
+    @apply bg-gradient-to-br from-[#0a0e1a] via-[#1a1f3a] to-[#2a3a5c];
   }
 
   .dark body,
   .admin-dark body {
-    @apply bg-gradient-to-br from-[#020420] via-slate-900 to-slate-950;
+    @apply bg-gradient-to-br from-[#0a0e1a] via-[#1a1f3a] to-[#2a3a5c];
   }
 }
 
