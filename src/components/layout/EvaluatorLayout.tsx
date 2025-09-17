@@ -18,8 +18,8 @@ export function EvaluatorLayout({ children }: EvaluatorLayoutProps) {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <header className="admin-gradient-bg border-b border-border/20 backdrop-blur-sm p-4 flex justify-between items-center admin-glow-border">
+    <div className="min-h-screen text-foreground">
+      <header className="bg-background/20 backdrop-blur-md border-b border-border/20 p-4 flex justify-between items-center admin-glow-border">
         <div className="flex items-center gap-3">
           <BrandLogo to="/evaluator" size="sm" />
           <div className="leading-tight">
@@ -45,7 +45,7 @@ export function EvaluatorLayout({ children }: EvaluatorLayoutProps) {
         {children}
       </main>
 
-      <footer className="bg-card/50 border-t border-border/20 py-4 text-center text-sm text-muted-foreground">
+      <footer className="bg-background/20 backdrop-blur-md border-t border-border/20 py-4 text-center text-sm text-muted-foreground">
         <p>© {new Date().getFullYear()} BIOINSTITUT - senzorska analiza</p>
       </footer>
     </div>

@@ -23,7 +23,7 @@ export default function Login() {
   // Prikazujemo spinner dok se provjerava inicijalna sesija
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-slate-600">Provjera sesije...</p>
@@ -35,10 +35,7 @@ export default function Login() {
   // Ako nakon provjere i dalje nema korisnika, prikaži formu za prijavu.
   // Ako korisnik postoji, useEffect iznad će odraditi preusmjeravanje.
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-card to-muted relative overflow-hidden">
-      {/* Enhanced dark background gradient overlay */}
-      <div className="absolute inset-0 admin-gradient-bg opacity-20"></div>
-      <div className="absolute inset-0 bg-gradient-to-tr from-primary/5 via-transparent to-accent/5"></div>
+    <div className="min-h-screen flex items-center justify-center relative overflow-hidden">
       <div className="relative z-10 w-full max-w-md px-4 animate-fade-in">
         <div className="flex flex-col items-center gap-6">
           <img 

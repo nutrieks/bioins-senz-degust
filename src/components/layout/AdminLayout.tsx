@@ -45,10 +45,10 @@ export function AdminLayout({
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
-  return <div className="admin-dark flex h-screen bg-background">
+  return <div className="admin-dark flex h-screen">
       {/* Sidebar for desktop */}
       <div className="hidden md:flex md:w-64 md:flex-col">
-        <div className="flex min-h-0 flex-1 flex-col border-r bg-card admin-glow-border">
+        <div className="flex min-h-0 flex-1 flex-col border-r bg-card/30 backdrop-blur-md admin-glow-border">
           <div className="flex flex-shrink-0 items-center px-4 py-4 border-b">
             <BrandLogo to="/admin" size="sm" showText />
           </div>
@@ -90,7 +90,7 @@ export function AdminLayout({
       </div>
 
       {/* Mobile menu */}
-      {isMobileMenuOpen && <div className="md:hidden fixed inset-0 z-40 bg-background admin-glow-border">
+      {isMobileMenuOpen && <div className="md:hidden fixed inset-0 z-40 bg-background/30 backdrop-blur-md admin-glow-border">
           <div className="flex min-h-full flex-col">
             <div className="flex items-center justify-between px-4 py-4 border-b">
               <BrandLogo to="/admin" size="sm" showText />
@@ -134,7 +134,7 @@ export function AdminLayout({
 
       {/* Main content */}
       <div className="flex flex-1 flex-col overflow-hidden">
-        <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-lg admin-glow-border sticky top-0 z-30">
+        <div className="border-b bg-background/20 backdrop-blur supports-[backdrop-filter]:bg-background/10 shadow-lg admin-glow-border sticky top-0 z-30">
           <div className="flex h-14 items-center px-4 md:px-6">
             <div className="text-sm text-muted-foreground">Admin Panel</div>
           </div>

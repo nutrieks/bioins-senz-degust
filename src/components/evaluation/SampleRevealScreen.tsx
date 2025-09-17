@@ -22,8 +22,8 @@ export function SampleRevealScreen({
   });
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-background via-background to-muted/20 p-4">
-      <Card className="w-full max-w-2xl shadow-lg">
+    <div className="flex items-center justify-center min-h-screen p-4">
+      <Card className="w-full max-w-2xl shadow-lg bg-card/30 backdrop-blur-md">
         <CardHeader className="text-center pb-4">
           <CardTitle className="text-2xl font-bold">Otkrivanje uzoraka</CardTitle>
           <CardDescription className="text-lg font-medium text-foreground">

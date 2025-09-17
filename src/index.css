@@ -120,12 +120,16 @@
   }
 
   body:not(.dark) {
-    @apply bg-gradient-to-br from-[#0a0e1a] via-[#1a1f3a] to-[#2a3a5c];
+    background: linear-gradient(135deg, #0a0e1a 0%, #1a1f3a 50%, #2a3a5c 100%);
+    background-attachment: fixed;
+    min-height: 100vh;
   }
 
   .dark body,
   .admin-dark body {
-    @apply bg-gradient-to-br from-[#0a0e1a] via-[#1a1f3a] to-[#2a3a5c];
+    background: linear-gradient(135deg, #0a0e1a 0%, #1a1f3a 50%, #2a3a5c 100%);
+    background-attachment: fixed;
+    min-height: 100vh;
   }
 }
 
