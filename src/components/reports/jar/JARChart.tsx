@@ -64,29 +64,29 @@ export function JARChart({ data, attrData, productName }: JARChartProps) {
       </div>
       
       {/* Chart container for export and display */}
-      <div ref={chartRef} className="print-container print-safe print-text-black bg-white p-2">
+      <div ref={chartRef} className="print-container print-safe print-text-black bg-white">
         <div 
-          className="rounded-lg shadow mx-auto w-full" 
-          style={{ aspectRatio: '16/9', minHeight: '400px', maxWidth: '100%' }}
+          className="w-full h-full flex flex-col"
+          style={{ width: '100%', height: '600px', padding: '20px' }}
         >
-          {/* Title and description */}
-          <div className="mb-1 text-center">
-            <h4 className="font-bold text-base mb-0.5">Consumer's reaction to specific attribute</h4>
-            <p className="text-xs">Method: JAR scale</p>
-            <p className="text-xs">Sample: {productName}</p>
-            <p className="text-xs mb-0.5">Attribute: {attrData.nameEN}</p>
+          {/* Title */}
+          <div className="text-center mb-4">
+            <h4 className="font-bold text-lg mb-1">Consumer's reaction to specific attribute</h4>
+            <p className="text-sm">Method: JAR scale</p>
+            <p className="text-sm">Sample: {productName}</p>
+            <p className="text-sm mb-2">Attribute: {attrData.nameEN}</p>
           </div>
           
-          {/* Chart */}
-          <div className="w-full" style={{ height: 'calc(100% - 80px)' }}>
-            <ResponsiveContainer width="100%" height="100%">
+          {/* Chart Container */}
+          <div className="flex-1 w-full">
+            <ResponsiveContainer width="100%" height="85%">
                <BarChart
                 data={data}
                 margin={{
-                  top: 20,
+                  top: 10,
                   right: 30,
                   left: 60,
-                  bottom: 40
+                  bottom: 10
                 }}
                 barCategoryGap={barCategoryGap}
                 barGap={0}
@@ -142,24 +142,25 @@ export function JARChart({ data, attrData, productName }: JARChartProps) {
               </BarChart>
             </ResponsiveContainer>
           </div>
-          
-          {/* Custom Legend */}
-          <div className="flex flex-wrap justify-center items-center gap-2 mt-1" style={{ fontSize: 14 }}>
-            {JAR_LABELS.map((label, index) => (
-              <span className="flex items-center gap-2" key={label}>
-                <span
-                  className="inline-block rounded-[3px]"
-                  style={{
-                    width: 22,
-                    height: 17,
-                    backgroundColor: JAR_COLORS[index],
-                    border: "1px solid #000",
-                    display: "inline-block"
-                  }}
-                />
-                <span style={{ color: "#111", fontWeight: 500 }}>{label}</span>
-              </span>
-            ))}
+          {/* Legend */}
+          <div className="mt-4 w-full">
+            <div className="flex flex-wrap justify-center items-center gap-4" style={{ fontSize: 16 }}>
+              {JAR_LABELS.map((label, index) => (
+                <span className="flex items-center gap-2" key={label}>
+                  <span
+                    className="inline-block rounded-[3px]"
+                    style={{
+                      width: 24,
+                      height: 18,
+                      backgroundColor: JAR_COLORS[index],
+                      border: "1px solid #000",
+                      display: "inline-block"
+                    }}
+                  />
+                  <span style={{ color: "#111", fontWeight: 500 }}>{label}</span>
+                </span>
+              ))}
+            </div>
           </div>
         </div>
       </div>

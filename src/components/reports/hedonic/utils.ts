@@ -18,9 +18,10 @@ export const RETAILER_COLORS: Record<RetailerCode, string> = {
 };
 
 // Predefined distinct green shades for brands (marke) to ensure clear differentiation
+// The first brand ALWAYS gets the standard green color
 const DISTINCT_GREEN_SHADES = [
+  "rgb(124, 252, 0)",   // Standard green - ALWAYS first brand
   "rgb(34, 139, 34)",   // Forest Green - dark green
-  "rgb(124, 252, 0)",   // Lawn Green - bright contrast
   "rgb(0, 128, 0)",     // Green - medium
   "rgb(50, 205, 50)",   // Lime Green - bright
   "rgb(144, 238, 144)", // Light Green - light
@@ -124,12 +125,25 @@ export const processChartData = (report: HedonicReport) => {
   
   const BRAND_CODES: RetailerCode[] = [RetailerCode.M, RetailerCode.DU, RetailerCode.ME, RetailerCode.MI, RetailerCode.TO, RetailerCode.VI];
   
+  // Global brand index to ensure first brand always gets standard green
+  let globalBrandIndex = 0;
+  
   sortedSamples.forEach(([id, sample]) => {
     const retailerCode = sample.retailerCode;
     const count = retailerCounts[retailerCode]++;
     const baseColor = RETAILER_COLORS[retailerCode];
     const isBrand = BRAND_CODES.includes(retailerCode);
-    const color = isBrand ? getColorVariant(baseColor, count) : (count === 0 ? baseColor : getColorVariant(baseColor, count));
+    
+    let color: string;
+    if (isBrand) {
+      // For brands, use global brand index to ensure first brand gets standard green
+      color = DISTINCT_GREEN_SHADES[globalBrandIndex % DISTINCT_GREEN_SHADES.length];
+      globalBrandIndex++;
+    } else {
+      // For retailers, use original logic
+      color = count === 0 ? baseColor : getColorVariant(baseColor, count);
+    }
+    
     colorMap.set(id, color);
     textColorMap.set(id, isDarkColor(color) ? "#fff" : "#000");
   });
