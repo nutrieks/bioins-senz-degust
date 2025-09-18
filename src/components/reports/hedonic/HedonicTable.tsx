@@ -22,7 +22,7 @@ export function HedonicTable({ report, productName }: HedonicTableProps) {
     if (tableRef.current) {
       const dataUrl = await toPng(tableRef.current, {
         backgroundColor: "#fff",
-        pixelRatio: 6,
+        pixelRatio: 8,
         cacheBust: true,
         style: { fontFamily: "inherit" }
       });
@@ -49,20 +49,20 @@ export function HedonicTable({ report, productName }: HedonicTableProps) {
 
         <div 
           ref={tableRef}
-          className="print-container print-safe bg-white p-5 rounded-lg shadow"
+          className="print-container print-safe bg-white p-4 rounded-lg shadow"
         >
-          <div className="mb-3 text-center text-black">
-            <h4 className="font-bold text-lg mb-1 text-black">Preference data: overall and attribute liking</h4>
-            <p className="text-sm text-black">Method: 9-point hedonic scale</p>
-            <p className="text-sm text-black">Sample: {productName}</p>
-            <p className="text-sm mb-3 text-black">Values: mean</p>
+          <div className="mb-4 text-center text-black">
+            <h4 className="font-extrabold text-2xl mb-2 text-black" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.3)' }}>Preference data: overall and attribute liking</h4>
+            <p className="text-lg font-semibold text-black">Method: 9-point hedonic scale</p>
+            <p className="text-lg font-semibold text-black">Sample: {productName}</p>
+            <p className="text-lg font-semibold mb-4 text-black">Values: mean</p>
           </div>
 
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="font-bold text-center text-black bg-white">Attribute</TableHead>
+                  <TableHead className="font-extrabold text-lg text-center text-black bg-white">Attribute</TableHead>
                   {sortedSamples.map(([id, sample]) => {
                     const bgColor = colorMap.get(id) || "";
                     const textColor = textColorMap.get(id) || "#000";
@@ -70,7 +70,7 @@ export function HedonicTable({ report, productName }: HedonicTableProps) {
                     return (
                       <TableHead 
                         key={id}
-                        className="font-bold text-center table-cell-colored"
+                        className="font-extrabold text-lg text-center table-cell-colored"
                         style={{ 
                           backgroundColor: bgColor,
                           color: textColor,
@@ -87,7 +87,7 @@ export function HedonicTable({ report, productName }: HedonicTableProps) {
               </TableHeader>
               <TableBody>
                 <TableRow>
-                  <TableCell className="font-medium text-black bg-white">Appearance</TableCell>
+                  <TableCell className="font-extrabold text-lg text-black bg-white">Appearance</TableCell>
                   {sortedSamples.map(([id, sample]) => {
                     const bgColor = colorMap.get(id) || "";
                     const textColor = textColorMap.get(id) || "#000";
@@ -95,7 +95,7 @@ export function HedonicTable({ report, productName }: HedonicTableProps) {
                     return (
                       <TableCell 
                         key={id}
-                        className="text-center table-cell-colored"
+                        className="text-center text-lg font-bold table-cell-colored"
                         style={{ 
                           backgroundColor: bgColor, 
                           color: textColor,
@@ -110,7 +110,7 @@ export function HedonicTable({ report, productName }: HedonicTableProps) {
                   })}
                 </TableRow>
                 <TableRow>
-                  <TableCell className="font-medium text-black bg-white">Odour</TableCell>
+                  <TableCell className="font-extrabold text-lg text-black bg-white">Odour</TableCell>
                   {sortedSamples.map(([id, sample]) => {
                     const bgColor = colorMap.get(id) || "";
                     const textColor = textColorMap.get(id) || "#000";
@@ -118,7 +118,7 @@ export function HedonicTable({ report, productName }: HedonicTableProps) {
                     return (
                       <TableCell 
                         key={id}
-                        className="text-center table-cell-colored"
+                        className="text-center text-lg font-bold table-cell-colored"
                         style={{ 
                           backgroundColor: bgColor, 
                           color: textColor,
@@ -133,7 +133,7 @@ export function HedonicTable({ report, productName }: HedonicTableProps) {
                   })}
                 </TableRow>
                 <TableRow>
-                  <TableCell className="font-medium text-black bg-white">Texture</TableCell>
+                  <TableCell className="font-extrabold text-lg text-black bg-white">Texture</TableCell>
                   {sortedSamples.map(([id, sample]) => {
                     const bgColor = colorMap.get(id) || "";
                     const textColor = textColorMap.get(id) || "#000";
@@ -141,7 +141,7 @@ export function HedonicTable({ report, productName }: HedonicTableProps) {
                     return (
                       <TableCell 
                         key={id}
-                        className="text-center table-cell-colored"
+                        className="text-center text-lg font-bold table-cell-colored"
                         style={{ 
                           backgroundColor: bgColor, 
                           color: textColor,
@@ -156,7 +156,7 @@ export function HedonicTable({ report, productName }: HedonicTableProps) {
                   })}
                 </TableRow>
                 <TableRow>
-                  <TableCell className="font-medium text-black bg-white">Flavour</TableCell>
+                  <TableCell className="font-extrabold text-lg text-black bg-white">Flavour</TableCell>
                   {sortedSamples.map(([id, sample]) => {
                     const bgColor = colorMap.get(id) || "";
                     const textColor = textColorMap.get(id) || "#000";
@@ -164,7 +164,7 @@ export function HedonicTable({ report, productName }: HedonicTableProps) {
                     return (
                       <TableCell 
                         key={id}
-                        className="text-center table-cell-colored"
+                        className="text-center text-lg font-bold table-cell-colored"
                         style={{ 
                           backgroundColor: bgColor, 
                           color: textColor,
@@ -179,7 +179,7 @@ export function HedonicTable({ report, productName }: HedonicTableProps) {
                   })}
                 </TableRow>
                 <TableRow>
-                  <TableCell className="font-medium text-black bg-white">Overall liking</TableCell>
+                  <TableCell className="font-extrabold text-lg text-black bg-white">Overall liking</TableCell>
                   {sortedSamples.map(([id, sample]) => {
                     const bgColor = colorMap.get(id) || "";
                     const textColor = textColorMap.get(id) || "#000";
@@ -187,7 +187,7 @@ export function HedonicTable({ report, productName }: HedonicTableProps) {
                     return (
                       <TableCell 
                         key={id}
-                        className="text-center table-cell-colored"
+                        className="text-center text-lg font-bold table-cell-colored"
                         style={{ 
                           backgroundColor: bgColor, 
                           color: textColor,

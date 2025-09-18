@@ -114,7 +114,8 @@ export const captureElementAsImage = async (
   element: HTMLElement | null, 
   filename: string,
   width?: number,
-  height?: number
+  height?: number,
+  pixelRatio?: number
 ) => {
   if (!element) return;
   
@@ -125,7 +126,7 @@ export const captureElementAsImage = async (
     
     const options: any = {
       backgroundColor: "#ffffff",
-      pixelRatio: 3,
+      pixelRatio: pixelRatio || 3,
       cacheBust: true,
       useCORS: true,
       style: {

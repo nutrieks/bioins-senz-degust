@@ -19,7 +19,7 @@ export function JARChart({ data, attrData, productName }: JARChartProps) {
     if (chartRef.current) {
       const dataUrl = await toPng(chartRef.current, {
         backgroundColor: "#fff",
-        pixelRatio: 2,
+        pixelRatio: 6,
         cacheBust: true,
         style: { fontFamily: "inherit" },
       });
@@ -36,7 +36,7 @@ export function JARChart({ data, attrData, productName }: JARChartProps) {
 
   // Calculate dynamic spacing based on number of samples
   const sampleCount = data.length;
-  const barCategoryGap = sampleCount <= 5 ? "15%" : sampleCount <= 8 ? "8%" : "3%";
+  const barCategoryGap = sampleCount <= 5 ? "10%" : sampleCount <= 8 ? "5%" : "2%";
 
   // Check if we have valid data
   if (!data || data.length === 0) {
@@ -66,26 +66,26 @@ export function JARChart({ data, attrData, productName }: JARChartProps) {
       <div ref={chartRef} className="print-container print-safe print-text-black bg-white">
         <div 
           className="w-full flex flex-col"
-          style={{ width: '100%', padding: '20px' }}
+          style={{ width: '100%', padding: '12px' }}
         >
           {/* Title */}
           <div className="text-center mb-4">
-            <h4 className="font-bold text-lg mb-1">Consumer's reaction to specific attribute</h4>
-            <p className="text-sm">Method: JAR scale</p>
-            <p className="text-sm">Sample: {productName}</p>
-            <p className="text-sm mb-2">Attribute: {attrData.nameEN}</p>
+            <h4 className="font-extrabold text-2xl mb-2" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.3)' }}>Consumer's reaction to specific attribute</h4>
+            <p className="text-lg font-semibold">Method: JAR scale</p>
+            <p className="text-lg font-semibold">Sample: {productName}</p>
+            <p className="text-lg font-semibold mb-3">Attribute: {attrData.nameEN}</p>
           </div>
           
           {/* Chart Container */}
-          <div className="w-full" style={{ height: '450px' }}>
+          <div className="w-full" style={{ height: '500px' }}>
             <ResponsiveContainer width="100%" height="100%">
                <BarChart
                 data={data}
                 margin={{
-                  top: 10,
-                  right: 30,
-                  left: 60,
-                  bottom: 10
+                  top: 7,
+                  right: 21,
+                  left: 42,
+                  bottom: 7
                 }}
                 barCategoryGap={barCategoryGap}
                 barGap={0}
@@ -96,14 +96,14 @@ export function JARChart({ data, attrData, productName }: JARChartProps) {
                   angle={-45}
                   textAnchor="end"
                   height={60}
-                  tick={{ fontSize: 11, fill: 'black' }}
+                  tick={{ fontSize: 20, fill: 'black' }}
                   interval={0}
                 />
                 <YAxis 
                   domain={[0, 12]}
                   ticks={[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]}
-                  tick={{ fontSize: 11, fill: 'black' }}
-                  label={{ value: 'No. of votes', angle: -90, position: 'insideLeft', fontSize: 13, fill: 'black' }}
+                  tick={{ fontSize: 20, fill: 'black' }}
+                  label={{ value: 'No. of votes', angle: -90, position: 'insideLeft', fontSize: 20, fontWeight: 'bold', fill: 'black' }}
                 />
                 <Tooltip 
                   contentStyle={{ 
@@ -142,21 +142,21 @@ export function JARChart({ data, attrData, productName }: JARChartProps) {
             </ResponsiveContainer>
           </div>
           {/* Legend */}
-          <div className="mt-2 w-full">
-            <div className="flex flex-wrap justify-center items-center gap-2" style={{ fontSize: 11 }}>
+          <div className="mt-3 w-full">
+            <div className="flex flex-wrap justify-center items-center gap-3" style={{ fontSize: 14 }}>
               {JAR_LABELS.map((label, index) => (
-                <span className="flex items-center gap-1" key={label}>
+                <span className="flex items-center gap-2" key={label}>
                   <span
                     className="inline-block rounded-[2px]"
                     style={{
-                      width: 14,
-                      height: 10,
+                      width: 16,
+                      height: 12,
                       backgroundColor: JAR_COLORS[index],
-                      border: "1px solid #000",
+                      border: "2px solid #000",
                       display: "inline-block"
                     }}
                   />
-                  <span style={{ color: "#111", fontWeight: 400 }}>{label}</span>
+                  <span style={{ color: "#111", fontWeight: 600, textShadow: '0.5px 0.5px 1px rgba(0,0,0,0.2)' }}>{label}</span>
                 </span>
               ))}
             </div>
