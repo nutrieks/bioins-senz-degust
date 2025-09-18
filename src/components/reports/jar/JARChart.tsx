@@ -9,7 +9,7 @@ import { JAR_LABELS, JAR_COLORS } from "./utils";
 // Custom tick component for multiline labels
 const CustomXAxisTick = (props: any) => {
   const { x, y, payload } = props;
-  const maxCharsPerLine = 15;
+  const maxCharsPerLine = 12;
   
   // Split long labels into multiple lines
   const words = payload.value.split(' ');
@@ -32,7 +32,7 @@ const CustomXAxisTick = (props: any) => {
         <text
           key={index}
           x={0}
-          y={index * 22 + 10}
+          y={index * 18 + 8}
           dy={0}
           textAnchor="middle"
           fill="black"
@@ -117,7 +117,7 @@ export function JARChart({ data, attrData, productName }: JARChartProps) {
           </div>
           
           {/* Chart Container */}
-          <div className="w-full" style={{ height: '500px' }}>
+          <div className="w-full" style={{ height: '620px' }}>
             <ResponsiveContainer width="100%" height="100%">
                <BarChart
                 data={data}
