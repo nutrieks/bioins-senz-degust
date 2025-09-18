@@ -9,7 +9,7 @@ import { JAR_LABELS, JAR_COLORS } from "./utils";
 // Custom tick component for multiline labels
 const CustomXAxisTick = (props: any) => {
   const { x, y, payload } = props;
-  const maxCharsPerLine = 12;
+  const maxCharsPerLine = 10;
   
   // Split long labels into multiple lines
   const words = payload.value.split(' ');
@@ -32,11 +32,11 @@ const CustomXAxisTick = (props: any) => {
         <text
           key={index}
           x={0}
-          y={index * 18 + 8}
+          y={index * 16 + 6}
           dy={0}
           textAnchor="middle"
           fill="black"
-          fontSize={20}
+          fontSize={16}
           fontWeight="bold"
         >
           {line}
@@ -125,7 +125,7 @@ export function JARChart({ data, attrData, productName }: JARChartProps) {
                   top: 7,
                   right: 21,
                   left: 42,
-                  bottom: 60
+                  bottom: 45
                 }}
                 barCategoryGap={barCategoryGap}
                 barGap={0}
@@ -133,7 +133,7 @@ export function JARChart({ data, attrData, productName }: JARChartProps) {
                 {/* Grid removed for cleaner export */}
                 <XAxis 
                   dataKey="name"
-                  height={100}
+                  height={80}
                   tick={<CustomXAxisTick />}
                   interval={0}
                 />
@@ -180,7 +180,7 @@ export function JARChart({ data, attrData, productName }: JARChartProps) {
             </ResponsiveContainer>
           </div>
           {/* Legend */}
-          <div className="mt-3 w-full">
+          <div className="mt-1 w-full">
             <div className="flex flex-wrap justify-center items-center gap-3" style={{ fontSize: 14 }}>
               {JAR_LABELS.map((label, index) => (
                 <span className="flex items-center gap-2" key={label}>
