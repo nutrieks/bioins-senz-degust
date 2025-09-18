@@ -6,6 +6,46 @@ import { Download } from "lucide-react";
 import { toPng } from "html-to-image";
 import { JAR_LABELS, JAR_COLORS } from "./utils";
 
+// Custom tick component for multiline labels
+const CustomXAxisTick = (props: any) => {
+  const { x, y, payload } = props;
+  const maxCharsPerLine = 15;
+  
+  // Split long labels into multiple lines
+  const words = payload.value.split(' ');
+  const lines: string[] = [];
+  let currentLine = '';
+  
+  words.forEach((word: string) => {
+    if ((currentLine + word).length <= maxCharsPerLine) {
+      currentLine += (currentLine ? ' ' : '') + word;
+    } else {
+      if (currentLine) lines.push(currentLine);
+      currentLine = word;
+    }
+  });
+  if (currentLine) lines.push(currentLine);
+  
+  return (
+    <g transform={`translate(${x},${y})`}>
+      {lines.map((line, index) => (
+        <text
+          key={index}
+          x={0}
+          y={index * 22 + 10}
+          dy={0}
+          textAnchor="middle"
+          fill="black"
+          fontSize={20}
+          fontWeight="bold"
+        >
+          {line}
+        </text>
+      ))}
+    </g>
+  );
+};
+
 interface JARChartProps {
   data: any[];
   attrData: any;
@@ -85,7 +125,7 @@ export function JARChart({ data, attrData, productName }: JARChartProps) {
                   top: 7,
                   right: 21,
                   left: 42,
-                  bottom: 7
+                  bottom: 60
                 }}
                 barCategoryGap={barCategoryGap}
                 barGap={0}
@@ -93,10 +133,8 @@ export function JARChart({ data, attrData, productName }: JARChartProps) {
                 {/* Grid removed for cleaner export */}
                 <XAxis 
                   dataKey="name"
-                  angle={-45}
-                  textAnchor="end"
-                  height={60}
-                  tick={{ fontSize: 20, fill: 'black' }}
+                  height={100}
+                  tick={<CustomXAxisTick />}
                   interval={0}
                 />
                 <YAxis 
