@@ -217,12 +217,12 @@ export async function checkRandomizationsComplete(eventId: string): Promise<bool
 }
 
 // Reports Management
-export async function generateHedonicReport(eventId: string): Promise<any> {
-  return await generateHedonicReportSupabase(eventId);
+export async function generateHedonicReport(productTypeId: string): Promise<any> {
+  return await generateHedonicReportSupabase(productTypeId);
 }
 
-export async function generateJARReport(eventId: string): Promise<any> {
-  return await generateJARReportSupabase(eventId);
+export async function generateJARReport(productTypeId: string): Promise<any> {
+  return await generateJARReportSupabase(productTypeId);
 }
 
 export async function getRawData(eventId: string): Promise<any> {
