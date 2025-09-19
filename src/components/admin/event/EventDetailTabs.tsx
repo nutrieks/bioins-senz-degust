@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProductTypesTab } from "./ProductTypesTab";
 import { RandomizationTab } from "./RandomizationTab";
 import { ReportsTab } from "./ReportsTab";
+import { EvaluationsTab } from "./EvaluationsTab";
 import { ProductType } from "@/types";
 
 interface EventDetailTabsProps {
@@ -28,6 +29,7 @@ export function EventDetailTabs({
           <TabsTrigger value="productTypes">Tipovi proizvoda</TabsTrigger>
           <TabsTrigger value="randomization">Randomizacija</TabsTrigger>
           <TabsTrigger value="reports">Izvještaji</TabsTrigger>
+          <TabsTrigger value="evaluations">Ocjene</TabsTrigger>
         </TabsList>
         <TabsContent value="productTypes">
           <ProductTypesTab 
@@ -45,6 +47,9 @@ export function EventDetailTabs({
         </TabsContent>
         <TabsContent value="reports">
           <ReportsTab eventId={eventId} />
+        </TabsContent>
+        <TabsContent value="evaluations">
+          <EvaluationsTab productTypes={productTypes} eventId={eventId} />
         </TabsContent>
       </Tabs>
     </div>

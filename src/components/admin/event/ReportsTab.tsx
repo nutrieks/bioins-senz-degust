@@ -9,12 +9,17 @@ import { ReportHeader } from "./reports/ReportHeader";
 import { HedonicTab } from "./reports/HedonicTab";
 import { JARTab } from "./reports/JARTab";
 import { PrintableReports } from "./reports/PrintableReports";
+import { SampleManager } from "./reports/SampleManager";
+import { useQuery } from "@tanstack/react-query";
+import { getEvent } from "@/services/dataService";
 
 interface ReportsTabProps {
   eventId: string;
 }
 
 export function ReportsTab({ eventId }: ReportsTabProps) {
+  const [editMode, setEditMode] = useState(false);
+  
   const {
     productTypes,
     selectedProductType,
@@ -25,6 +30,16 @@ export function ReportsTab({ eventId }: ReportsTabProps) {
     handleProductTypeChange,
     productType
   } = useReportsData(eventId);
+
+  // Fetch event data to check status
+  const { data: event } = useQuery({
+    queryKey: ['event', eventId],
+    queryFn: () => getEvent(eventId),
+    enabled: !!eventId,
+  });
+
+  // Only show edit mode for completed or archived events
+  const canEdit = event?.status === 'COMPLETED' || event?.status === 'ARCHIVED';
 
   const handlePrintReport = () => {
     window.print();
@@ -55,6 +70,9 @@ export function ReportsTab({ eventId }: ReportsTabProps) {
               onPrint={handlePrintReport}
               onExport={handleExportReport}
               disabled={!hedonicReport || !jarReport}
+              editMode={editMode}
+              onEditModeChange={setEditMode}
+              showEditMode={canEdit}
             />
           </div>
 
@@ -62,6 +80,13 @@ export function ReportsTab({ eventId }: ReportsTabProps) {
             eventDate={eventDate} 
             productType={productType} 
           />
+
+          {editMode && selectedProductType && productType && (
+            <SampleManager
+              productTypeId={selectedProductType}
+              productTypeName={`${productType.customerCode} - ${productType.productName}`}
+            />
+          )}
 
           <Tabs defaultValue="hedonic" className="print:hidden">
             <TabsList className="mb-4">

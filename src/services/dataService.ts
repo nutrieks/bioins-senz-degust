@@ -26,9 +26,9 @@ import {
   getNextSample as getNextSampleSupabase
 } from './supabase/randomization';
 import { 
-  generateHedonicReport as generateHedonicReportSupabase,
-  generateJARReport as generateJARReportSupabase,
-  getRawData as getRawDataSupabase
+  generateHedonicReportSupabase, 
+  generateJARReportSupabase,
+  getRawData as getRawDataSupabase 
 } from './supabase/reports';
 
 // Re-export from new service modules

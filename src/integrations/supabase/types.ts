@@ -32,6 +32,44 @@ export type Database = {
         }
         Relationships: []
       }
+      evaluation_history: {
+        Row: {
+          id: string
+          modified_at: string
+          modified_by: string
+          modified_values: Json
+          original_evaluation_id: string
+          original_values: Json
+          reason: string | null
+        }
+        Insert: {
+          id?: string
+          modified_at?: string
+          modified_by: string
+          modified_values: Json
+          original_evaluation_id: string
+          original_values: Json
+          reason?: string | null
+        }
+        Update: {
+          id?: string
+          modified_at?: string
+          modified_by?: string
+          modified_values?: Json
+          original_evaluation_id?: string
+          original_values?: Json
+          reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evaluation_history_original_evaluation_id_fkey"
+            columns: ["original_evaluation_id"]
+            isOneToOne: false
+            referencedRelation: "evaluations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       evaluations: {
         Row: {
           event_id: string
@@ -263,6 +301,7 @@ export type Database = {
           blind_code: string | null
           brand: string
           created_at: string
+          hidden_from_reports: boolean
           id: string
           images_details: string[] | null
           images_packaging: string | null
@@ -274,6 +313,7 @@ export type Database = {
           blind_code?: string | null
           brand: string
           created_at?: string
+          hidden_from_reports?: boolean
           id?: string
           images_details?: string[] | null
           images_packaging?: string | null
@@ -285,6 +325,7 @@ export type Database = {
           blind_code?: string | null
           brand?: string
           created_at?: string
+          hidden_from_reports?: boolean
           id?: string
           images_details?: string[] | null
           images_packaging?: string | null

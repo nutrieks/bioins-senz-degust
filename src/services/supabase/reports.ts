@@ -2,19 +2,21 @@
 import { supabase } from '@/integrations/supabase/client'
 import { HedonicReport, JARReport, RetailerCode } from '@/types'
 
-export async function generateHedonicReport(productTypeId: string): Promise<HedonicReport> {
+export async function generateHedonicReportSupabase(productTypeId: string): Promise<HedonicReport> {
   try {
     console.log('=== SUPABASE generateHedonicReport ===');
     console.log('Product Type ID:', productTypeId);
     
     // Get all evaluations for this product type with sample data including retailer_code
+    // Only include samples that are not hidden from reports
     const { data: evaluations, error: evalError } = await supabase
       .from('evaluations')
       .select(`
         *,
-        samples!inner(id, brand, blind_code, retailer_code)
+        samples!inner(id, brand, blind_code, retailer_code, hidden_from_reports)
       `)
-      .eq('product_type_id', productTypeId);
+      .eq('product_type_id', productTypeId)
+      .eq('samples.hidden_from_reports', false);
 
     if (evalError) {
       console.error('Error fetching evaluations:', evalError);
@@ -70,7 +72,7 @@ export async function generateHedonicReport(productTypeId: string): Promise<Hedo
   }
 }
 
-export async function generateJARReport(productTypeId: string): Promise<JARReport> {
+export async function generateJARReportSupabase(productTypeId: string): Promise<JARReport> {
   try {
     console.log('=== SUPABASE generateJARReport ===');
     console.log('Product Type ID:', productTypeId);
@@ -87,13 +89,15 @@ export async function generateJARReport(productTypeId: string): Promise<JARRepor
     }
 
     // Get all evaluations for this product type with sample data including retailer_code
+    // Only include samples that are not hidden from reports
     const { data: evaluations, error: evalError } = await supabase
       .from('evaluations')
       .select(`
         *,
-        samples!inner(id, brand, blind_code, retailer_code)
+        samples!inner(id, brand, blind_code, retailer_code, hidden_from_reports)
       `)
-      .eq('product_type_id', productTypeId);
+      .eq('product_type_id', productTypeId)
+      .eq('samples.hidden_from_reports', false);
 
     if (evalError) {
       console.error('Error fetching evaluations:', evalError);
